@@ -165,7 +165,7 @@
                   >
                     <div v-if="!cell.empty" class="day-number">{{ cell.day }}</div>
                     <div v-if="!cell.empty" class="day-status-icon">
-                      <q-icon :name="getDayIcon(row.student.id, cell.day)" size="10px" />
+                      <q-icon :name="getDayIcon(row.student.id, cell.day)" size="12px" />
                     </div>
                   </div>
                 </div>
@@ -868,7 +868,7 @@ function exportExcel() {
 }
 .calendar-header-cell {
   text-align: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: bold;
   color: #757575;
   padding: 4px 0;

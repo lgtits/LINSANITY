@@ -33,8 +33,7 @@
                   {{ dayLabel[d] }}
                 </q-badge>
               </div>
-              <q-chip v-if="s.notes" dense icon="warning" color="orange-2" text-color="orange-9"
-                size="sm" class="q-mt-xs">{{ s.notes }}</q-chip>
+              <div v-if="s.notes" class="text-caption q-mt-xs">{{ s.notes }}</div>
             </div>
             <div class="col-auto column q-gutter-xs items-end">
               <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEdit(s)" />
@@ -47,9 +46,6 @@
           <q-badge :color="balanceColor(balances[s.id])" class="text-body2 q-pa-xs" style="font-size:14px">
             餐費 ${{ balances[s.id] ?? 0 }}
           </q-badge>
-          <q-space />
-          <q-btn flat dense icon="history" label="記錄" color="grey-7" size="sm"
-            @click="openDetail(s)" />
         </q-card-actions>
       </q-card>
       <div v-if="!filtered.length" class="text-center text-grey q-pa-xl">
@@ -65,8 +61,6 @@
       row-key="id"
       flat bordered
       :rows-per-page-options="[10, 20, 0]"
-      class="cursor-pointer"
-      @row-click="(_, row) => openDetail(row)"
     >
       <template #body-cell-grade="props">
         <q-td :props="props">{{ gradeText(props.row.grade) }}</q-td>
@@ -80,9 +74,7 @@
       </template>
       <template #body-cell-notes="props">
         <q-td :props="props">
-          <q-chip v-if="props.row.notes" dense icon="warning" color="orange-2" text-color="orange-9" size="sm">
-            {{ props.row.notes }}
-          </q-chip>
+          {{ props.row.notes || '-' }}
         </q-td>
       </template>
       <template #body-cell-balance="props">
@@ -138,56 +130,6 @@
         </q-card-section>
       </q-card>
     </q-dialog>
-
-    <!-- 消費記錄 Dialog -->
-    <q-dialog v-model="showDetail" :maximized="$q.screen.lt.sm">
-      <q-card style="width: min(95vw, 500px); max-height: 88vh" class="column">
-        <q-card-section class="row items-center q-pb-none">
-          <div>
-            <div class="text-h6">{{ detailStudent?.name }}</div>
-            <div class="text-caption text-grey-7">
-              {{ gradeText(detailStudent?.grade) }}・{{ detailStudent?.phone }}
-            </div>
-          </div>
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
-        </q-card-section>
-
-        <q-card-section class="text-center q-py-sm">
-          <div class="text-caption text-grey-6">目前餘額</div>
-          <div class="text-h3 text-weight-bold"
-            :class="'text-' + balanceColor(balances[detailStudent?.id])">
-            ${{ balances[detailStudent?.id] ?? 0 }}
-          </div>
-        </q-card-section>
-
-        <q-separator />
-        <div class="q-px-md q-pt-md text-subtitle2 text-grey-8">消費記錄</div>
-        <q-scroll-area class="col" style="min-height: 160px">
-          <q-list separator>
-            <q-item v-for="tx in detailTransactions" :key="tx.id" dense>
-              <q-item-section avatar>
-                <q-icon :name="tx.type === 'topup' ? 'add_circle' : 'remove_circle'"
-                  :color="tx.type === 'topup' ? 'positive' : 'negative'" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>{{ tx.note }}</q-item-label>
-                <q-item-label caption>{{ tx.datetime || tx.date }}</q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <span class="text-weight-bold"
-                  :class="tx.type === 'topup' ? 'text-positive' : 'text-negative'">
-                  {{ tx.type === 'topup' ? '+' : '' }}{{ tx.amount }}
-                </span>
-              </q-item-section>
-            </q-item>
-            <q-item v-if="!detailTransactions.length">
-              <q-item-section class="text-grey text-center q-pa-md">尚無消費記錄</q-item-section>
-            </q-item>
-          </q-list>
-        </q-scroll-area>
-      </q-card>
-    </q-dialog>
   </q-page>
 </template>
 
@@ -202,7 +144,6 @@ const $q = useQuasar()
 
 const students = ref([])
 const balances = ref({})
-const allTransactions = ref([])
 const search = ref('')
 const selectedGrade = ref(null)
 
@@ -243,20 +184,9 @@ const filtered = computed(() => {
   )
 })
 
-const txByStudent = computed(() => {
-  const map = {}
-  for (const tx of allTransactions.value) {
-    if (!map[tx.studentId]) map[tx.studentId] = []
-    map[tx.studentId].push(tx)
-  }
-  for (const id of Object.keys(map)) map[id].sort((a, b) => b.date.localeCompare(a.date))
-  return map
-})
-
 onMounted(async () => {
   students.value = await studentService.getAll()
   balances.value = await mealService.getAllBalances()
-  allTransactions.value = await mealService.getAllTransactions()
 })
 
 // ── 新增/編輯 ──
@@ -303,17 +233,6 @@ function confirmDelete(student) {
     students.value = students.value.filter(s => s.id !== student.id)
     $q.notify({ message: '學生已刪除', color: 'negative', icon: 'delete' })
   })
-}
-
-// ── 消費記錄 ──
-const showDetail = ref(false)
-const detailStudent = ref(null)
-const detailTransactions = ref([])
-
-function openDetail(student) {
-  detailStudent.value = student
-  detailTransactions.value = txByStudent.value[student.id] || []
-  showDetail.value = true
 }
 
 // ── 匯出 ──

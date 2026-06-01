@@ -3,7 +3,9 @@
 
 import { defineConfig } from '#q-app/wrappers'
 
-export default defineConfig((/* ctx */) => {
+export default defineConfig((ctx) => {
+  const publicPath = ctx.dev ? '/' : '/LINSANITY/'
+
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
     // preFetch: true,
@@ -44,7 +46,7 @@ export default defineConfig((/* ctx */) => {
 
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
-      publicPath: '/LINSANITY/',
+      publicPath,
       // analyze: true,
       // env: {},
       // rawDefine: {}
@@ -187,7 +189,7 @@ export default defineConfig((/* ctx */) => {
       builder: {
         // https://www.electron.build/configuration
 
-        appId: 'linsanity',
+        appId: 'LINSANITY',
       },
     },
 

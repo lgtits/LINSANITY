@@ -56,7 +56,7 @@
           :label="item.label"
           :color="route.path === item.to ? 'primary' : 'grey-5'"
           class="col"
-          style="font-size: 10px; padding: 4px 0"
+          style="font-size: 12px; padding: 4px 0"
           @click="router.push(item.to)"
         />
       </div>

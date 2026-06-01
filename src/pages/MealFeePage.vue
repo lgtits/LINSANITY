@@ -15,11 +15,11 @@
           outlined dense emit-value map-options clearable />
       </div>
       <div class="col-12 col-sm-3 row justify-end items-center q-gutter-xs">
-        <span class="text-caption text-grey-7">共 {{ filteredBalance.length }} 位</span>
+        <span class="text-body2 text-grey-7">共 {{ filteredBalance.length }} 位</span>
         <q-btn flat dense icon="file_download" color="positive" size="sm" label="餘額表"
-          @click="exportBalanceSummary" />
+          style="font-size: 12px" @click="exportBalanceSummary" />
         <q-btn flat dense icon="file_download" color="primary" size="sm" label="全記錄"
-          @click="exportAllTransactions" />
+          style="font-size: 12px" @click="exportAllTransactions" />
       </div>
     </div>
 
@@ -28,7 +28,7 @@
       <q-card v-for="item in filteredBalance" :key="item.student.id" class="q-mb-sm" flat bordered>
         <q-card-section class="q-pb-xs">
           <div class="text-subtitle1 text-weight-bold">{{ item.student.name }}</div>
-          <div class="text-caption text-grey-7">
+          <div class="text-body2 text-grey-7">
             {{ item.student.grade }}年級・{{ item.student.parentName }}・{{ item.student.phone }}
           </div>
         </q-card-section>
@@ -110,7 +110,7 @@
                 <div class="text-subtitle2 text-weight-bold">
                   {{ todayStr }}（{{ todayWeekday }}）
                 </div>
-                <div class="text-caption text-grey-6">
+                <div class="text-body2 text-grey-6">
                   {{ todayRecords.length }} 位學生・共 ${{ todayTotal }}
                 </div>
               </div>
@@ -139,7 +139,7 @@
               <q-item-section>
                 <q-item-label class="text-weight-bold">
                   {{ record.studentName }}
-                  <span class="text-caption text-grey-6 q-ml-xs">{{ record.grade }}年級</span>
+                  <span class="text-body2 text-grey-6 q-ml-xs">{{ record.grade }}年級</span>
                 </q-item-label>
                 <q-item-label caption>
                   {{ record.orders.length }} 筆訂單・{{ record.orders.map(o => o.restaurantName).join('、') }}
@@ -162,7 +162,7 @@
                 <div class="row items-center q-mb-xs">
                   <q-icon name="restaurant" color="primary" size="sm" class="q-mr-xs" />
                   <span class="text-weight-bold text-body2">{{ order.restaurantName }}</span>
-                  <span class="text-caption text-grey-6 q-ml-xs">${{ order.total }}</span>
+                  <span class="text-body2 text-grey-6 q-ml-xs">${{ order.total }}</span>
                   <q-space />
                   <q-btn flat dense round icon="delete" color="negative" size="xs"
                     @click="confirmDeleteOrder(order)">
@@ -221,7 +221,7 @@
         </q-card>
 
         <div class="row items-center q-mb-sm">
-          <span class="text-caption text-grey-6">{{ historyRecords.length }} 筆</span>
+          <span class="text-body2 text-grey-6">{{ historyRecords.length }} 筆</span>
           <q-space />
           <q-btn flat dense icon="file_download" label="匯出篩選結果" color="positive" size="sm"
             :disable="!historyRecords.length" @click="exportHistoryExcel" />
@@ -242,7 +242,7 @@
               <q-item-section>
                 <q-item-label class="text-weight-bold">
                   {{ record.studentName }}
-                  <span class="text-caption text-grey-6 q-ml-xs">{{ record.grade }}年級</span>
+                  <span class="text-body2 text-grey-6 q-ml-xs">{{ record.grade }}年級</span>
                 </q-item-label>
                 <q-item-label caption>
                   {{ record.date }} ・ {{ record.orders.map(o => o.restaurantName).join('、') }}
@@ -268,7 +268,7 @@
                 <div class="row items-center q-mb-xs">
                   <q-icon name="restaurant" color="primary" size="sm" class="q-mr-xs" />
                   <span class="text-weight-bold text-body2">{{ order.restaurantName }}</span>
-                  <span class="text-caption text-grey-6 q-ml-xs">${{ order.total }}</span>
+                  <span class="text-body2 text-grey-6 q-ml-xs">${{ order.total }}</span>
                   <q-space />
                   <q-btn flat dense round icon="delete" color="negative" size="xs"
                     @click="confirmDeleteOrder(order)">
@@ -306,7 +306,7 @@
         <q-card-section class="row items-center q-pb-none">
           <div>
             <div class="text-h6">{{ detailStudent?.name }}</div>
-            <div class="text-caption text-grey-7">
+            <div class="text-body2 text-grey-7">
               {{ detailStudent?.grade }}年級・{{ detailStudent?.phone }}
             </div>
           </div>
@@ -315,7 +315,7 @@
         </q-card-section>
 
         <q-card-section class="text-center q-py-sm">
-          <div class="text-caption text-grey-6">目前餘額</div>
+          <div class="text-body2 text-grey-6">目前餘額</div>
           <div class="text-h3 text-weight-bold"
             :class="'text-' + balanceColor(balances[detailStudent?.id])">
             ${{ balances[detailStudent?.id] ?? 0 }}
