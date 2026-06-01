@@ -1,81 +1,92 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+  <q-layout view="lHh LpR lFf">
+    <q-header elevated class="bg-primary text-white">
       <q-toolbar>
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
-
-        <q-toolbar-title> Quasar App </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
+        <q-btn
+          v-if="$q.screen.gt.sm"
+          flat
+          dense
+          round
+          icon="menu"
+          @click="drawerOpen = !drawerOpen"
+        />
+        <q-toolbar-title class="text-weight-bold">{{ currentTitle }}</q-toolbar-title>
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
-        <q-item-label header> Essential Links </q-item-label>
-
-        <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" />
+    <!-- 桌機：左側導覽列 -->
+    <q-drawer v-model="drawerOpen" :breakpoint="1024" show-if-above bordered :width="220">
+      <div class="q-pa-md text-primary text-weight-bold text-h6 q-mt-sm">
+        <q-icon name="school" class="q-mr-sm" />補習班系統
+      </div>
+      <q-separator />
+      <q-list padding>
+        <q-item
+          v-for="item in navItems"
+          :key="item.to"
+          clickable
+          :to="item.to"
+          exact
+          active-class="text-primary bg-green-1"
+          rounded
+          v-ripple
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>{{ item.label }}</q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
     <q-page-container>
       <router-view />
     </q-page-container>
+
+    <!-- 手機：底部導覽列（用 q-btn 確保全部可見） -->
+    <q-footer v-if="$q.screen.lt.md" class="bg-white shadow-up-3">
+      <div class="row" style="min-height: 56px">
+        <q-btn
+          v-for="item in navItems"
+          :key="item.to"
+          flat
+          no-caps
+          stack
+          :icon="item.icon"
+          :label="item.label"
+          :color="route.path === item.to ? 'primary' : 'grey-5'"
+          class="col"
+          style="font-size: 10px; padding: 4px 0"
+          @click="router.push(item.to)"
+        />
+      </div>
+    </q-footer>
   </q-layout>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const linksList = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev',
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework',
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev',
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev',
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev',
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev',
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev',
-  },
+const route = useRoute()
+const router = useRouter()
+const drawerOpen = ref(true)
+
+const navItems = [
+  { to: '/students', icon: 'people', label: '學生列表' },
+  { to: '/ordering', icon: 'restaurant_menu', label: '點餐' },
+  { to: '/meals', icon: 'account_balance_wallet', label: '餐費記錄' },
+  { to: '/restaurants', icon: 'restaurant', label: '餐廳管理' },
+  { to: '/tuition', icon: 'school', label: '寒暑假學費' },
 ]
 
-const leftDrawerOpen = ref(false)
-
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}
+const currentTitle = computed(
+  () => navItems.find((i) => i.to === route.path)?.label || '補習班系統',
+)
 </script>
+
+<style scoped>
+.shadow-up-3 {
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+</style>

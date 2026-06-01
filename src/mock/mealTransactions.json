@@ -1,0 +1,24 @@
+[
+  { "id": "t1",  "studentId": "s1", "type": "topup",  "amount":  500, "note": "六月儲值",               "date": "2026-06-01" },
+  { "id": "t2",  "studentId": "s1", "type": "deduct", "amount":  -70, "note": "阿忠便當 - 排骨便當",   "date": "2026-06-02" },
+  { "id": "t3",  "studentId": "s1", "type": "deduct", "amount":  -80, "note": "阿忠便當 - 雞腿便當",   "date": "2026-06-03" },
+
+  { "id": "t4",  "studentId": "s2", "type": "topup",  "amount":  600, "note": "六月儲值",               "date": "2026-06-01" },
+  { "id": "t5",  "studentId": "s2", "type": "deduct", "amount":  -80, "note": "阿忠便當 - 雞腿便當",   "date": "2026-06-02" },
+  { "id": "t6",  "studentId": "s2", "type": "deduct", "amount":  -90, "note": "香香自助餐 - 四菜一湯", "date": "2026-06-03" },
+
+  { "id": "t7",  "studentId": "s3", "type": "topup",  "amount": 1000, "note": "六月儲值",               "date": "2026-06-01" },
+  { "id": "t8",  "studentId": "s3", "type": "deduct", "amount":  -65, "note": "阿忠便當 - 素食便當",   "date": "2026-06-02" },
+  { "id": "t9",  "studentId": "s3", "type": "deduct", "amount":  -75, "note": "香香自助餐 - 素食套餐", "date": "2026-06-03" },
+
+  { "id": "t10", "studentId": "s4", "type": "topup",  "amount":  300, "note": "六月儲值",               "date": "2026-06-01" },
+  { "id": "t11", "studentId": "s4", "type": "deduct", "amount":  -75, "note": "阿忠便當 - 控肉便當",   "date": "2026-06-03" },
+
+  { "id": "t12", "studentId": "s5", "type": "topup",  "amount":  200, "note": "六月儲值",               "date": "2026-06-01" },
+  { "id": "t13", "studentId": "s5", "type": "deduct", "amount":  -90, "note": "香香自助餐 - 四菜一湯", "date": "2026-06-02" },
+  { "id": "t14", "studentId": "s5", "type": "deduct", "amount":  -90, "note": "香香自助餐 - 四菜一湯", "date": "2026-06-03" },
+
+  { "id": "t15", "studentId": "s6", "type": "topup",  "amount":  800, "note": "六月儲值",               "date": "2026-06-01" },
+  { "id": "t16", "studentId": "s6", "type": "deduct", "amount":  -80, "note": "阿忠便當 - 雞腿便當",   "date": "2026-06-02" },
+  { "id": "t17", "studentId": "s6", "type": "deduct", "amount":  -80, "note": "阿忠便當 - 雞腿便當",   "date": "2026-06-03" }
+]
