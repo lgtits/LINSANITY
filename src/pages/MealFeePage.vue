@@ -324,8 +324,8 @@
 
         <q-separator />
         <div class="q-px-md q-pt-md text-subtitle2 text-grey-8">消費記錄</div>
-        <q-scroll-area style="height: 300px">
-          <q-list>
+        <q-scroll-area class="col" style="min-height: 200px">
+          <q-list separator>
             <q-item v-for="tx in detailTransactions" :key="tx.id" dense>
               <q-item-section avatar>
                 <q-icon :name="tx.type === 'topup' ? 'add_circle' : 'remove_circle'"
@@ -692,9 +692,6 @@ const detailTransactions = ref([])
 function openDetail(student) {
   detailStudent.value = student
   detailTransactions.value = txByStudent.value[student.id] || []
-  console.log('txByStudent:', txByStudent.value)
-  console.log('student.id:', student.id)
-  console.log('detailTransactions:', detailTransactions.value)
   showDetail.value = true
 }
 
