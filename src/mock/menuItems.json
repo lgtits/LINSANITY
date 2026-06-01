@@ -1,14 +1,114 @@
 [
-  { "id": "m1", "restaurantId": "r1", "name": "排骨便當", "price": 70, "category": "便當", "available": true },
-  { "id": "m2", "restaurantId": "r1", "name": "雞腿便當", "price": 80, "category": "便當", "available": true },
-  { "id": "m3", "restaurantId": "r1", "name": "控肉便當", "price": 75, "category": "便當", "available": true },
-  { "id": "m4", "restaurantId": "r1", "name": "素食便當", "price": 65, "category": "便當", "available": true },
-  { "id": "m5", "restaurantId": "r1", "name": "魚排便當", "price": 75, "category": "便當", "available": false },
-  { "id": "m6", "restaurantId": "r2", "name": "三菜一湯", "price": 80, "category": "自助", "available": true },
-  { "id": "m7", "restaurantId": "r2", "name": "四菜一湯", "price": 90, "category": "自助", "available": true },
-  { "id": "m8", "restaurantId": "r2", "name": "五菜一湯", "price": 100, "category": "自助", "available": true },
-  { "id": "m9", "restaurantId": "r2", "name": "素食套餐", "price": 75, "category": "自助", "available": true },
-  { "id": "m10", "restaurantId": "r3", "name": "親子丼", "price": 120, "category": "丼飯", "available": true },
-  { "id": "m11", "restaurantId": "r3", "name": "豬排丼", "price": 130, "category": "丼飯", "available": true },
-  { "id": "m12", "restaurantId": "r3", "name": "鮭魚丼", "price": 140, "category": "丼飯", "available": true }
+  {
+    "id": "m1",
+    "restaurantId": "r1",
+    "name": "排骨便當",
+    "price": 70,
+    "category": "便當",
+    "available": true
+  },
+  {
+    "id": "m2",
+    "restaurantId": "r1",
+    "name": "雞腿便當",
+    "price": 80,
+    "category": "便當",
+    "available": true
+  },
+  {
+    "id": "m3",
+    "restaurantId": "r1",
+    "name": "控肉便當",
+    "price": 75,
+    "category": "便當",
+    "available": true
+  },
+  {
+    "id": "m4",
+    "restaurantId": "r1",
+    "name": "素食便當",
+    "price": 65,
+    "category": "便當",
+    "available": true
+  },
+  {
+    "id": "m5",
+    "restaurantId": "r1",
+    "name": "魚排便當",
+    "price": 75,
+    "category": "便當",
+    "available": false
+  },
+  {
+    "id": "m6",
+    "restaurantId": "r2",
+    "name": "三菜一湯",
+    "price": 80,
+    "category": "自助",
+    "available": true
+  },
+  {
+    "id": "m7",
+    "restaurantId": "r2",
+    "name": "四菜一湯",
+    "price": 90,
+    "category": "自助",
+    "available": true
+  },
+  {
+    "id": "m8",
+    "restaurantId": "r2",
+    "name": "五菜一湯",
+    "price": 100,
+    "category": "自助",
+    "available": true
+  },
+  {
+    "id": "m9",
+    "restaurantId": "r2",
+    "name": "素食套餐",
+    "price": 75,
+    "category": "自助",
+    "available": true
+  },
+  {
+    "id": "m10",
+    "restaurantId": "r3",
+    "name": "親子丼",
+    "price": 120,
+    "category": "丼飯",
+    "available": true
+  },
+  {
+    "id": "m11",
+    "restaurantId": "r3",
+    "name": "豬排丼",
+    "price": 130,
+    "category": "丼飯",
+    "available": true
+  },
+  {
+    "id": "m12",
+    "restaurantId": "r3",
+    "name": "鮭魚丼",
+    "price": 140,
+    "category": "丼飯",
+    "available": true
+  },
+  {
+    "id": "m13",
+    "restaurantId": "r4",
+    "name": "豬肉水餃",
+    "price": 7,
+    "category": "水餃",
+    "available": true
+  },
+  {
+    "id": "m14",
+    "restaurantId": "r4",
+    "name": "蝦仁水餃",
+    "price": 6.5,
+    "category": "水餃",
+    "available": true
+  }
 ]

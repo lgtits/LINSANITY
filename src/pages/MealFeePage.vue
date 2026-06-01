@@ -324,8 +324,8 @@
 
         <q-separator />
         <div class="q-px-md q-pt-md text-subtitle2 text-grey-8">消費記錄</div>
-        <q-scroll-area class="col" style="min-height: 160px">
-          <q-list separator>
+        <q-scroll-area style="height: 300px">
+          <q-list>
             <q-item v-for="tx in detailTransactions" :key="tx.id" dense>
               <q-item-section avatar>
                 <q-icon :name="tx.type === 'topup' ? 'add_circle' : 'remove_circle'"
@@ -445,7 +445,9 @@ const txByStudent = computed(() => {
     if (!map[tx.studentId]) map[tx.studentId] = []
     map[tx.studentId].push(tx)
   }
-  for (const id of Object.keys(map)) map[id].sort((a, b) => b.date.localeCompare(a.date))
+  for (const id of Object.keys(map)) {
+    map[id].sort((a, b) => (b.datetime || b.date).localeCompare(a.datetime || a.date))
+  }
   return map
 })
 
@@ -690,6 +692,9 @@ const detailTransactions = ref([])
 function openDetail(student) {
   detailStudent.value = student
   detailTransactions.value = txByStudent.value[student.id] || []
+  console.log('txByStudent:', txByStudent.value)
+  console.log('student.id:', student.id)
+  console.log('detailTransactions:', detailTransactions.value)
   showDetail.value = true
 }
 
