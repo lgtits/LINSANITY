@@ -1,5 +1,6 @@
 <template>
   <q-page padding>
+    <q-inner-loading :showing="loading" label="載入中..." />
     <!-- 設定列 -->
     <q-card flat bordered class="q-mb-md">
       <q-card-section>
@@ -116,7 +117,7 @@
               <span class="text-primary text-weight-bold">${{ getSubtotal(order) }}</span>
             </div>
             <div v-for="item in order.items" :key="item.itemId"
-              class="row items-center q-pl-sm text-caption text-grey-7">
+              class="row items-center q-pl-sm text-body2 text-grey-7">
               <q-icon name="fiber_manual_record" size="6px" color="grey-5" class="q-mr-xs" />
               <span class="col">
                 {{ item.menuItemName }}
@@ -133,7 +134,9 @@
         </q-card-section>
         <q-card-actions align="right" class="q-pa-md">
           <q-btn color="primary" icon="check_circle" label="確認點餐" size="md"
-            :disable="grandTotal === 0" @click="confirmOrder" />
+            :disable="grandTotal === 0" @click="confirmOrder">
+            <q-tooltip v-if="grandTotal === 0">請先為學生選擇餐點</q-tooltip>
+          </q-btn>
         </q-card-actions>
       </q-card>
     </template>
@@ -164,7 +167,7 @@
             <q-icon name="restaurant" color="primary" class="q-mr-sm" />
             <div class="col">
               <span class="text-subtitle2 text-weight-bold">{{ batch.restaurantName }}</span>
-              <span class="text-caption text-grey-6 q-ml-sm">{{ batch.datetime?.slice(11) }}</span>
+              <span class="text-body2 text-grey-6 q-ml-sm">下單 {{ batch.datetime?.slice(11) }}</span>
             </div>
             <span class="text-primary text-weight-bold text-subtitle2">${{ batch.batchTotal }}</span>
           </div>
@@ -191,12 +194,14 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
+
 import { studentService } from '../services/studentService'
 import { restaurantService } from '../services/restaurantService'
 import { orderService } from '../services/orderService'
 import { mealService } from '../services/mealService'
 
 const $q = useQuasar()
+const loading = ref(true)
 
 const today = new Date().toISOString().slice(0, 10)
 const orderDate = ref(today)
@@ -299,9 +304,13 @@ async function loadConfirmedOrders() {
 }
 
 onMounted(async () => {
-  allStudents.value = await studentService.getAll()
-  restaurants.value = await restaurantService.getAll()
-  await loadConfirmedOrders()
+  try {
+    allStudents.value = await studentService.getAll()
+    restaurants.value = await restaurantService.getAll()
+    await loadConfirmedOrders()
+  } finally {
+    loading.value = false
+  }
 })
 
 async function onRestaurantChange(id) {

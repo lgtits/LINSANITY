@@ -1,5 +1,6 @@
 <template>
   <q-page padding>
+    <q-inner-loading :showing="loading" label="載入中..." />
     <q-tabs v-model="tab" align="left" indicator-color="primary" active-color="primary" class="q-mb-md">
       <q-tab name="restaurants" icon="store" label="餐廳" />
       <q-tab name="menu" icon="menu_book" label="餐點" />
@@ -17,6 +18,7 @@
             class="q-mb-sm"
             flat
             bordered
+            :style="!r.active ? 'opacity:0.5' : ''"
           >
             <q-card-section class="row items-center">
               <div class="col">
@@ -96,7 +98,7 @@
                   <span class="text-subtitle1 text-weight-bold">{{ m.name }}</span>
                   <q-badge :color="m.available ? 'positive' : 'grey'">{{ m.available ? '供應中' : '停供' }}</q-badge>
                 </div>
-                <div class="text-caption text-grey-7">{{ restaurantName(m.restaurantId) }} ・ {{ m.category }}</div>
+                <div class="text-body2 text-grey-7">{{ restaurantName(m.restaurantId) }}</div>
                 <div class="text-h6 text-primary q-mt-xs">${{ m.price }}</div>
               </div>
               <div class="col-auto column q-gutter-xs">
@@ -194,7 +196,6 @@
             />
             <q-input v-model="mForm.name" label="餐點名稱 *" outlined dense :rules="[v => !!v || '必填']" />
             <q-input v-model.number="mForm.price" label="價格 *" outlined dense type="number" :rules="[v => v > 0 || '請輸入正確價格']" />
-            <q-input v-model="mForm.category" label="分類（便當、自助...）" outlined dense />
             <div class="row justify-end q-mt-md q-gutter-sm">
               <q-btn flat label="取消" v-close-popup />
               <q-btn type="submit" color="primary" :label="isEdit ? '更新' : '新增'" />
@@ -213,6 +214,7 @@ import { restaurantService } from '../services/restaurantService'
 
 const $q = useQuasar()
 
+const loading = ref(true)
 const tab = ref('restaurants')
 const restaurants = ref([])
 const menuItems = ref([])
@@ -222,7 +224,7 @@ const showRestaurantDialog = ref(false)
 const showMenuDialog = ref(false)
 
 const emptyR = () => ({ name: '', phone: '', address: '' })
-const emptyM = () => ({ restaurantId: '', name: '', price: 0, category: '' })
+const emptyM = () => ({ restaurantId: '', name: '', price: 0 })
 const rForm = ref(emptyR())
 const mForm = ref(emptyM())
 
@@ -235,12 +237,11 @@ const rColumns = [
 ]
 
 const mColumns = [
-  { name: 'restaurantId', label: '餐廳',   field: 'restaurantId', align: 'left' },
-  { name: 'name',         label: '餐點',   field: 'name',         align: 'left', sortable: true },
-  { name: 'price',        label: '價格',   field: 'price',        align: 'right', sortable: true },
-  { name: 'category',     label: '分類',   field: 'category',     align: 'left' },
-  { name: 'available',    label: '狀態',   field: 'available',    align: 'center' },
-  { name: 'actions',      label: '操作',   field: 'actions',      align: 'center' }
+  { name: 'restaurantId', label: '餐廳', field: 'restaurantId', align: 'left' },
+  { name: 'name',         label: '餐點', field: 'name',         align: 'left', sortable: true },
+  { name: 'price',        label: '價格', field: 'price',        align: 'right', sortable: true },
+  { name: 'available',    label: '狀態', field: 'available',    align: 'center' },
+  { name: 'actions',      label: '操作', field: 'actions',      align: 'center' }
 ]
 
 const restaurantOptions = computed(() =>
@@ -258,8 +259,12 @@ function restaurantName(id) {
 }
 
 onMounted(async () => {
-  restaurants.value = await restaurantService.getAll()
-  menuItems.value = await restaurantService.getMenuItems()
+  try {
+    restaurants.value = await restaurantService.getAll()
+    menuItems.value = await restaurantService.getMenuItems()
+  } finally {
+    loading.value = false
+  }
 })
 
 function openAdd() {

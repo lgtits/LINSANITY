@@ -1,36 +1,37 @@
-import mockData from '../mock/tuition.json'
-
-let data = {
-  rates: JSON.parse(JSON.stringify(mockData.rates || {})),
-  settings: JSON.parse(JSON.stringify(mockData.settings)),
-  attendance: JSON.parse(JSON.stringify(mockData.attendance))
-}
+import { api } from '../lib/api'
+import { isDemoMode } from '../lib/supabase'
 
 export const tuitionService = {
   async getAll() {
-    return {
-      rates: JSON.parse(JSON.stringify(data.rates)),
-      settings: JSON.parse(JSON.stringify(data.settings)),
-      attendance: JSON.parse(JSON.stringify(data.attendance))
-    }
+    if (isDemoMode) return api.get('tuition')
   },
 
   async updateSetting(studentId, key, value) {
-    if (!data.settings[studentId]) {
-      data.settings[studentId] = { classType: 'full', withMeal: false }
+    if (isDemoMode) {
+      await api.mutate('tuition', data => {
+        if (!data.settings[studentId]) data.settings[studentId] = { classType: 'full', withMeal: false }
+        data.settings[studentId][key] = value
+      })
     }
-    data.settings[studentId][key] = value
   },
 
   async updateAttendance(studentId, monthKey, key, value) {
-    if (!data.attendance[studentId]) data.attendance[studentId] = {}
-    if (!data.attendance[studentId][monthKey]) {
-      data.attendance[studentId][monthKey] = { totalDays: 22, absentDays: 0 }
+    if (isDemoMode) {
+      await api.mutate('tuition', data => {
+        if (!data.attendance[studentId]) data.attendance[studentId] = {}
+        if (!data.attendance[studentId][monthKey]) {
+          data.attendance[studentId][monthKey] = { totalDays: 22, absentDays: 0 }
+        }
+        data.attendance[studentId][monthKey][key] = value
+      })
     }
-    data.attendance[studentId][monthKey][key] = value
   },
 
   async updateRates(monthKey, ratesValue) {
-    data.rates[monthKey] = { ...ratesValue }
+    if (isDemoMode) {
+      await api.mutate('tuition', data => {
+        data.rates[monthKey] = { ...ratesValue }
+      })
+    }
   }
 }

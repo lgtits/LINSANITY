@@ -1,5 +1,6 @@
 <template>
   <q-page padding>
+    <q-inner-loading :showing="loading" label="載入中..." />
 
     <!-- ══════════════════════════════════
          控制列
@@ -23,67 +24,66 @@
         </q-input>
       </div>
 
-      <!-- 年級 + 匯出 -->
+      <!-- 年級 + 班別 + 匯出 -->
       <div class="col-12 col-sm-auto row items-center q-gutter-xs">
-        <q-select
-          v-model="selectedGrade"
-          :options="gradeFilterOptions"
-          label="年級篩選"
-          outlined dense emit-value map-options clearable
-          style="min-width: 110px"
-        />
-        <span class="text-caption text-grey-7">共 {{ filteredRows.length }} 位</span>
-        <q-btn flat dense icon="file_download" color="positive" size="sm" label="匯出" @click="exportExcel" />
+        <q-select v-model="selectedGrade" :options="gradeFilterOptions" label="年級篩選"
+          outlined dense emit-value map-options clearable style="min-width: 110px" />
+        <q-select v-model="selectedClassType" :options="classTypeFilterOptions" label="班別"
+          outlined dense emit-value map-options style="min-width: 100px" />
+        <span class="text-body2 text-grey-7">共 {{ filteredRows.length }} 位</span>
+        <q-btn outline dense icon="file_download" color="positive" label="匯出 Excel" style="font-size: 12px" @click="exportExcel" />
       </div>
     </div>
 
-    <!-- ══════════════════════════════════
-         計費說明 (在控制列下方，學生列表上方)
-    ══════════════════════════════════ -->
+    <!-- 計費說明 -->
     <q-card flat bordered class="q-mb-md">
       <q-card-section class="q-py-sm">
         <div class="row items-center q-mb-sm">
           <q-icon name="info_outline" color="primary" size="18px" class="q-mr-xs" />
           <span class="text-subtitle2 text-weight-bold">計費說明</span>
           <q-space />
-          <q-btn flat dense round icon="settings" color="grey-7" size="sm" @click="openRatesDialog">
+          <q-btn flat dense round icon="settings" color="grey-7" @click="openRatesDialog">
             <q-tooltip>修改費率</q-tooltip>
           </q-btn>
         </div>
-
         <div class="row q-col-gutter-sm">
-          <!-- 全天班 -->
           <div class="col-6">
-            <div class="rate-block q-pa-sm rounded-borders">
-              <div class="row items-center q-mb-xs">
-                <q-badge color="deep-purple" label="全天班" />
-              </div>
-              <div class="text-caption text-grey-6">請假 ≤ {{ rates.absentThreshold }} 天</div>
-              <div class="text-subtitle2 text-weight-bold text-deep-purple">${{ fmtNum(rates.fullFlat) }} <span class="text-caption text-grey-6">/ 月</span></div>
-              <q-separator class="q-my-xs" />
-              <div class="text-caption text-grey-6">請假 > {{ rates.absentThreshold }} 天</div>
-              <div class="text-body2 text-weight-bold text-deep-purple">${{ rates.fullDaily }} <span class="text-caption text-grey-6">/ 天</span></div>
-              <div class="text-caption text-orange-8">
-                <q-icon name="restaurant" size="12px" />含用餐 ${{ rates.fullMealDaily }} / 天
-              </div>
-            </div>
+            <q-list dense bordered class="rounded-borders">
+              <q-item dense class="bg-deep-purple-1">
+                <q-item-section><span class="text-body2 text-weight-bold text-deep-purple">全天班</span></q-item-section>
+              </q-item>
+              <q-item dense>
+                <q-item-section class="text-body2 text-grey-7">月費（請假 ≤ {{ rates.absentThreshold }} 天）</q-item-section>
+                <q-item-section side class="text-body2 text-weight-bold text-primary">${{ fmtNum(rates.fullFlat) }}</q-item-section>
+              </q-item>
+              <q-item dense>
+                <q-item-section class="text-body2 text-grey-7">按日（不含餐）</q-item-section>
+                <q-item-section side class="text-body2 text-weight-bold">${{ rates.fullDaily }} / 天</q-item-section>
+              </q-item>
+              <q-item dense>
+                <q-item-section class="text-body2 text-grey-7">按日（含用餐）</q-item-section>
+                <q-item-section side class="text-body2 text-weight-bold">${{ rates.fullMealDaily }} / 天</q-item-section>
+              </q-item>
+            </q-list>
           </div>
-
-          <!-- 半天班 -->
           <div class="col-6">
-            <div class="rate-block rate-half q-pa-sm rounded-borders">
-              <div class="row items-center q-mb-xs">
-                <q-badge color="teal" label="半天班" />
-              </div>
-              <div class="text-caption text-grey-6">請假 ≤ {{ rates.absentThreshold }} 天</div>
-              <div class="text-subtitle2 text-weight-bold text-teal">${{ fmtNum(rates.halfFlat) }} <span class="text-caption text-grey-6">/ 月</span></div>
-              <q-separator class="q-my-xs" />
-              <div class="text-caption text-grey-6">請假 > {{ rates.absentThreshold }} 天</div>
-              <div class="text-body2 text-weight-bold text-teal">${{ rates.halfDaily }} <span class="text-caption text-grey-6">/ 天</span></div>
-              <div class="text-caption text-orange-8">
-                <q-icon name="restaurant" size="12px" />含用餐 ${{ rates.halfMealDaily }} / 天
-              </div>
-            </div>
+            <q-list dense bordered class="rounded-borders">
+              <q-item dense class="bg-teal-1">
+                <q-item-section><span class="text-body2 text-weight-bold text-teal">半天班</span></q-item-section>
+              </q-item>
+              <q-item dense>
+                <q-item-section class="text-body2 text-grey-7">月費（請假 ≤ {{ rates.absentThreshold }} 天）</q-item-section>
+                <q-item-section side class="text-body2 text-weight-bold text-primary">${{ fmtNum(rates.halfFlat) }}</q-item-section>
+              </q-item>
+              <q-item dense>
+                <q-item-section class="text-body2 text-grey-7">按日（不含餐）</q-item-section>
+                <q-item-section side class="text-body2 text-weight-bold">${{ rates.halfDaily }} / 天</q-item-section>
+              </q-item>
+              <q-item dense>
+                <q-item-section class="text-body2 text-grey-7">按日（含用餐）</q-item-section>
+                <q-item-section side class="text-body2 text-weight-bold">${{ rates.halfMealDaily }} / 天</q-item-section>
+              </q-item>
+            </q-list>
           </div>
         </div>
       </q-card-section>
@@ -103,23 +103,21 @@
           <template #header>
             <q-item-section>
               <div class="row items-center no-wrap">
-                <span class="text-subtitle1 text-weight-bold text-grey-9">{{ row.student.name }}</span>
-                <span class="text-caption text-grey-6 q-ml-xs">({{ row.student.grade }}年級)</span>
+                <span class="text-subtitle1 text-weight-bold">{{ row.student.name }}</span>
+                <span class="text-body2 text-grey-6 q-ml-xs">{{ row.student.grade }}年級</span>
               </div>
               <div class="row items-center q-gutter-xs q-mt-xs">
-                <q-badge
-                  dense
-                  :color="row.settings.classType === 'full' ? 'deep-purple' : 'teal'"
-                  :label="row.settings.classType === 'full' ? '全天班' : '半天班'"
-                />
-                <q-badge v-if="row.settings.withMeal" color="orange-7" label="含用餐" />
+                <q-badge :color="row.settings.classType === 'full' ? 'deep-purple' : 'teal'"
+                  :label="row.settings.classType === 'full' ? '全天班' : '半天班'" />
+                <q-badge :color="row.settings.withMeal ? 'orange-7' : 'grey-6'"
+                  :label="row.settings.withMeal ? '含用餐' : '不含用餐'" />
                 <q-badge outline color="positive" :label="`出席 ${row.attendance.attendDays}天`" />
-                <q-badge outline :color="row.attendance.absentDays > rates.absentThreshold ? 'negative' : 'grey-7'" :label="`請假 ${row.attendance.absentDays}天`" />
+                <q-badge outline :color="row.attendance.absentDays > rates.absentThreshold ? 'negative' : 'grey-6'" :label="`請假 ${row.attendance.absentDays}天`" />
               </div>
             </q-item-section>
             <q-item-section side class="text-right">
               <div class="text-subtitle1 text-weight-bold text-primary">${{ fmtNum(row.fee) }}</div>
-              <div class="text-caption text-grey-5" :class="row.attendance.absentDays > rates.absentThreshold ? 'text-negative text-weight-bold' : ''">
+              <div class="text-body2" :class="row.attendance.absentDays > rates.absentThreshold ? 'text-negative text-weight-bold' : 'text-grey-5'">
                 {{ row.attendance.absentDays > rates.absentThreshold ? '按日計費' : '月費制' }}
               </div>
             </q-item-section>
@@ -176,14 +174,14 @@
             <q-card flat bordered class="q-pa-sm">
               <q-list dense separator>
                 <q-item>
-                  <q-item-section class="text-caption text-grey-7">上課天數統計</q-item-section>
-                  <q-item-section side class="text-caption text-weight-bold">
+                  <q-item-section class="text-body2 text-grey-7">上課天數統計</q-item-section>
+                  <q-item-section side class="text-body2 text-weight-bold">
                     共 {{ row.attendance.totalDays }} 天 / 出席 {{ row.attendance.attendDays }} 天 / 請假 {{ row.attendance.absentDays }} 天
                   </q-item-section>
                 </q-item>
                 <q-item>
-                  <q-item-section class="text-caption text-grey-7">計費方式</q-item-section>
-                  <q-item-section side class="text-caption">
+                  <q-item-section class="text-body2 text-grey-7">計費方式</q-item-section>
+                  <q-item-section side class="text-body2">
                     <span v-if="row.attendance.absentDays <= rates.absentThreshold">
                       月費制 (請假 ≤ {{ rates.absentThreshold }} 天)
                     </span>
@@ -230,18 +228,12 @@
               <span class="text-weight-bold text-grey-9">{{ props.row.student.name }}</span>
             </q-td>
             <q-td key="classType" :props="props" class="text-center">
-              <q-badge
-                :color="props.row.settings.classType === 'full' ? 'deep-purple' : 'teal'"
-                :label="props.row.settings.classType === 'full' ? '全天班' : '半天班'"
-              />
+              <q-badge :color="props.row.settings.classType === 'full' ? 'deep-purple' : 'teal'"
+                :label="props.row.settings.classType === 'full' ? '全天班' : '半天班'" />
             </q-td>
             <q-td key="withMeal" :props="props" class="text-center">
-              <q-chip
-                dense size="sm"
-                :color="props.row.settings.withMeal ? 'orange-1' : 'grey-2'"
-                :text-color="props.row.settings.withMeal ? 'orange-9' : 'grey-5'"
-                :icon="props.row.settings.withMeal ? 'restaurant' : 'block'"
-              >{{ props.row.settings.withMeal ? '含用餐' : '不含用餐' }}</q-chip>
+              <q-badge :color="props.row.settings.withMeal ? 'orange-7' : 'grey-6'"
+                :label="props.row.settings.withMeal ? '含用餐' : '不含用餐'" />
             </q-td>
             <q-td key="attendance" :props="props" class="text-center">
               <span class="text-positive text-weight-bold">{{ props.row.attendance.attendDays }}</span>
@@ -270,7 +262,7 @@
               <div class="row q-col-gutter-md">
                 <!-- 左：設定與明細 -->
                 <div class="col-12 col-md-6">
-                  <div class="text-caption text-grey-7 text-weight-bold q-mb-sm">
+                  <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                     <q-icon name="tune" size="14px" class="q-mr-xs" />{{ selectedYear }}年{{ String(selectedMonth).padStart(2,'0') }}月 設定與統計
                   </div>
                   <q-card flat bordered class="q-pa-md q-mb-md">
@@ -294,18 +286,18 @@
                     </div>
                   </q-card>
 
-                  <div class="text-caption text-grey-7 text-weight-bold q-mb-sm">
+                  <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                     <q-icon name="receipt_long" size="14px" class="q-mr-xs" />出席統計與費用明細
                   </div>
                   <q-card flat bordered>
                     <q-list dense separator>
                       <q-item>
-                        <q-item-section class="text-caption text-grey-7">上課總天數 (出席 + 請假)</q-item-section>
-                        <q-item-section side class="text-caption text-weight-bold">{{ props.row.attendance.totalDays }} 天</q-item-section>
+                        <q-item-section class="text-body2 text-grey-7">上課總天數 (出席 + 請假)</q-item-section>
+                        <q-item-section side class="text-body2 text-weight-bold">{{ props.row.attendance.totalDays }} 天</q-item-section>
                       </q-item>
                       <q-item>
-                        <q-item-section class="text-caption text-grey-7">請假天數</q-item-section>
-                        <q-item-section side class="text-caption">
+                        <q-item-section class="text-body2 text-grey-7">請假天數</q-item-section>
+                        <q-item-section side class="text-body2">
                           <span :class="props.row.attendance.absentDays > rates.absentThreshold ? 'text-negative text-weight-bold' : ''">
                             {{ props.row.attendance.absentDays }} 天
                             <q-chip v-if="props.row.attendance.absentDays > rates.absentThreshold" dense size="xs" color="negative" text-color="white" class="q-ml-xs">超過{{ rates.absentThreshold }}天</q-chip>
@@ -313,12 +305,12 @@
                         </q-item-section>
                       </q-item>
                       <q-item>
-                        <q-item-section class="text-caption text-grey-7">實際出席天數</q-item-section>
-                        <q-item-section side class="text-positive text-weight-bold text-caption">{{ props.row.attendance.attendDays }} 天</q-item-section>
+                        <q-item-section class="text-body2 text-grey-7">實際出席天數</q-item-section>
+                        <q-item-section side class="text-positive text-weight-bold text-body2">{{ props.row.attendance.attendDays }} 天</q-item-section>
                       </q-item>
                       <q-item>
-                        <q-item-section class="text-caption text-grey-7">計費方式</q-item-section>
-                        <q-item-section side class="text-caption">
+                        <q-item-section class="text-body2 text-grey-7">計費方式</q-item-section>
+                        <q-item-section side class="text-body2">
                           <span v-if="props.row.attendance.absentDays <= rates.absentThreshold">
                             月費制 {{ props.row.settings.classType === 'full' ? `$${fmtNum(rates.fullFlat)}` : `$${fmtNum(rates.halfFlat)}` }}
                           </span>
@@ -340,7 +332,7 @@
 
                 <!-- 右：日曆 -->
                 <div class="col-12 col-md-6 flex flex-column">
-                  <div class="text-caption text-grey-7 text-weight-bold q-mb-sm">
+                  <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                     <q-icon name="calendar_month" size="14px" class="q-mr-xs" />上課日曆與簽到
                   </div>
                   <q-card flat bordered class="q-pa-md col flex justify-center items-center">
@@ -513,6 +505,7 @@ import { studentService } from '../services/studentService'
 import { tuitionService } from '../services/tuitionService'
 
 const $q = useQuasar()
+const loading = ref(true)
 
 // ── 月份控制 ──
 const now = new Date()
@@ -534,6 +527,13 @@ const monthKey = computed(() =>
 // ── 篩選 ──
 const search        = ref('')
 const selectedGrade = ref(null)
+const selectedClassType = ref('all')
+
+const classTypeFilterOptions = [
+  { label: '全部班別', value: 'all' },
+  { label: '全天班',   value: 'full' },
+  { label: '半天班',   value: 'half' }
+]
 
 const gradeFilterOptions = [
   { label: '全部年級', value: null },
@@ -761,6 +761,7 @@ onMounted(async () => {
   settings.value   = data.settings
   attendance.value = data.attendance
   initializeCalendars()
+  loading.value = false
 })
 
 // ── 計費 ──
@@ -798,6 +799,7 @@ const rows = computed(() =>
 const filteredRows = computed(() => {
   let list = rows.value
   if (selectedGrade.value !== null) list = list.filter(r => r.student.grade === selectedGrade.value)
+  if (selectedClassType.value !== 'all') list = list.filter(r => r.settings.classType === selectedClassType.value)
   const q = search.value?.trim().toLowerCase()
   if (q) list = list.filter(r => r.student.name.toLowerCase().includes(q))
   return list
@@ -849,14 +851,6 @@ function exportExcel() {
 </script>
 
 <style scoped>
-.rate-block {
-  background: #f3e5f5;
-  border: 1px solid #e1bee7;
-}
-.rate-half {
-  background: #e0f2f1;
-  border: 1px solid #b2dfdb;
-}
 
 /* 簽到日曆樣式 */
 .calendar-grid {
