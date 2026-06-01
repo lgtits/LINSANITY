@@ -172,8 +172,11 @@
                 <div v-for="item in order.items" :key="item.itemId"
                   class="row items-center q-pl-md q-mb-xs">
                   <q-icon name="fiber_manual_record" size="8px" color="grey-5" class="q-mr-sm" />
-                  <span class="col text-body2">{{ item.menuItemName }}</span>
-                  <span class="text-primary text-weight-bold q-mr-sm">${{ item.price }}</span>
+                  <span class="col text-body2">
+                    {{ item.menuItemName }}
+                    <span v-if="item.qty > 1" class="text-primary"> ×{{ item.qty }}</span>
+                  </span>
+                  <span class="text-primary text-weight-bold q-mr-sm">${{ item.price * (item.qty || 1) }}</span>
                   <q-btn flat round dense icon="close" size="xs" color="grey-6"
                     @click="confirmDeleteItem(order, item)">
                     <q-tooltip>刪除此餐點</q-tooltip>
@@ -275,8 +278,11 @@
                 <div v-for="item in order.items" :key="item.itemId"
                   class="row items-center q-pl-md q-mb-xs">
                   <q-icon name="fiber_manual_record" size="8px" color="grey-5" class="q-mr-sm" />
-                  <span class="col text-body2">{{ item.menuItemName }}</span>
-                  <span class="text-primary text-weight-bold q-mr-sm">${{ item.price }}</span>
+                  <span class="col text-body2">
+                    {{ item.menuItemName }}
+                    <span v-if="item.qty > 1" class="text-primary"> ×{{ item.qty }}</span>
+                  </span>
+                  <span class="text-primary text-weight-bold q-mr-sm">${{ item.price * (item.qty || 1) }}</span>
                   <q-btn flat round dense icon="close" size="xs" color="grey-6"
                     @click="confirmDeleteItem(order, item)">
                     <q-tooltip>刪除此餐點</q-tooltip>
@@ -548,10 +554,11 @@ function confirmDeleteItem(order, item) {
     ok: { color: 'negative', label: '刪除並退款' },
     persistent: true
   }).onOk(async () => {
+    const refund = item.price * (item.qty || 1)
     await orderService.deleteOrderItem(order.id, item.itemId)
-    await mealService.topup(order.studentId, item.price, `退款：${order.restaurantName} - ${item.menuItemName}`)
+    await mealService.topup(order.studentId, refund, `退款：${order.restaurantName} - ${item.menuItemName}${item.qty > 1 ? '×' + item.qty : ''}`)
     await refreshAll()
-    $q.notify({ message: `已退款 $${item.price}（${item.menuItemName}）`, color: 'positive', icon: 'savings' })
+    $q.notify({ message: `已退款 $${refund}（${item.menuItemName}${item.qty > 1 ? '×' + item.qty : ''}）`, color: 'positive', icon: 'savings' })
   })
 }
 
@@ -562,7 +569,9 @@ function buildStudentDayNotification(record) {
   const warning = balance < 100 ? '\n⚠️ 餘額不足，請盡快儲值' : ''
   const lines = [`📢 點餐通知 ${record.date}（${wt}）`]
   for (const order of record.orders) {
-    const itemsText = order.items.map(i => `${i.menuItemName} $${i.price}`).join('、')
+    const itemsText = order.items.map(i =>
+      i.qty > 1 ? `${i.menuItemName}×${i.qty} $${i.price * i.qty}` : `${i.menuItemName} $${i.price}`
+    ).join('、')
     lines.push(`🍱 ${order.restaurantName}：${itemsText}`)
   }
   lines.push(`共 $${record.totalAmount}｜餘額 $${balance}${warning}`)
@@ -584,7 +593,9 @@ async function copyAllNotification() {
   for (const record of todayRecords.value) {
     const balance = balances.value[record.studentId] ?? 0
     const warning = balance < 100 ? ' ⚠️' : ''
-    const allItems = record.orders.flatMap(o => o.items.map(i => i.menuItemName)).join('、')
+    const allItems = record.orders.flatMap(o =>
+      o.items.map(i => i.qty > 1 ? `${i.menuItemName}×${i.qty}` : i.menuItemName)
+    ).join('、')
     lines.push(`${record.studentName}：${allItems} $${record.totalAmount}｜餘額 $${balance}${warning}`)
   }
   lines.push(divider)
@@ -606,24 +617,26 @@ function flattenRecord(record) {
       '年級': `${record.grade}年級`,
       '餐廳': o.restaurantName,
       '餐點': i.menuItemName,
-      '金額': i.price
+      '數量': i.qty || 1,
+      '單價': i.price,
+      '小計': i.price * (i.qty || 1)
     }))
   )
 }
 
 function exportTodayExcel() {
   const data = todayRecords.value.flatMap(flattenRecord)
-  writeExcel(data, [12, 8, 7, 12, 15, 7], '今日點餐', `今日點餐_${todayStr}.xlsx`)
+  writeExcel(data, [12, 8, 7, 12, 15, 5, 7, 8], '今日點餐', `今日點餐_${todayStr}.xlsx`)
 }
 
 function exportHistoryExcel() {
   const data = historyRecords.value.flatMap(flattenRecord)
-  writeExcel(data, [12, 8, 7, 12, 15, 7], '點餐記錄', `點餐記錄_${today()}.xlsx`)
+  writeExcel(data, [12, 8, 7, 12, 15, 5, 7, 8], '點餐記錄', `點餐記錄_${today()}.xlsx`)
 }
 
 function exportRecordExcel(record) {
   const data = flattenRecord(record)
-  writeExcel(data, [12, 8, 7, 12, 15, 7], '點餐記錄', `點餐_${record.studentName}_${record.date}.xlsx`)
+  writeExcel(data, [12, 8, 7, 12, 15, 5, 7, 8], '點餐記錄', `點餐_${record.studentName}_${record.date}.xlsx`)
 }
 
 function exportBalanceSummary() {

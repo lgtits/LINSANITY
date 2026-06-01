@@ -30,6 +30,7 @@
 
       <q-card v-for="(order, idx) in studentOrders" :key="order.studentId" class="q-mb-sm" flat bordered>
         <q-card-section class="q-py-sm">
+          <!-- 學生 header -->
           <div class="row items-center q-mb-sm">
             <div class="col">
               <span class="text-weight-bold">{{ order.studentName }}</span>
@@ -39,17 +40,44 @@
             <q-btn flat round dense icon="close" color="negative" size="sm" @click="removeStudent(idx)" />
           </div>
 
+          <!-- 已選餐點（含數量控制） -->
           <div v-if="order.items.length" class="q-mb-sm">
             <div v-for="(item, itemIdx) in order.items" :key="item.itemId"
-              class="row items-center q-mb-xs">
-              <q-icon name="fiber_manual_record" size="8px" color="primary" class="q-mr-sm" />
-              <span class="col text-body2">{{ item.menuItemName }}</span>
-              <span class="text-primary text-weight-bold q-mr-sm">${{ item.price }}</span>
+              class="row items-center q-mb-xs no-wrap">
+              <q-icon name="fiber_manual_record" size="8px" color="primary" class="q-mr-sm q-mt-xs" style="flex-shrink:0" />
+              <span class="col text-body2 ellipsis">{{ item.menuItemName }}</span>
+
+              <!-- 數量控制 -->
+              <div class="row items-center no-wrap q-mx-xs" style="gap:2px">
+                <q-btn
+                  flat round dense icon="remove" size="xs" color="grey-6"
+                  :disable="item.qty <= 1"
+                  @click="item.qty = Math.max(1, item.qty - 1)"
+                />
+                <q-input
+                  v-model.number="item.qty"
+                  type="number"
+                  min="1"
+                  dense borderless
+                  style="width: 36px"
+                  input-class="text-center q-pa-none"
+                  @update:model-value="v => { const n = parseInt(v); item.qty = n >= 1 ? n : 1 }"
+                />
+                <q-btn
+                  flat round dense icon="add" size="xs" color="primary"
+                  @click="item.qty++"
+                />
+              </div>
+
+              <span class="text-primary text-weight-bold q-mr-xs" style="min-width:44px;text-align:right">
+                ${{ item.price * item.qty }}
+              </span>
               <q-btn flat round dense icon="close" size="xs" color="grey-6"
                 @click="removeItem(order, itemIdx)" />
             </div>
           </div>
 
+          <!-- 加餐點 -->
           <q-select
             v-model="addingSelection[order.studentId]"
             :options="menuOptions"
@@ -58,6 +86,7 @@
             @update:model-value="(val) => addItemToOrder(order, val)"
           />
 
+          <!-- 小計 -->
           <div v-if="order.items.length" class="row justify-end q-mt-xs">
             <span class="text-caption text-grey-6 q-mr-xs">小計</span>
             <span class="text-subtitle2 text-primary text-weight-bold">${{ getSubtotal(order) }}</span>
@@ -65,6 +94,7 @@
         </q-card-section>
       </q-card>
 
+      <!-- 加入其他學生 -->
       <q-select
         v-model="extraStudentId"
         :options="extraStudentOptions"
@@ -74,7 +104,7 @@
         @update:model-value="addExtraStudent"
       />
 
-      <!-- 點餐總覽（含餐點明細） -->
+      <!-- 點餐總覽 -->
       <q-card class="bg-grey-1" flat bordered>
         <q-card-section>
           <div class="text-subtitle1 text-weight-bold q-mb-md">
@@ -88,8 +118,11 @@
             <div v-for="item in order.items" :key="item.itemId"
               class="row items-center q-pl-sm text-caption text-grey-7">
               <q-icon name="fiber_manual_record" size="6px" color="grey-5" class="q-mr-xs" />
-              <span class="col">{{ item.menuItemName }}</span>
-              <span>${{ item.price }}</span>
+              <span class="col">
+                {{ item.menuItemName }}
+                <span v-if="item.qty > 1" class="text-primary"> ×{{ item.qty }}</span>
+              </span>
+              <span>${{ item.price * item.qty }}</span>
             </div>
           </div>
           <q-separator class="q-my-sm" />
@@ -125,14 +158,8 @@
         </div>
       </div>
 
-      <!-- 每個 batch = 一次確認送出（一家餐廳） -->
-      <q-card
-        v-for="batch in confirmedBatches"
-        :key="batch.batchId"
-        class="q-mb-sm" flat bordered
-      >
+      <q-card v-for="batch in confirmedBatches" :key="batch.batchId" class="q-mb-sm" flat bordered>
         <q-card-section class="q-py-sm">
-          <!-- Batch header -->
           <div class="row items-center q-mb-sm">
             <q-icon name="restaurant" color="primary" class="q-mr-sm" />
             <div class="col">
@@ -142,18 +169,16 @@
             <span class="text-primary text-weight-bold text-subtitle2">${{ batch.batchTotal }}</span>
           </div>
 
-          <!-- 每位學生的餐點 -->
-          <div
-            v-for="order in batch.studentOrders"
-            :key="order.id"
-            class="q-pl-sm q-mb-xs"
-          >
-            <div class="row items-center text-body2">
-              <span class="text-weight-medium col-auto q-mr-md">{{ order.studentName }}</span>
-              <span class="text-grey-7 col">
-                {{ order.items.map(i => i.menuItemName).join('、') }}
-              </span>
-              <span class="text-primary text-weight-bold">${{ order.total }}</span>
+          <div v-for="order in batch.studentOrders" :key="order.id" class="q-pl-sm q-mb-xs">
+            <div class="row items-start text-body2">
+              <span class="text-weight-medium q-mr-md" style="min-width:64px">{{ order.studentName }}</span>
+              <div class="col">
+                <div v-for="item in order.items" :key="item.itemId" class="row text-grey-7">
+                  <span class="col">{{ item.menuItemName }}<span v-if="item.qty > 1" class="text-primary"> ×{{ item.qty }}</span></span>
+                  <span>${{ item.price * item.qty }}</span>
+                </div>
+              </div>
+              <span class="text-primary text-weight-bold q-ml-sm">${{ order.total }}</span>
             </div>
           </div>
         </q-card-section>
@@ -191,22 +216,17 @@ const currentWeekday = computed(() =>
   orderDate.value ? new Date(orderDate.value + 'T00:00:00').getDay() : null
 )
 const weekdayText = computed(() => weekdayNames[currentWeekday.value] ?? '')
-
 const scheduledCount = computed(() =>
   allStudents.value.filter(s => s.scheduleDays.includes(currentWeekday.value)).length
 )
-
 const restaurantOptions = computed(() =>
   restaurants.value.filter(r => r.active).map(r => ({ label: r.name, value: r.id }))
 )
-
 const menuOptions = computed(() =>
   menuItems.value.filter(m => m.available).map(m => ({ label: `${m.name}  $${m.price}`, value: m.id }))
 )
-
 const orderedStudents = computed(() => studentOrders.value.filter(o => o.items.length > 0))
 const grandTotal = computed(() => orderedStudents.value.reduce((s, o) => s + getSubtotal(o), 0))
-
 const extraStudentOptions = computed(() => {
   const inList = new Set(studentOrders.value.map(o => o.studentId))
   return allStudents.value
@@ -233,21 +253,14 @@ const confirmedBatches = computed(() => {
     batch.studentOrders.push(order)
     batch.batchTotal += order.total
   }
-  return [...map.values()].sort((a, b) =>
-    (a.datetime || '').localeCompare(b.datetime || '')
-  )
+  return [...map.values()].sort((a, b) => (a.datetime || '').localeCompare(b.datetime || ''))
 })
 
-const confirmedTotal = computed(() =>
-  confirmedBatches.value.reduce((s, b) => s + b.batchTotal, 0)
-)
-
-const confirmedStudentCount = computed(() =>
-  new Set(confirmedOrders.value.map(o => o.studentId)).size
-)
+const confirmedTotal = computed(() => confirmedBatches.value.reduce((s, b) => s + b.batchTotal, 0))
+const confirmedStudentCount = computed(() => new Set(confirmedOrders.value.map(o => o.studentId)).size)
 
 function getSubtotal(order) {
-  return order.items.reduce((s, i) => s + i.price, 0)
+  return order.items.reduce((s, i) => s + i.price * (i.qty || 1), 0)
 }
 
 function currentDatetime() {
@@ -273,7 +286,8 @@ function addItemToOrder(order, menuItemId) {
     itemId: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
     menuItemId: item.id,
     menuItemName: item.name,
-    price: item.price
+    price: item.price,
+    qty: 1
   })
   addingSelection[order.studentId] = null
 }
@@ -331,9 +345,7 @@ async function confirmOrder() {
   for (const o of toOrder) {
     const total = getSubtotal(o)
     await orderService.saveOrder({
-      batchId,
-      date: orderDate.value,
-      datetime,
+      batchId, date: orderDate.value, datetime,
       restaurantId: selectedRestaurantId.value,
       restaurantName: restaurant.name,
       studentId: o.studentId,
@@ -341,7 +353,7 @@ async function confirmOrder() {
       grade: o.grade,
       items: o.items
     })
-    const itemsText = o.items.map(i => i.menuItemName).join('、')
+    const itemsText = o.items.map(i => i.qty > 1 ? `${i.menuItemName}×${i.qty}` : i.menuItemName).join('、')
     await mealService.deduct(o.studentId, total, `${restaurant.name} - ${itemsText}`, orderDate.value)
   }
 
