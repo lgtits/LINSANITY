@@ -28,30 +28,20 @@
     <template v-if="studentOrders.length">
       <div class="text-subtitle2 text-grey-8 q-mb-sm">學生點餐（{{ studentOrders.length }} 位）</div>
 
-      <q-card
-        v-for="(order, idx) in studentOrders"
-        :key="order.studentId"
-        class="q-mb-sm" flat bordered
-      >
+      <q-card v-for="(order, idx) in studentOrders" :key="order.studentId" class="q-mb-sm" flat bordered>
         <q-card-section class="q-py-sm">
-          <!-- 學生 header -->
           <div class="row items-center q-mb-sm">
             <div class="col">
               <span class="text-weight-bold">{{ order.studentName }}</span>
               <span class="text-caption text-grey-6 q-ml-sm">{{ order.grade }}年級</span>
               <q-badge v-if="!order.scheduled" color="grey" class="q-ml-xs">加入</q-badge>
             </div>
-            <q-btn flat round dense icon="close" color="negative" size="sm"
-              @click="removeStudent(idx)" />
+            <q-btn flat round dense icon="close" color="negative" size="sm" @click="removeStudent(idx)" />
           </div>
 
-          <!-- 已選餐點 -->
           <div v-if="order.items.length" class="q-mb-sm">
-            <div
-              v-for="(item, itemIdx) in order.items"
-              :key="item.itemId"
-              class="row items-center q-mb-xs"
-            >
+            <div v-for="(item, itemIdx) in order.items" :key="item.itemId"
+              class="row items-center q-mb-xs">
               <q-icon name="fiber_manual_record" size="8px" color="primary" class="q-mr-sm" />
               <span class="col text-body2">{{ item.menuItemName }}</span>
               <span class="text-primary text-weight-bold q-mr-sm">${{ item.price }}</span>
@@ -60,7 +50,6 @@
             </div>
           </div>
 
-          <!-- 加餐點 Select -->
           <q-select
             v-model="addingSelection[order.studentId]"
             :options="menuOptions"
@@ -69,17 +58,13 @@
             @update:model-value="(val) => addItemToOrder(order, val)"
           />
 
-          <!-- 小計 -->
           <div v-if="order.items.length" class="row justify-end q-mt-xs">
             <span class="text-caption text-grey-6 q-mr-xs">小計</span>
-            <span class="text-subtitle2 text-primary text-weight-bold">
-              ${{ getSubtotal(order) }}
-            </span>
+            <span class="text-subtitle2 text-primary text-weight-bold">${{ getSubtotal(order) }}</span>
           </div>
         </q-card-section>
       </q-card>
 
-      <!-- 加入其他學生 -->
       <q-select
         v-model="extraStudentId"
         :options="extraStudentOptions"
@@ -89,19 +74,23 @@
         @update:model-value="addExtraStudent"
       />
 
-      <!-- 點餐總覽 -->
+      <!-- 點餐總覽（含餐點明細） -->
       <q-card class="bg-grey-1" flat bordered>
         <q-card-section>
-          <div class="text-subtitle1 text-weight-bold q-mb-sm">
+          <div class="text-subtitle1 text-weight-bold q-mb-md">
             <q-icon name="receipt_long" class="q-mr-xs" />點餐總覽
           </div>
-          <div
-            v-for="order in orderedStudents"
-            :key="order.studentId"
-            class="row justify-between q-mb-xs text-body2"
-          >
-            <span>{{ order.studentName }}</span>
-            <span class="text-primary text-weight-bold">${{ getSubtotal(order) }}</span>
+          <div v-for="order in orderedStudents" :key="order.studentId" class="q-mb-sm">
+            <div class="row items-center justify-between">
+              <span class="text-weight-bold">{{ order.studentName }}</span>
+              <span class="text-primary text-weight-bold">${{ getSubtotal(order) }}</span>
+            </div>
+            <div v-for="item in order.items" :key="item.itemId"
+              class="row items-center q-pl-sm text-caption text-grey-7">
+              <q-icon name="fiber_manual_record" size="6px" color="grey-5" class="q-mr-xs" />
+              <span class="col">{{ item.menuItemName }}</span>
+              <span>${{ item.price }}</span>
+            </div>
           </div>
           <q-separator class="q-my-sm" />
           <div class="row justify-between">
@@ -123,20 +112,66 @@
         {{ hasLoaded ? '今日無學生點餐' : '請選擇日期與餐廳後點擊「載入學生」' }}
       </div>
     </div>
+
+    <!-- ══════ 當日已確認訂單（以 batch 為單位） ══════ -->
+    <template v-if="confirmedBatches.length">
+      <q-separator class="q-my-lg" />
+      <div class="row items-center q-mb-sm">
+        <div>
+          <div class="text-subtitle1 text-weight-bold">{{ orderDate }} 已確認訂單</div>
+          <div class="text-caption text-grey-6">
+            {{ confirmedBatches.length }} 筆・{{ confirmedStudentCount }} 位學生・共 ${{ confirmedTotal }}
+          </div>
+        </div>
+      </div>
+
+      <!-- 每個 batch = 一次確認送出（一家餐廳） -->
+      <q-card
+        v-for="batch in confirmedBatches"
+        :key="batch.batchId"
+        class="q-mb-sm" flat bordered
+      >
+        <q-card-section class="q-py-sm">
+          <!-- Batch header -->
+          <div class="row items-center q-mb-sm">
+            <q-icon name="restaurant" color="primary" class="q-mr-sm" />
+            <div class="col">
+              <span class="text-subtitle2 text-weight-bold">{{ batch.restaurantName }}</span>
+              <span class="text-caption text-grey-6 q-ml-sm">{{ batch.datetime?.slice(11) }}</span>
+            </div>
+            <span class="text-primary text-weight-bold text-subtitle2">${{ batch.batchTotal }}</span>
+          </div>
+
+          <!-- 每位學生的餐點 -->
+          <div
+            v-for="order in batch.studentOrders"
+            :key="order.id"
+            class="q-pl-sm q-mb-xs"
+          >
+            <div class="row items-center text-body2">
+              <span class="text-weight-medium col-auto q-mr-md">{{ order.studentName }}</span>
+              <span class="text-grey-7 col">
+                {{ order.items.map(i => i.menuItemName).join('、') }}
+              </span>
+              <span class="text-primary text-weight-bold">${{ order.total }}</span>
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+    </template>
+
   </q-page>
 </template>
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useRouter } from 'vue-router'
 import { studentService } from '../services/studentService'
 import { restaurantService } from '../services/restaurantService'
 import { orderService } from '../services/orderService'
 import { mealService } from '../services/mealService'
 
 const $q = useQuasar()
-const router = useRouter()
 
 const today = new Date().toISOString().slice(0, 10)
 const orderDate = ref(today)
@@ -147,7 +182,8 @@ const restaurants = ref([])
 const menuItems = ref([])
 const extraStudentId = ref(null)
 const hasLoaded = ref(false)
-const addingSelection = reactive({}) // { [studentId]: null }
+const addingSelection = reactive({})
+const confirmedOrders = ref([])
 
 const weekdayNames = { 0: '週日', 1: '週一', 2: '週二', 3: '週三', 4: '週四', 5: '週五', 6: '週六' }
 
@@ -165,16 +201,11 @@ const restaurantOptions = computed(() =>
 )
 
 const menuOptions = computed(() =>
-  menuItems.value
-    .filter(m => m.available)
-    .map(m => ({ label: `${m.name}  $${m.price}`, value: m.id }))
+  menuItems.value.filter(m => m.available).map(m => ({ label: `${m.name}  $${m.price}`, value: m.id }))
 )
 
 const orderedStudents = computed(() => studentOrders.value.filter(o => o.items.length > 0))
-
-const grandTotal = computed(() =>
-  orderedStudents.value.reduce((sum, o) => sum + getSubtotal(o), 0)
-)
+const grandTotal = computed(() => orderedStudents.value.reduce((s, o) => s + getSubtotal(o), 0))
 
 const extraStudentOptions = computed(() => {
   const inList = new Set(studentOrders.value.map(o => o.studentId))
@@ -183,8 +214,50 @@ const extraStudentOptions = computed(() => {
     .map(s => ({ label: `${s.name}（${s.grade}年級）`, value: s.id }))
 })
 
+// ── 已確認訂單：依 batchId 分組 ──
+const confirmedBatches = computed(() => {
+  const map = new Map()
+  for (const order of confirmedOrders.value) {
+    const key = order.batchId || order.id
+    if (!map.has(key)) {
+      map.set(key, {
+        batchId: key,
+        datetime: order.datetime || order.date,
+        restaurantId: order.restaurantId,
+        restaurantName: order.restaurantName,
+        studentOrders: [],
+        batchTotal: 0
+      })
+    }
+    const batch = map.get(key)
+    batch.studentOrders.push(order)
+    batch.batchTotal += order.total
+  }
+  return [...map.values()].sort((a, b) =>
+    (a.datetime || '').localeCompare(b.datetime || '')
+  )
+})
+
+const confirmedTotal = computed(() =>
+  confirmedBatches.value.reduce((s, b) => s + b.batchTotal, 0)
+)
+
+const confirmedStudentCount = computed(() =>
+  new Set(confirmedOrders.value.map(o => o.studentId)).size
+)
+
 function getSubtotal(order) {
   return order.items.reduce((s, i) => s + i.price, 0)
+}
+
+function currentDatetime() {
+  const now = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  return `${now.toISOString().slice(0, 10)} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+}
+
+function batchUid() {
+  return 'b_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)
 }
 
 function makeOrder(s, scheduled = true) {
@@ -205,13 +278,16 @@ function addItemToOrder(order, menuItemId) {
   addingSelection[order.studentId] = null
 }
 
-function removeItem(order, idx) {
-  order.items.splice(idx, 1)
+function removeItem(order, idx) { order.items.splice(idx, 1) }
+
+async function loadConfirmedOrders() {
+  confirmedOrders.value = await orderService.getByDate(orderDate.value)
 }
 
 onMounted(async () => {
   allStudents.value = await studentService.getAll()
   restaurants.value = await restaurantService.getAll()
+  await loadConfirmedOrders()
 })
 
 async function onRestaurantChange(id) {
@@ -219,9 +295,10 @@ async function onRestaurantChange(id) {
   studentOrders.value.forEach(o => { o.items = [] })
 }
 
-function onDateChange() {
+async function onDateChange() {
   studentOrders.value = []
   hasLoaded.value = false
+  await loadConfirmedOrders()
 }
 
 async function loadStudents() {
@@ -241,20 +318,22 @@ function addExtraStudent(studentId) {
   extraStudentId.value = null
 }
 
-function removeStudent(idx) {
-  studentOrders.value.splice(idx, 1)
-}
+function removeStudent(idx) { studentOrders.value.splice(idx, 1) }
 
 async function confirmOrder() {
   const toOrder = orderedStudents.value
   if (!toOrder.length) return
 
   const restaurant = restaurants.value.find(r => r.id === selectedRestaurantId.value)
+  const batchId = batchUid()
+  const datetime = currentDatetime()
 
   for (const o of toOrder) {
     const total = getSubtotal(o)
     await orderService.saveOrder({
+      batchId,
       date: orderDate.value,
+      datetime,
       restaurantId: selectedRestaurantId.value,
       restaurantName: restaurant.name,
       studentId: o.studentId,
@@ -267,11 +346,11 @@ async function confirmOrder() {
   }
 
   $q.notify({
-    message: `點餐完成！${toOrder.length} 位・$${grandTotal.value}｜可至「餐費記錄」查看`,
-    color: 'positive', icon: 'check_circle', timeout: 4000,
-    actions: [{ label: '前往', color: 'white', handler: () => router.push('/meals') }]
+    message: `點餐完成！${toOrder.length} 位・$${grandTotal.value}`,
+    color: 'positive', icon: 'check_circle', timeout: 3000
   })
 
   studentOrders.value.forEach(o => { o.items = [] })
+  await loadConfirmedOrders()
 }
 </script>
