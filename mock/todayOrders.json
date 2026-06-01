@@ -1,0 +1,37 @@
+[
+  {
+    "id": "o_t1", "batchId": "batch_t1", "date": "2026-06-01", "datetime": "2026-06-01 11:30",
+    "restaurantId": "r1", "restaurantName": "阿忠便當",
+    "studentId": "s1", "studentName": "王小明", "grade": 3,
+    "items": [{ "itemId": "i_t1", "menuItemId": "m2", "menuItemName": "雞腿便當", "price": 80, "qty": 1 }],
+    "total": 80
+  },
+  {
+    "id": "o_t2", "batchId": "batch_t1", "date": "2026-06-01", "datetime": "2026-06-01 11:30",
+    "restaurantId": "r1", "restaurantName": "阿忠便當",
+    "studentId": "s2", "studentName": "李小華", "grade": 4,
+    "items": [{ "itemId": "i_t2", "menuItemId": "m1", "menuItemName": "排骨便當", "price": 70, "qty": 1 }],
+    "total": 70
+  },
+  {
+    "id": "o_t3", "batchId": "batch_t1", "date": "2026-06-01", "datetime": "2026-06-01 11:30",
+    "restaurantId": "r1", "restaurantName": "阿忠便當",
+    "studentId": "s4", "studentName": "張志豪", "grade": 5,
+    "items": [{ "itemId": "i_t3", "menuItemId": "m3", "menuItemName": "控肉便當", "price": 75, "qty": 1 }],
+    "total": 75
+  },
+  {
+    "id": "o_t4", "batchId": "batch_t2", "date": "2026-06-01", "datetime": "2026-06-01 11:35",
+    "restaurantId": "r4", "restaurantName": "八方雲集",
+    "studentId": "s3", "studentName": "陳美玲", "grade": 3,
+    "items": [{ "itemId": "i_t4", "menuItemId": "m13", "menuItemName": "豬肉水餃", "price": 7, "qty": 10 }],
+    "total": 70
+  },
+  {
+    "id": "o_t5", "batchId": "batch_t2", "date": "2026-06-01", "datetime": "2026-06-01 11:35",
+    "restaurantId": "r4", "restaurantName": "八方雲集",
+    "studentId": "s5", "studentName": "林佳芬", "grade": 2,
+    "items": [{ "itemId": "i_t5", "menuItemId": "m14", "menuItemName": "蝦仁水餃", "price": 6.5, "qty": 8 }],
+    "total": 52
+  }
+]

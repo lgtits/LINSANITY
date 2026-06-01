@@ -1,0 +1,1 @@
+import{It as e,nn as t}from"./index-Ceb_K4_x.js";var n=e({name:`QSpace`,setup(){let e=t(`div`,{class:`q-space`});return()=>e}});export{n as t};

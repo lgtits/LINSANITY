@@ -1,0 +1,56 @@
+[
+  {
+    "id": "s1",
+    "name": "王小明",
+    "grade": 3,
+    "parentName": "王大明",
+    "phone": "0912-345-678",
+    "scheduleDays": [1, 3, 5],
+    "notes": "對花生過敏"
+  },
+  {
+    "id": "s2",
+    "name": "李小華",
+    "grade": 4,
+    "parentName": "李志明",
+    "phone": "0923-456-789",
+    "scheduleDays": [2, 4],
+    "notes": ""
+  },
+  {
+    "id": "s3",
+    "name": "陳美玲",
+    "grade": 3,
+    "parentName": "陳建國",
+    "phone": "0934-567-890",
+    "scheduleDays": [1, 2, 3, 4, 5],
+    "notes": "素食"
+  },
+  {
+    "id": "s4",
+    "name": "張志豪",
+    "grade": 5,
+    "parentName": "張文雄",
+    "phone": "0945-678-901",
+    "scheduleDays": [1, 3],
+    "notes": ""
+  },
+  {
+    "id": "s5",
+    "name": "林佳芬",
+    "grade": 2,
+    "parentName": "林秀蘭",
+    "phone": "0956-789-012",
+    "scheduleDays": [2, 4, 5],
+    "notes": ""
+  },
+  {
+    "id": "s6",
+    "name": "吳俊賢",
+    "grade": 6,
+    "parentName": "吳勇志",
+    "phone": "0967-890-123",
+    "scheduleDays": [1, 2, 3, 4, 5],
+    "notes": ""
+  }
+]
