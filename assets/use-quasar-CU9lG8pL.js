@@ -1,0 +1,1 @@
+import{on as e}from"./index-DySzGxuZ.js";function t(){return e(`_q_`)}export{t};

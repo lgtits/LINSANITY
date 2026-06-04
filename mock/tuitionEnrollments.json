@@ -1,0 +1,18 @@
+{
+  "2026-06": {
+    "s1": { "classType": "none", "withMeal": false },
+    "s2": { "classType": "half", "withMeal": true },
+    "s3": { "classType": "full", "withMeal": true },
+    "s4": { "classType": "half", "withMeal": false },
+    "s5": { "classType": "full", "withMeal": false },
+    "s6": { "classType": "half", "withMeal": true }
+  },
+  "2026-07": {
+    "s1": { "classType": "none", "withMeal": false },
+    "s2": { "classType": "half", "withMeal": true },
+    "s3": { "classType": "full", "withMeal": true },
+    "s4": { "classType": "half", "withMeal": false },
+    "s5": { "classType": "full", "withMeal": false },
+    "s6": { "classType": "half", "withMeal": true }
+  }
+}

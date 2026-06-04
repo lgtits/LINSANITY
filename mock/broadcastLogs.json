@@ -1,0 +1,27 @@
+[
+  {
+    "id": "log1",
+    "type": "expense",
+    "sentAt": "2026-06-03 12:30",
+    "recipientCount": 3,
+    "records": [
+      { "studentId": "s1", "studentName": "王小明", "message": "您好，王大明 家長：\n王小明 今日餐費 $80，目前帳戶餘額 $320。" },
+      { "studentId": "s2", "studentName": "李小華", "message": "您好，李志明 家長：\n李小華 今日餐費 $120，目前帳戶餘額 $50。\n⚠️ 餘額偏低，請盡快儲值！" },
+      { "studentId": "s3", "studentName": "陳美玲", "message": "您好，陳建國 家長：\n陳美玲 今日餐費 $60，目前帳戶餘額 $180。" }
+    ]
+  },
+  {
+    "id": "log2",
+    "type": "general",
+    "sentAt": "2026-06-01 09:00",
+    "recipientCount": 6,
+    "records": [
+      { "studentId": "s1", "studentName": "王小明", "message": "您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！" },
+      { "studentId": "s2", "studentName": "李小華", "message": "您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！" },
+      { "studentId": "s3", "studentName": "陳美玲", "message": "您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！" },
+      { "studentId": "s4", "studentName": "張志豪", "message": "您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！" },
+      { "studentId": "s5", "studentName": "林佳芬", "message": "您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！" },
+      { "studentId": "s6", "studentName": "吳俊賢", "message": "您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！" }
+    ]
+  }
+]
