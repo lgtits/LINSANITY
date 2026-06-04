@@ -26,8 +26,8 @@
             <div class="row items-center q-mb-xs">
               <div class="text-subtitle2">收件人</div>
               <q-space />
-              <q-btn flat dense size="sm" label="全選" @click="selectAll" />
-              <q-btn flat dense size="sm" label="清除" color="grey-7" @click="clearAll" />
+              <q-btn flat dense label="全選" @click="selectAll" />
+              <q-btn flat dense label="清除" color="grey-7" @click="clearAll" />
             </div>
             <div class="row q-col-gutter-xs">
               <div class="col-7">
@@ -52,32 +52,29 @@
               <q-item
                 v-for="s in filteredStudents"
                 :key="s.id"
-                clickable
-                @click="toggleStudent(s.id)"
+                :clickable="!!s.lineUserId"
+                :disable="!s.lineUserId"
+                @click="s.lineUserId && toggleStudent(s.id)"
               >
                 <q-item-section avatar>
                   <q-checkbox
                     :model-value="selectedIds.includes(s.id)"
+                    :disable="!s.lineUserId"
                     color="primary"
-                    @update:model-value="toggleStudent(s.id)"
+                    @update:model-value="s.lineUserId && toggleStudent(s.id)"
                   />
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>{{ s.name }}</q-item-label>
-                  <q-item-label caption>{{ s.grade }}年級・{{ s.parentName }}</q-item-label>
+                  <q-item-label style="font-size: 12px" class="text-grey-6">
+                    {{ s.grade }}年級・{{ s.parentName }}
+                    <span v-if="!s.lineUserId" class="text-negative q-ml-xs">未填 LINE ID</span>
+                  </q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-badge v-if="broadcastType === 'expense'" :color="balanceColor(balances[s.id])" outline>
+                  <q-badge v-if="broadcastType === 'expense' && s.lineUserId" :color="balanceColor(balances[s.id])" outline>
                     ${{ balances[s.id] ?? 0 }}
                   </q-badge>
-                  <q-icon
-                    v-if="!s.lineUserId"
-                    name="link_off"
-                    color="grey-4"
-                    size="xs"
-                  >
-                    <q-tooltip>未綁定 LINE</q-tooltip>
-                  </q-icon>
                 </q-item-section>
               </q-item>
               <q-item v-if="!filteredStudents.length">
@@ -88,9 +85,9 @@
 
           <q-separator />
           <q-card-section class="q-py-sm">
-            <span class="text-body2 text-grey-7">已選 {{ selectedIds.length }} / {{ students.length }} 位</span>
-            <span v-if="unlinkedCount > 0" class="text-body2 text-orange q-ml-sm">
-              （{{ unlinkedCount }} 位未綁定 LINE）
+            <span class="text-body2 text-grey-7">已選 {{ selectedIds.length }} / {{ linkedStudents.length }} 位</span>
+            <span v-if="noLineIdCount > 0" class="text-body2 text-grey-5 q-ml-sm">
+              （{{ noLineIdCount }} 位未填 LINE ID）
             </span>
           </q-card-section>
         </q-card>
@@ -236,9 +233,8 @@ const selectedStudents = computed(() =>
   students.value.filter(s => selectedIds.value.includes(s.id))
 )
 
-const unlinkedCount = computed(() =>
-  selectedStudents.value.filter(s => !s.lineUserId).length
-)
+const linkedStudents = computed(() => students.value.filter(s => s.lineUserId))
+const noLineIdCount = computed(() => students.value.length - linkedStudents.value.length)
 
 const templateOptions = computed(() =>
   templates.value.map(t => ({ label: t.name, value: t.id }))
@@ -252,13 +248,15 @@ function balanceColor(b) {
 }
 
 function toggleStudent(id) {
+  const student = students.value.find(s => s.id === id)
+  if (!student?.lineUserId) return
   const idx = selectedIds.value.indexOf(id)
   if (idx === -1) selectedIds.value.push(id)
   else selectedIds.value.splice(idx, 1)
 }
 
 function selectAll() {
-  selectedIds.value = filteredStudents.value.map(s => s.id)
+  selectedIds.value = filteredStudents.value.filter(s => s.lineUserId).map(s => s.id)
 }
 
 function clearAll() {

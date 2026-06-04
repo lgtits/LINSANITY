@@ -19,6 +19,7 @@ const toDb = data => ({
   grade: data.grade,
   parent_name: data.parentName,
   phone: data.phone,
+  line_user_id: data.lineUserId ?? '',
   schedule_days: data.scheduleDays,
   notes: data.notes,
   archived: data.archived ?? false,

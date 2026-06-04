@@ -45,7 +45,7 @@
 
     <!-- 空狀態 -->
     <div v-if="!loading && !filtered.length" class="text-center text-grey q-pa-xl">
-      <q-icon name="history" size="56px" class="q-mb-sm" /><br />尚無廣播記錄
+      <q-icon name="history" size="56px" class="q-mb-sm" /><br />尚無訊息記錄
     </div>
 
     <!-- 記錄列表 -->
@@ -63,7 +63,7 @@
                 :color="log.type === 'expense' ? 'teal' : 'primary'"
                 class="q-ml-sm"
               >
-                {{ log.type === 'expense' ? '餐費通知' : '一般廣播' }}
+                {{ log.type === 'expense' ? '餐費通知' : '一般訊息' }}
               </q-badge>
             </q-item-label>
             <q-item-label style="font-size: 13px" class="text-grey-6">
@@ -73,18 +73,16 @@
         </template>
 
         <!-- 展開：每個收件人的訊息 -->
-        <div class="bg-grey-1">
-          <div
-            v-for="rec in log.records"
-            :key="rec.studentId"
-            class="q-pa-sm q-mb-xs"
-          >
-            <div class="text-weight-bold text-body2 q-mb-xs">{{ rec.studentName }}</div>
-            <div style="font-size: 13px; white-space: pre-line; line-height: 1.7; color: #555">
-              {{ rec.message }}
-            </div>
-          </div>
-        </div>
+        <q-list separator class="bg-grey-1">
+          <q-item v-for="rec in log.records" :key="rec.studentId" class="q-py-sm">
+            <q-item-section>
+              <div class="text-weight-bold text-body2 q-mb-xs">{{ rec.studentName }}</div>
+              <div style="font-size: 13px; white-space: pre-line; line-height: 1.7; color: #555">
+                {{ rec.message }}
+              </div>
+            </q-item-section>
+          </q-item>
+        </q-list>
       </q-expansion-item>
     </q-list>
   </q-page>
@@ -103,7 +101,7 @@ const dateTo = ref('')
 const sortOrder = ref('date_desc')
 
 const typeOptions = [
-  { label: '一般廣播', value: 'general' },
+  { label: '一般訊息', value: 'general' },
   { label: '餐費通知', value: 'expense' }
 ]
 

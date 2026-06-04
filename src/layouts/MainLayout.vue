@@ -150,7 +150,7 @@ const allTitles = {
   '/tuition/rates':     '費率管理',
   '/broadcast':           '發送訊息',
   '/broadcast/history':   '訊息記錄',
-  '/broadcast/templates': '訊息模板'
+  '/broadcast/templates': '訊息模板',
 }
 
 const currentTitle = computed(() => allTitles[route.path] || '補習班系統')

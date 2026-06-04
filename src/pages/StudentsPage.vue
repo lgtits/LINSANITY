@@ -37,58 +37,56 @@
     <!-- 手機：卡片清單 -->
     <template v-if="$q.screen.lt.md">
       <q-card v-for="s in filtered" :key="s.id" class="q-mb-sm" flat bordered>
-        <q-card-section class="q-pb-xs">
-          <div class="row items-start no-wrap">
+        <q-card-section class="q-py-sm q-px-md">
+          <div class="row items-center no-wrap q-mb-xs">
             <div class="col">
-              <div class="text-subtitle1 text-weight-bold">{{ s.name }}</div>
-              <div class="text-body2 text-grey-7">
-                {{ gradeText(s.grade) }}・{{ s.parentName }}・{{ s.phone }}
-              </div>
-              <div class="row q-gutter-xs q-mt-xs">
-                <q-badge v-for="d in s.scheduleDays" :key="d" color="primary" outline>
-                  {{ dayLabel[d] }}
-                </q-badge>
-              </div>
-              <div v-if="s.notes" class="text-body2 q-mt-xs">{{ s.notes }}</div>
+              <span class="text-subtitle2 text-weight-bold">{{ s.name }}</span>
+              <q-badge color="grey-4" text-color="grey-8" class="q-ml-sm" style="font-size: 12px">
+                {{ gradeText(s.grade) }}
+              </q-badge>
             </div>
-            <div class="col-auto column q-gutter-xs items-end">
+            <div class="col-auto row q-gutter-xs">
               <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEdit(s)" />
-              <q-btn flat round dense icon="archive" color="grey-7" size="sm"
-                @click="confirmArchive(s)">
+              <q-btn flat round dense icon="archive" color="grey-6" size="sm" @click="confirmArchive(s)">
                 <q-tooltip>封存學生</q-tooltip>
               </q-btn>
             </div>
           </div>
+
+          <div class="text-body2 text-grey-7 q-mb-xs">
+            <q-icon name="person" size="14px" class="q-mr-xs" />{{ s.parentName }}
+            <q-icon name="phone" size="14px" class="q-ml-sm q-mr-xs" />{{ s.phone }}
+          </div>
+
+          <div class="row items-center q-gutter-xs q-mb-xs">
+            <q-badge v-for="d in s.scheduleDays" :key="d" color="primary" outline style="font-size: 12px">
+              {{ dayLabel[d] }}
+            </q-badge>
+            <q-badge v-if="s.lineUserId" color="green-1" text-color="positive" style="font-size: 12px">
+              <q-icon name="link" size="12px" class="q-mr-xs" />LINE
+            </q-badge>
+          </div>
+
+          <div v-if="s.notes" class="text-body2 text-grey-7" style="font-size: 12px">
+            {{ s.notes }}
+          </div>
         </q-card-section>
+
         <q-separator />
-        <q-card-actions class="q-px-md q-py-xs">
+
+        <q-card-actions class="q-px-md q-py-xs row items-center">
           <span class="text-body2">
-            剩餘餐費：
-            <q-badge :color="balanceColor(balances[s.id])" class="q-pa-xs" style="font-size: 14px">
+            餘額：
+            <q-badge :color="balanceColor(balances[s.id])" class="q-pa-xs" style="font-size: 13px">
               ${{ balances[s.id] ?? 0 }}
             </q-badge>
           </span>
           <q-space />
-          <q-btn
-            flat
-            dense
-            icon="savings"
-            label="儲值"
-            color="primary"
-            size="sm"
-            @click="openTopup(s)"
-          />
-          <q-btn
-            flat
-            dense
-            icon="history"
-            label="記錄"
-            color="grey-7"
-            size="sm"
-            @click="openDetail(s)"
-          />
+          <q-btn flat dense icon="savings" label="儲值" color="primary" size="sm" @click="openTopup(s)" />
+          <q-btn flat dense icon="history" label="記錄" color="grey-7" size="sm" @click="openDetail(s)" />
         </q-card-actions>
       </q-card>
+
       <div v-if="!filtered.length" class="text-center text-grey q-pa-xl">
         <q-icon name="people_outline" size="56px" class="q-mb-sm" /><br />沒有符合的學生
       </div>
@@ -106,6 +104,15 @@
     >
       <template #body-cell-grade="props">
         <q-td :props="props">{{ gradeText(props.row.grade) }}</q-td>
+      </template>
+      <template #body-cell-lineUserId="props">
+        <q-td :props="props">
+          <span v-if="props.row.lineUserId" class="row items-center no-wrap q-gutter-xs">
+            <q-icon name="check_circle" color="positive" size="16px" />
+            <span class="text-body2 text-grey-8" style="font-size: 12px">{{ props.row.lineUserId }}</span>
+          </span>
+          <span v-else class="text-grey-4">-</span>
+        </q-td>
       </template>
       <template #body-cell-scheduleDays="props">
         <q-td :props="props">
@@ -204,6 +211,7 @@
             />
             <q-input v-model="form.parentName" label="家長姓名" outlined dense />
             <q-input v-model="form.phone" label="聯絡電話" outlined dense />
+            <q-input v-model="form.lineUserId" label="LINE ID" outlined dense clearable />
             <div class="text-body2 text-grey-8 q-mt-sm">上課星期</div>
             <div class="row q-gutter-sm">
               <q-checkbox
@@ -364,6 +372,7 @@ const columns = [
   { name: 'name', label: '姓名', field: 'name', align: 'left', sortable: true },
   { name: 'parentName', label: '家長', field: 'parentName', align: 'left' },
   { name: 'phone', label: '電話', field: 'phone', align: 'left' },
+  { name: 'lineUserId', label: 'LINE ID', field: 'lineUserId', align: 'left' },
   { name: 'scheduleDays', label: '上課日', field: 'scheduleDays', align: 'left' },
   { name: 'notes', label: '備註', field: 'notes', align: 'left' },
   { name: 'balance', label: '剩餘餐費', field: 'id', align: 'left' },
@@ -415,6 +424,7 @@ const emptyForm = () => ({
   grade: null,
   parentName: '',
   phone: '',
+  lineUserId: '',
   scheduleDays: [],
   notes: '',
 })
