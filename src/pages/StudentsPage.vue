@@ -53,15 +53,10 @@
             </div>
             <div class="col-auto column q-gutter-xs items-end">
               <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEdit(s)" />
-              <q-btn
-                flat
-                round
-                dense
-                icon="delete"
-                color="negative"
-                size="sm"
-                @click="confirmDelete(s)"
-              />
+              <q-btn flat round dense icon="archive" color="grey-7" size="sm"
+                @click="confirmArchive(s)">
+                <q-tooltip>封存學生</q-tooltip>
+              </q-btn>
             </div>
           </div>
         </q-card-section>
@@ -165,24 +160,12 @@
           >
             <q-tooltip>消費記錄</q-tooltip>
           </q-btn>
-          <q-btn
-            flat
-            dense
-            round
-            icon="edit"
-            color="primary"
-            size="sm"
-            @click="openEdit(props.row)"
-          />
-          <q-btn
-            flat
-            dense
-            round
-            icon="delete"
-            color="negative"
-            size="sm"
-            @click="confirmDelete(props.row)"
-          />
+          <q-btn flat dense round icon="edit" color="primary" size="sm"
+            @click="openEdit(props.row)" />
+          <q-btn flat dense round icon="archive" color="grey-7" size="sm"
+            @click="confirmArchive(props.row)">
+            <q-tooltip>封存學生</q-tooltip>
+          </q-btn>
         </q-td>
       </template>
     </q-table>
@@ -463,19 +446,20 @@ async function saveStudent() {
   showFormDialog.value = false
 }
 
-function confirmDelete(student) {
+function confirmArchive(student) {
   $q.dialog({
-    title: '確認刪除',
-    message: `確定要刪除學生「${student.name}」嗎？`,
+    title: '封存學生',
+    message: `確定要封存「${student.name}」？封存後不會出現在點餐和餐費記錄中，可在封存學生列表恢復。`,
     cancel: { flat: true, label: '取消' },
-    ok: { color: 'negative', label: '刪除' },
-    persistent: true,
+    ok: { color: 'grey-7', label: '封存' },
+    persistent: true
   }).onOk(async () => {
-    await studentService.remove(student.id)
-    students.value = students.value.filter((s) => s.id !== student.id)
-    $q.notify({ message: '學生已刪除', color: 'negative', icon: 'delete' })
+    await studentService.archive(student.id)
+    students.value = students.value.filter(s => s.id !== student.id)
+    $q.notify({ message: `${student.name} 已封存`, color: 'grey-7', icon: 'archive' })
   })
 }
+
 
 // ── 消費記錄 Dialog ──
 const showDetail = ref(false)

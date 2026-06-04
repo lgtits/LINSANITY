@@ -1,0 +1,18 @@
+{
+  "2026-06": {
+    "s1": { "totalDays": 22, "absentDays": 3 },
+    "s2": { "totalDays": 22, "absentDays": 9 },
+    "s3": { "totalDays": 22, "absentDays": 0 },
+    "s4": { "totalDays": 22, "absentDays": 12 },
+    "s5": { "totalDays": 22, "absentDays": 2 },
+    "s6": { "totalDays": 22, "absentDays": 7 }
+  },
+  "2026-07": {
+    "s1": { "totalDays": 22, "absentDays": 3 },
+    "s2": { "totalDays": 22, "absentDays": 9 },
+    "s3": { "totalDays": 22, "absentDays": 0 },
+    "s4": { "totalDays": 22, "absentDays": 12 },
+    "s5": { "totalDays": 22, "absentDays": 2 },
+    "s6": { "totalDays": 22, "absentDays": 7 }
+  }
+}

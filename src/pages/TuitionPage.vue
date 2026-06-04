@@ -5,94 +5,147 @@
     <!-- ══════════════════════════════════
          控制列
     ══════════════════════════════════ -->
-    <div class="row q-col-gutter-sm q-mb-md">
-      <!-- 月份導航 -->
-      <div class="col-12 col-sm-auto">
-        <div class="row items-center no-wrap">
-          <q-btn flat round dense icon="chevron_left" @click="prevMonth" />
-          <div class="text-subtitle2 text-weight-bold text-primary q-px-xs" style="min-width: 100px; text-align: center">
-            {{ selectedYear }}年 {{ String(selectedMonth).padStart(2,'0') }}月
-          </div>
-          <q-btn flat round dense icon="chevron_right" @click="nextMonth" />
-        </div>
+    <!-- 第一行：月份導航 + 費率設定 -->
+    <div class="row items-center q-mb-sm no-wrap">
+      <q-btn flat round dense icon="chevron_left" @click="prevMonth" />
+      <div class="text-subtitle1 text-weight-bold text-primary q-px-sm" style="min-width: 110px; text-align: center">
+        {{ selectedYear }}年 {{ String(selectedMonth).padStart(2,'0') }}月
       </div>
+      <q-btn flat round dense icon="chevron_right" @click="nextMonth" />
+      <q-space />
+      <q-btn flat dense icon="calculate" color="grey-7" label="費率說明"
+        style="font-size: 13px" @click="showRatesInfoDialog = true" />
+    </div>
 
-      <!-- 搜尋 -->
+    <!-- 第二行：篩選 + 匯出 -->
+    <div class="row q-col-gutter-sm q-mb-md items-center">
       <div class="col-12 col-sm">
         <q-input v-model="search" placeholder="搜尋姓名..." outlined dense clearable>
           <template #prepend><q-icon name="search" /></template>
         </q-input>
       </div>
-
-      <!-- 年級 + 班別 + 匯出 -->
-      <div class="col-12 col-sm-auto row items-center q-gutter-xs">
+      <div class="col-12 col-sm-auto row items-center no-wrap q-gutter-xs">
         <q-select v-model="selectedGrade" :options="gradeFilterOptions" label="年級篩選"
           outlined dense emit-value map-options clearable style="min-width: 110px" />
         <q-select v-model="selectedClassType" :options="classTypeFilterOptions" label="班別"
           outlined dense emit-value map-options style="min-width: 100px" />
         <span class="text-body2 text-grey-7">共 {{ filteredRows.length }} 位</span>
-        <q-btn outline dense icon="file_download" color="positive" label="匯出 Excel" style="font-size: 12px" @click="exportExcel" />
+        <q-btn outline dense icon="file_download" color="positive" label="匯出 Excel"
+          style="font-size: 12px" @click="exportExcel" />
       </div>
     </div>
 
-    <!-- 計費說明 -->
-    <q-card flat bordered class="q-mb-md">
-      <q-card-section class="q-py-sm">
-        <div class="row items-center q-mb-sm">
-          <q-icon name="info_outline" color="primary" size="18px" class="q-mr-xs" />
-          <span class="text-subtitle2 text-weight-bold">計費說明</span>
+    <!-- ══════════ 計費說明 Dialog ══════════ -->
+    <q-dialog v-model="showRatesInfoDialog">
+      <q-card style="width: min(95vw, 520px)">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">計費說明</div>
+          <div class="text-body2 text-grey-6 q-ml-sm">{{ selectedYear }}年{{ String(selectedMonth).padStart(2,'0') }}月</div>
           <q-space />
-          <q-btn flat dense round icon="settings" color="grey-7" @click="openRatesDialog">
-            <q-tooltip>修改費率</q-tooltip>
-          </q-btn>
-        </div>
-        <div class="row q-col-gutter-sm">
-          <div class="col-6">
-            <q-list dense bordered class="rounded-borders">
-              <q-item dense class="bg-deep-purple-1">
-                <q-item-section><span class="text-body2 text-weight-bold text-deep-purple">全天班</span></q-item-section>
-              </q-item>
-              <q-item dense>
-                <q-item-section class="text-body2 text-grey-7">月費（請假 ≤ {{ rates.absentThreshold }} 天）</q-item-section>
-                <q-item-section side class="text-body2 text-weight-bold text-primary">${{ fmtNum(rates.fullFlat) }}</q-item-section>
-              </q-item>
-              <q-item dense>
-                <q-item-section class="text-body2 text-grey-7">按日（不含餐）</q-item-section>
-                <q-item-section side class="text-body2 text-weight-bold">${{ rates.fullDaily }} / 天</q-item-section>
-              </q-item>
-              <q-item dense>
-                <q-item-section class="text-body2 text-grey-7">按日（含用餐）</q-item-section>
-                <q-item-section side class="text-body2 text-weight-bold">${{ rates.fullMealDaily }} / 天</q-item-section>
-              </q-item>
-            </q-list>
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <div v-if="!hasRates" class="text-center text-grey q-pa-md">
+            <q-icon name="warning" color="orange-7" size="36px" class="q-mb-sm" /><br>
+            <span class="text-body2">此月份尚未設定費率</span>
           </div>
-          <div class="col-6">
-            <q-list dense bordered class="rounded-borders">
-              <q-item dense class="bg-teal-1">
-                <q-item-section><span class="text-body2 text-weight-bold text-teal">半天班</span></q-item-section>
-              </q-item>
-              <q-item dense>
-                <q-item-section class="text-body2 text-grey-7">月費（請假 ≤ {{ rates.absentThreshold }} 天）</q-item-section>
-                <q-item-section side class="text-body2 text-weight-bold text-primary">${{ fmtNum(rates.halfFlat) }}</q-item-section>
-              </q-item>
-              <q-item dense>
-                <q-item-section class="text-body2 text-grey-7">按日（不含餐）</q-item-section>
-                <q-item-section side class="text-body2 text-weight-bold">${{ rates.halfDaily }} / 天</q-item-section>
-              </q-item>
-              <q-item dense>
-                <q-item-section class="text-body2 text-grey-7">按日（含用餐）</q-item-section>
-                <q-item-section side class="text-body2 text-weight-bold">${{ rates.halfMealDaily }} / 天</q-item-section>
-              </q-item>
-            </q-list>
+          <template v-else>
+            <div class="row q-col-gutter-sm">
+              <div class="col-12 col-sm-6">
+                <q-list dense bordered class="rounded-borders">
+                  <q-item dense class="bg-deep-purple-1">
+                    <q-item-section><span class="text-body2 text-weight-bold text-deep-purple">全天班</span></q-item-section>
+                  </q-item>
+                  <q-item dense>
+                    <q-item-section class="text-body2 text-grey-7">月費 不含餐</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold text-primary">${{ fmtNum(rates.fullFlat) }}</q-item-section>
+                  </q-item>
+                  <q-item dense>
+                    <q-item-section class="text-body2 text-grey-7">月費 含用餐</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold text-primary">${{ fmtNum(rates.fullFlatMeal) }}</q-item-section>
+                  </q-item>
+                  <q-item dense>
+                    <q-item-section class="text-body2 text-grey-7">按日（不含餐）</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold">${{ rates.fullDaily }} / 天</q-item-section>
+                  </q-item>
+                  <q-item dense>
+                    <q-item-section class="text-body2 text-grey-7">按日（含用餐）</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold">${{ rates.fullMealDaily }} / 天</q-item-section>
+                  </q-item>
+                </q-list>
+              </div>
+              <div class="col-12 col-sm-6">
+                <q-list dense bordered class="rounded-borders">
+                  <q-item dense class="bg-teal-1">
+                    <q-item-section><span class="text-body2 text-weight-bold text-teal">半天班</span></q-item-section>
+                  </q-item>
+                  <q-item dense>
+                    <q-item-section class="text-body2 text-grey-7">月費 不含餐</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold text-primary">${{ fmtNum(rates.halfFlat) }}</q-item-section>
+                  </q-item>
+                  <q-item dense>
+                    <q-item-section class="text-body2 text-grey-7">月費 含用餐</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold text-primary">${{ fmtNum(rates.halfFlatMeal) }}</q-item-section>
+                  </q-item>
+                  <q-item dense>
+                    <q-item-section class="text-body2 text-grey-7">按日（不含餐）</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold">${{ rates.halfDaily }} / 天</q-item-section>
+                  </q-item>
+                  <q-item dense>
+                    <q-item-section class="text-body2 text-grey-7">按日（含用餐）</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold">${{ rates.halfMealDaily }} / 天</q-item-section>
+                  </q-item>
+                </q-list>
+              </div>
+            </div>
+            <div class="text-body2 text-grey-6 q-mt-sm">
+              請假超過 {{ rates.absentThreshold }} 天時改為按日計費
+            </div>
+          </template>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-px-md q-pb-md">
+          <q-btn outline icon="tune" label="前往費率管理" color="primary"
+            @click="showRatesInfoDialog = false; $router.push('/tuition/rates')" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- 尚未設定費率的警告 -->
+    <q-banner v-if="!loading && !hasRates" class="bg-orange-1 text-orange-9 q-mb-md rounded-borders">
+      <template #avatar><q-icon name="warning" color="orange-7" /></template>
+      <div class="text-body2">
+        <span class="text-weight-bold">{{ selectedYear }}年{{ String(selectedMonth).padStart(2,'0') }}月 尚未設定費率</span>，
+        費用無法計算，請前往費率管理設定。
+      </div>
+      <template #action>
+        <q-btn flat color="orange-9" label="前往設定" icon="tune"
+          @click="$router.push('/tuition/rates')" />
+      </template>
+    </q-banner>
+
+    <!-- 尚未建立名單時的提示 -->
+    <q-card v-if="!loading && enrollment === null && !loadingMonth"
+      flat bordered class="q-mb-md bg-blue-1">
+      <q-card-section class="row items-center">
+        <div class="col">
+          <div class="text-subtitle2 text-weight-bold text-primary">
+            {{ selectedYear }}年{{ String(selectedMonth).padStart(2,'0') }}月 尚未建立學生名單
+          </div>
+          <div class="text-body2 text-grey-7 q-mt-xs">
+            點擊「載入學生」將目前在籍學生載入為本月名單，之後可調整個別學生設定
           </div>
         </div>
+        <q-btn color="primary" icon="group_add" label="載入學生"
+          class="q-ml-md" @click="loadStudentsForMonth" />
       </q-card-section>
     </q-card>
 
     <!-- ══════════════════════════════════
          手機：卡片清單 (與學生列表頁類似，更精簡)
     ══════════════════════════════════ -->
-    <template v-if="$q.screen.lt.md">
+    <template v-if="$q.screen.lt.md && enrollment !== null">
       <q-card
         v-for="row in filteredRows"
         :key="row.student.id"
@@ -107,19 +160,27 @@
                 <span class="text-body2 text-grey-6 q-ml-xs">{{ row.student.grade }}年級</span>
               </div>
               <div class="row items-center q-gutter-xs q-mt-xs">
-                <q-badge :color="row.settings.classType === 'full' ? 'deep-purple' : 'teal'"
-                  :label="row.settings.classType === 'full' ? '全天班' : '半天班'" />
-                <q-badge :color="row.settings.withMeal ? 'orange-7' : 'grey-6'"
-                  :label="row.settings.withMeal ? '含用餐' : '不含用餐'" />
-                <q-badge outline color="positive" :label="`出席 ${row.attendance.attendDays}天`" />
-                <q-badge outline :color="row.attendance.absentDays > rates.absentThreshold ? 'negative' : 'grey-6'" :label="`請假 ${row.attendance.absentDays}天`" />
+                <q-badge
+                  :color="row.settings.classType === 'full' ? 'deep-purple' : row.settings.classType === 'half' ? 'teal' : 'grey-6'"
+                  :label="row.settings.classType === 'full' ? '全天班' : row.settings.classType === 'half' ? '半天班' : '不上課'" />
+                <template v-if="row.settings.classType !== 'none'">
+                  <q-badge :color="row.settings.withMeal ? 'orange-7' : 'grey-6'"
+                    :label="row.settings.withMeal ? '含用餐' : '不含用餐'" />
+                  <q-badge outline color="positive" :label="`出席 ${row.attendance.attendDays}天`" />
+                  <q-badge outline :color="row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? 'negative' : 'grey-6'" :label="`請假 ${row.attendance.absentDays}天`" />
+                </template>
               </div>
             </q-item-section>
             <q-item-section side class="text-right">
-              <div class="text-subtitle1 text-weight-bold text-primary">${{ fmtNum(row.fee) }}</div>
-              <div class="text-body2" :class="row.attendance.absentDays > rates.absentThreshold ? 'text-negative text-weight-bold' : 'text-grey-5'">
-                {{ row.attendance.absentDays > rates.absentThreshold ? '按日計費' : '月費制' }}
-              </div>
+              <template v-if="row.settings.classType !== 'none'">
+                <div class="text-subtitle1 text-weight-bold" :class="hasRates ? 'text-primary' : 'text-grey-5'">
+                  {{ row.fee !== null ? `$${fmtNum(row.fee)}` : 'N/A' }}
+                </div>
+                <div class="text-body2" :class="hasRates && row.attendance.absentDays > rates?.absentThreshold ? 'text-negative text-weight-bold' : 'text-grey-5'">
+                  {{ row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? '按日計費' : '月費制' }}
+                </div>
+              </template>
+              <div v-else class="text-body2 text-grey-5">不計費</div>
             </q-item-section>
           </template>
 
@@ -135,7 +196,7 @@
                 />
               </div>
               <div class="col-6 flex items-center justify-end">
-                <q-toggle
+                <q-toggle v-if="row.settings.classType !== 'none'"
                   :model-value="row.settings.withMeal"
                   @update:model-value="v => updateSetting(row.student.id, 'withMeal', v)"
                   label="含用餐" color="orange-7"
@@ -144,8 +205,8 @@
               </div>
             </div>
 
-            <!-- 日曆簽到 -->
-            <q-card flat bordered class="q-pa-sm q-mb-md">
+            <!-- 日曆簽到（不上課時隱藏） -->
+            <q-card v-if="row.settings.classType !== 'none'" flat bordered class="q-pa-sm q-mb-md">
               <div class="attendance-calendar-container full-width">
                 <div class="text-caption text-grey-6 text-center q-mb-sm">
                   點擊日期切換：出席(綠) ➔ 請假(紅) ➔ 非上課日(灰)
@@ -170,8 +231,8 @@
               </div>
             </q-card>
 
-            <!-- 費用統計明細 -->
-            <q-card flat bordered class="q-pa-sm">
+            <!-- 費用統計明細（不上課時隱藏） -->
+            <q-card v-if="row.settings.classType !== 'none'" flat bordered class="q-pa-sm">
               <q-list dense separator>
                 <q-item>
                   <q-item-section class="text-body2 text-grey-7">上課天數統計</q-item-section>
@@ -182,8 +243,8 @@
                 <q-item>
                   <q-item-section class="text-body2 text-grey-7">計費方式</q-item-section>
                   <q-item-section side class="text-body2">
-                    <span v-if="row.attendance.absentDays <= rates.absentThreshold">
-                      月費制 (請假 ≤ {{ rates.absentThreshold }} 天)
+                    <span v-if="row.attendance.absentDays <= (rates?.absentThreshold ?? Infinity)">
+                      月費制 (請假 ≤ {{ rates?.absentThreshold }} 天)
                     </span>
                     <span v-else class="text-negative text-weight-bold">
                       按日計費 (出席 {{ row.attendance.attendDays }} 天 × ${{ dailyRate(row) }} / 天)
@@ -194,7 +255,9 @@
                 <q-item class="bg-blue-50">
                   <q-item-section class="text-weight-bold">應收學費</q-item-section>
                   <q-item-section side>
-                    <span class="text-h6 text-primary text-weight-bold">${{ fmtNum(row.fee) }}</span>
+                    <span :class="row.fee !== null ? 'text-h6 text-primary text-weight-bold' : 'text-body2 text-grey-5'">
+                      {{ row.fee !== null ? `$${fmtNum(row.fee)}` : 'N/A' }}
+                    </span>
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -211,11 +274,11 @@
     <!-- ══════════════════════════════════
          桌機：表格列表 (與學生列表頁類似)
     ══════════════════════════════════ -->
-    <template v-else>
+    <template v-else-if="enrollment !== null">
       <q-table
         :rows="filteredRows"
         :columns="columns"
-        row-key="student.id"
+        row-key="id"
         flat
         bordered
         :rows-per-page-options="[10, 20, 0]"
@@ -228,28 +291,37 @@
               <span class="text-weight-bold text-grey-9">{{ props.row.student.name }}</span>
             </q-td>
             <q-td key="classType" :props="props" class="text-center">
-              <q-badge :color="props.row.settings.classType === 'full' ? 'deep-purple' : 'teal'"
-                :label="props.row.settings.classType === 'full' ? '全天班' : '半天班'" />
+              <q-badge
+                :color="props.row.settings.classType === 'full' ? 'deep-purple' : props.row.settings.classType === 'half' ? 'teal' : 'grey-6'"
+                :label="props.row.settings.classType === 'full' ? '全天班' : props.row.settings.classType === 'half' ? '半天班' : '不上課'" />
             </q-td>
             <q-td key="withMeal" :props="props" class="text-center">
-              <q-badge :color="props.row.settings.withMeal ? 'orange-7' : 'grey-6'"
+              <q-badge v-if="props.row.settings.classType !== 'none'"
+                :color="props.row.settings.withMeal ? 'orange-7' : 'grey-6'"
                 :label="props.row.settings.withMeal ? '含用餐' : '不含用餐'" />
+              <span v-else class="text-grey-5">—</span>
             </q-td>
             <q-td key="attendance" :props="props" class="text-center">
-              <span class="text-positive text-weight-bold">{{ props.row.attendance.attendDays }}</span>
-              <span class="text-grey-4"> / </span>
-              <span :class="props.row.attendance.absentDays > rates.absentThreshold ? 'text-negative text-weight-bold' : 'text-grey-6'">
-                {{ props.row.attendance.absentDays }}
-              </span>
-              <span class="text-caption text-grey-5"> 天</span>
+              <template v-if="props.row.settings.classType !== 'none'">
+                <span class="text-positive text-weight-bold">{{ props.row.attendance.attendDays }}</span>
+                <span class="text-grey-4"> / </span>
+                <span :class="props.row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? 'text-negative text-weight-bold' : 'text-grey-6'">
+                  {{ props.row.attendance.absentDays }}
+                </span>
+                <span class="text-caption text-grey-5"> 天</span>
+              </template>
+              <span v-else class="text-grey-5">—</span>
             </q-td>
             <q-td key="billingType" :props="props" class="text-center">
-              <span :class="props.row.attendance.absentDays > rates.absentThreshold ? 'text-negative text-weight-bold' : 'text-grey-6'">
-                {{ props.row.attendance.absentDays > rates.absentThreshold ? '按日計費' : '月費制' }}
+              <span v-if="props.row.settings.classType !== 'none'"
+                :class="props.row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? 'text-negative text-weight-bold' : 'text-grey-6'">
+                {{ props.row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? '按日計費' : '月費制' }}
               </span>
+              <span v-else class="text-grey-5">—</span>
             </q-td>
-            <q-td key="fee" :props="props" class="text-right text-subtitle2 text-weight-bold text-primary">
-              ${{ fmtNum(props.row.fee) }}
+            <q-td key="fee" :props="props" class="text-right text-subtitle2 text-weight-bold"
+              :class="props.row.settings.classType !== 'none' ? 'text-primary' : 'text-grey-5'">
+              {{ props.row.settings.classType === 'none' ? '不計費' : props.row.fee !== null ? `$${fmtNum(props.row.fee)}` : 'N/A' }}
             </q-td>
             <q-td key="expandBtn" :props="props" class="text-center">
               <q-btn flat round dense :icon="props.expand ? 'keyboard_arrow_up' : 'keyboard_arrow_down'" size="sm" />
@@ -276,7 +348,7 @@
                         />
                       </div>
                       <div class="col-6 flex items-center">
-                        <q-toggle
+                        <q-toggle v-if="props.row.settings.classType !== 'none'"
                           :model-value="props.row.settings.withMeal"
                           @update:model-value="v => updateSetting(props.row.student.id, 'withMeal', v)"
                           label="含用餐" color="orange-7"
@@ -286,6 +358,7 @@
                     </div>
                   </q-card>
 
+                  <template v-if="props.row.settings.classType !== 'none'">
                   <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                     <q-icon name="receipt_long" size="14px" class="q-mr-xs" />出席統計與費用明細
                   </div>
@@ -298,9 +371,9 @@
                       <q-item>
                         <q-item-section class="text-body2 text-grey-7">請假天數</q-item-section>
                         <q-item-section side class="text-body2">
-                          <span :class="props.row.attendance.absentDays > rates.absentThreshold ? 'text-negative text-weight-bold' : ''">
+                          <span :class="props.row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? 'text-negative text-weight-bold' : ''">
                             {{ props.row.attendance.absentDays }} 天
-                            <q-chip v-if="props.row.attendance.absentDays > rates.absentThreshold" dense size="xs" color="negative" text-color="white" class="q-ml-xs">超過{{ rates.absentThreshold }}天</q-chip>
+                            <q-chip v-if="props.row.attendance.absentDays > (rates?.absentThreshold ?? Infinity)" dense size="xs" color="negative" text-color="white" class="q-ml-xs">超過{{ rates?.absentThreshold }}天</q-chip>
                           </span>
                         </q-item-section>
                       </q-item>
@@ -311,8 +384,11 @@
                       <q-item>
                         <q-item-section class="text-body2 text-grey-7">計費方式</q-item-section>
                         <q-item-section side class="text-body2">
-                          <span v-if="props.row.attendance.absentDays <= rates.absentThreshold">
-                            月費制 {{ props.row.settings.classType === 'full' ? `$${fmtNum(rates.fullFlat)}` : `$${fmtNum(rates.halfFlat)}` }}
+                          <span v-if="!hasRates" class="text-grey-5">N/A（未設定費率）</span>
+                          <span v-else-if="props.row.attendance.absentDays <= (rates?.absentThreshold ?? Infinity)">
+                            月費制 ${{ props.row.settings.classType === 'full'
+                              ? fmtNum(props.row.settings.withMeal ? rates.fullFlatMeal : rates.fullFlat)
+                              : fmtNum(props.row.settings.withMeal ? rates.halfFlatMeal : rates.halfFlat) }}
                           </span>
                           <span v-else class="text-negative text-weight-bold">
                             {{ props.row.attendance.attendDays }} 天 × ${{ dailyRate(props.row) }} / 天 (按日計費)
@@ -323,15 +399,18 @@
                       <q-item class="bg-blue-50">
                         <q-item-section class="text-subtitle2 text-weight-bold">應收學費</q-item-section>
                         <q-item-section side>
-                          <span class="text-h5 text-primary text-weight-bold">${{ fmtNum(props.row.fee) }}</span>
+                          <span :class="props.row.fee !== null ? 'text-h5 text-primary text-weight-bold' : 'text-body2 text-grey-5'">
+                            {{ props.row.fee !== null ? `$${fmtNum(props.row.fee)}` : 'N/A' }}
+                          </span>
                         </q-item-section>
                       </q-item>
                     </q-list>
                   </q-card>
+                  </template>
                 </div>
 
-                <!-- 右：日曆 -->
-                <div class="col-12 col-md-6 flex flex-column">
+                <!-- 右：日曆（不上課時隱藏） -->
+                <div v-if="props.row.settings.classType !== 'none'" class="col-12 col-md-6 flex flex-column">
                   <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                     <q-icon name="calendar_month" size="14px" class="q-mr-xs" />上課日曆與簽到
                   </div>
@@ -384,115 +463,13 @@
             <div class="text-caption text-grey-5">學費總計</div>
           </div>
           <q-space />
-          <div class="text-h5 text-weight-bold text-primary">${{ fmtNum(totalFee) }}</div>
+          <div :class="totalFee !== null ? 'text-h5 text-weight-bold text-primary' : 'text-body2 text-grey-5'">
+            {{ totalFee !== null ? `$${fmtNum(totalFee)}` : 'N/A（未設定費率）' }}
+          </div>
         </div>
       </q-card-section>
     </q-card>
 
-    <!-- ══════════════════════════════════
-         費率設定 Dialog
-    ══════════════════════════════════ -->
-    <q-dialog v-model="showRatesDialog" persistent>
-      <q-card style="width: min(95vw, 420px)">
-        <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6">費率設定</div>
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
-        </q-card-section>
-
-        <q-card-section>
-          <!-- 請假門檻 -->
-          <div class="q-mb-md">
-            <div class="text-caption text-grey-7 text-weight-bold q-mb-sm">按日計費門檻</div>
-            <q-input
-              v-model.number="rateForm.absentThreshold"
-              label="請假超過幾天改按日計費"
-              type="number" suffix="天"
-              outlined dense
-              hint="預設 7 天，超過此天數才按日計算"
-              :rules="[v => v >= 0 || '請輸入正確天數']"
-            />
-          </div>
-
-          <q-separator class="q-mb-md" />
-
-          <!-- 全天班 -->
-          <div class="row items-center q-mb-sm">
-            <q-badge color="deep-purple" label="全天班" class="q-mr-sm" />
-          </div>
-          <div class="row q-col-gutter-sm q-mb-md">
-            <div class="col-12">
-              <q-input
-                v-model.number="rateForm.fullFlat"
-                :label="`月費（請假 ≤ ${rateForm.absentThreshold} 天）`"
-                type="number" prefix="$" suffix="/ 月"
-                outlined dense
-                :rules="[v => v > 0 || '請輸入正確金額']"
-              />
-            </div>
-            <div class="col-6">
-              <q-input
-                v-model.number="rateForm.fullDaily"
-                label="按日計費（不含餐）"
-                type="number" prefix="$" suffix="/ 天"
-                outlined dense
-                :rules="[v => v > 0 || '請輸入正確金額']"
-              />
-            </div>
-            <div class="col-6">
-              <q-input
-                v-model.number="rateForm.fullMealDaily"
-                label="按日計費（含用餐）"
-                type="number" prefix="$" suffix="/ 天"
-                outlined dense
-                :rules="[v => v > 0 || '請輸入正確金額']"
-              />
-            </div>
-          </div>
-
-          <q-separator class="q-mb-md" />
-
-          <!-- 半天班 -->
-          <div class="row items-center q-mb-sm">
-            <q-badge color="teal" label="半天班" class="q-mr-sm" />
-          </div>
-          <div class="row q-col-gutter-sm q-mb-md">
-            <div class="col-12">
-              <q-input
-                v-model.number="rateForm.halfFlat"
-                :label="`月費（請假 ≤ ${rateForm.absentThreshold} 天）`"
-                type="number" prefix="$" suffix="/ 月"
-                outlined dense
-                :rules="[v => v > 0 || '請輸入正確金額']"
-              />
-            </div>
-            <div class="col-6">
-              <q-input
-                v-model.number="rateForm.halfDaily"
-                label="按日計費（不含餐）"
-                type="number" prefix="$" suffix="/ 天"
-                outlined dense
-                :rules="[v => v > 0 || '請輸入正確金額']"
-              />
-            </div>
-            <div class="col-6">
-              <q-input
-                v-model.number="rateForm.halfMealDaily"
-                label="按日計費（含用餐）"
-                type="number" prefix="$" suffix="/ 天"
-                outlined dense
-                :rules="[v => v > 0 || '請輸入正確金額']"
-              />
-            </div>
-          </div>
-
-          <div class="row justify-end q-gutter-sm">
-            <q-btn flat label="取消" v-close-popup />
-            <q-btn color="primary" label="儲存費率" icon="save" @click="saveRates" />
-          </div>
-        </q-card-section>
-      </q-card>
-    </q-dialog>
 
   </q-page>
 </template>
@@ -500,11 +477,13 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 import * as XLSX from 'xlsx'
 import { studentService } from '../services/studentService'
 import { tuitionService } from '../services/tuitionService'
 
 const $q = useQuasar()
+const $router = useRouter()
 const loading = ref(true)
 
 // ── 月份控制 ──
@@ -532,6 +511,7 @@ const selectedClassType = ref('all')
 const classTypeFilterOptions = [
   { label: '全部班別', value: 'all' },
   { label: '全天班',   value: 'full' },
+  { label: '不上課',   value: 'none' },
   { label: '半天班',   value: 'half' }
 ]
 
@@ -541,44 +521,18 @@ const gradeFilterOptions = [
 ]
 const classTypeOptions = [
   { label: '全天班', value: 'full' },
-  { label: '半天班', value: 'half' }
+  { label: '半天班', value: 'half' },
+  { label: '不上課', value: 'none' }
 ]
 
 // ── 費率 ──
 const SAVED_MONTHLY_RATES_KEY = 'linsanity_tuition_monthly_rates'
-const defaultRates = {
-  absentThreshold: 7,
-  fullFlat:        10000,
-  fullDaily:       400,
-  fullMealDaily:   450,
-  halfFlat:        5000,
-  halfDaily:       200,
-  halfMealDaily:   250
-}
-
 const allRates = ref({})
 
-const rates = computed(() => {
-  const mk = monthKey.value
-  return allRates.value[mk] || defaultRates
-})
+const rates = computed(() => allRates.value[monthKey.value] || null)
+const hasRates = computed(() => rates.value !== null)
 
-const showRatesDialog = ref(false)
-const rateForm = ref({ ...rates.value })
-
-function openRatesDialog() {
-  rateForm.value = { ...rates.value }
-  showRatesDialog.value = true
-}
-
-function saveRates() {
-  const mk = monthKey.value
-  allRates.value[mk] = { ...rateForm.value }
-  tuitionService.updateRates(mk, rateForm.value)
-  localStorage.setItem(SAVED_MONTHLY_RATES_KEY, JSON.stringify(allRates.value))
-  showRatesDialog.value = false
-  $q.notify({ message: `已儲存 ${selectedYear.value}年${selectedMonth.value}月 的費率設定`, color: 'positive', icon: 'check' })
-}
+const showRatesInfoDialog = ref(false)
 
 // ── 表格欄位 ──
 const columns = [
@@ -593,9 +547,10 @@ const columns = [
 ]
 
 // ── 資料 ──
-const students   = ref([])
-const settings   = ref({})
-const attendance = ref({})
+const allStudents  = ref([])   // 目前在籍學生（用於建立名單）
+const enrollment   = ref(null) // 當月報名學生 { studentId: { classType, withMeal } }，null = 尚未建立
+const attendance   = ref({})   // 當月出席記錄 { studentId: { totalDays, absentDays, calendar } }
+const loadingMonth = ref(false)
 
 // ── 日曆輔助方法 ──
 function getMonthDays(year, month) {
@@ -613,21 +568,15 @@ function getMonthDays(year, month) {
   return cells
 }
 
-function getStudentCalendar(studentId, monthKey) {
-  if (!attendance.value) return {}
+function getStudentCalendar(studentId) {
   if (!attendance.value[studentId]) {
-    attendance.value[studentId] = {}
+    attendance.value[studentId] = { totalDays: 22, absentDays: 0 }
   }
-  if (!attendance.value[studentId][monthKey]) {
-    attendance.value[studentId][monthKey] = { totalDays: 22, absentDays: 0 }
-  }
-  
-  const att = attendance.value[studentId][monthKey]
+  const att = attendance.value[studentId]
   
   if (!att.calendar) {
-    const [yearStr, monthStr] = monthKey.split('-')
-    const year = parseInt(yearStr, 10)
-    const month = parseInt(monthStr, 10)
+    const year = selectedYear.value
+    const month = selectedMonth.value
     const totalDaysInMonth = new Date(year, month, 0).getDate()
     
     const cal = {}
@@ -677,124 +626,129 @@ function getStudentCalendar(studentId, monthKey) {
   return att.calendar
 }
 
-function recalculateTotals(studentId, monthKey, triggerSave = true) {
-  const att = attendance.value[studentId]?.[monthKey]
+function recalculateTotals(studentId, triggerSave = true) {
+  const att = attendance.value[studentId]
   if (!att || !att.calendar) return
-  
-  let presentCount = 0
-  let absentCount = 0
-  
-  Object.values(att.calendar).forEach(status => {
-    if (status === 'present') presentCount++
-    if (status === 'absent') absentCount++
+  let presentCount = 0, absentCount = 0
+  Object.values(att.calendar).forEach(s => {
+    if (s === 'present') presentCount++
+    if (s === 'absent') absentCount++
   })
-  
-  const totalDays = presentCount + absentCount
-  const absentDays = absentCount
-  
-  att.totalDays = totalDays
-  att.absentDays = absentDays
-  
+  att.totalDays = presentCount + absentCount
+  att.absentDays = absentCount
   if (triggerSave) {
-    tuitionService.updateAttendance(studentId, monthKey, 'calendar', att.calendar)
-    tuitionService.updateAttendance(studentId, monthKey, 'totalDays', totalDays)
-    tuitionService.updateAttendance(studentId, monthKey, 'absentDays', absentDays)
+    const mk = monthKey.value
+    tuitionService.updateAttendance(mk, studentId, 'calendar', att.calendar)
+    tuitionService.updateAttendance(mk, studentId, 'totalDays', att.totalDays)
+    tuitionService.updateAttendance(mk, studentId, 'absentDays', att.absentDays)
   }
 }
 
 function toggleDay(studentId, dayNum) {
-  const mk = monthKey.value
-  const cal = getStudentCalendar(studentId, mk)
+  const cal = getStudentCalendar(studentId)
   if (!cal) return
-  
   const current = cal[dayNum] || 'none'
-  let next = 'present'
-  if (current === 'present') next = 'absent'
-  else if (current === 'absent') next = 'none'
-  
-  cal[dayNum] = next
-  recalculateTotals(studentId, mk, true)
+  cal[dayNum] = current === 'present' ? 'absent' : current === 'absent' ? 'none' : 'present'
+  recalculateTotals(studentId, true)
 }
 
 function getDayClass(studentId, cell) {
   if (cell.empty) return 'cell-empty'
-  const mk = monthKey.value
-  const cal = getStudentCalendar(studentId, mk)
-  const status = cal[cell.day] || 'none'
-  return `cell-${status}`
+  const cal = getStudentCalendar(studentId)
+  return `cell-${cal[cell.day] || 'none'}`
 }
 
 function getDayIcon(studentId, dayNum) {
-  const mk = monthKey.value
-  const cal = getStudentCalendar(studentId, mk)
-  const status = cal[dayNum] || 'none'
-  if (status === 'present') return 'check_circle'
-  if (status === 'absent') return 'cancel'
+  const cal = getStudentCalendar(studentId)
+  const s = cal[dayNum] || 'none'
+  if (s === 'present') return 'check_circle'
+  if (s === 'absent') return 'cancel'
   return 'do_not_disturb_on'
 }
 
 function initializeCalendars() {
-  if (!students.value || !attendance.value) return
-  const mk = monthKey.value
-  students.value.forEach(student => {
-    getStudentCalendar(student.id, mk)
-  })
+  if (!enrollment.value) return
+  Object.keys(enrollment.value).forEach(sid => getStudentCalendar(sid))
 }
 
-watch(monthKey, () => {
-  initializeCalendars()
-})
+async function loadMonth(mk) {
+  loadingMonth.value = true
+  attendance.value = {}
+  enrollment.value = null
+  const [enr, att] = await Promise.all([
+    tuitionService.getEnrollment(mk),
+    tuitionService.getAttendance(mk)
+  ])
+  enrollment.value = enr
+  attendance.value = att
+  if (enrollment.value) initializeCalendars()
+  loadingMonth.value = false
+}
+
+watch(monthKey, loadMonth)
 
 onMounted(async () => {
-  const saved = localStorage.getItem(SAVED_MONTHLY_RATES_KEY)
-  if (saved) {
-    try {
-      allRates.value = JSON.parse(saved)
-    } catch (e) {
-      console.error('Failed to parse saved monthly tuition rates:', e)
+  try {
+    const saved = localStorage.getItem(SAVED_MONTHLY_RATES_KEY)
+    if (saved) {
+      try { allRates.value = JSON.parse(saved) } catch (e) { console.warn('Failed to parse saved rates', e) }
     }
+    const mk = monthKey.value
+    const [fetchedStudents, fetchedRates, enr, att] = await Promise.all([
+      studentService.getAll(),
+      tuitionService.getRates(),
+      tuitionService.getEnrollment(mk),
+      tuitionService.getAttendance(mk)
+    ])
+    allStudents.value = fetchedStudents
+    allRates.value    = { ...fetchedRates, ...allRates.value }
+    enrollment.value  = enr
+    attendance.value  = att
+    if (enrollment.value) initializeCalendars()
+  } finally {
+    loading.value = false
   }
-  students.value   = await studentService.getAll()
-  const data       = await tuitionService.getAll()
-  const serviceRates = data.rates || {}
-  allRates.value = { ...serviceRates, ...allRates.value }
-  settings.value   = data.settings
-  attendance.value = data.attendance
-  initializeCalendars()
-  loading.value = false
 })
 
 // ── 計費 ──
 function calcFee(classType, withMeal, totalDays, absentDays) {
+  if (!rates.value) return null
+  if (classType === 'none') return 0
   const attended = Math.max(0, totalDays - absentDays)
   const threshold = rates.value.absentThreshold
   if (classType === 'full') {
     if (absentDays > threshold) return attended * (withMeal ? rates.value.fullMealDaily : rates.value.fullDaily)
-    return rates.value.fullFlat
+    return withMeal ? rates.value.fullFlatMeal : rates.value.fullFlat
   } else {
     if (absentDays > threshold) return attended * (withMeal ? rates.value.halfMealDaily : rates.value.halfDaily)
-    return rates.value.halfFlat
+    return withMeal ? rates.value.halfFlatMeal : rates.value.halfFlat
   }
 }
 
 function dailyRate(row) {
+  if (!rates.value) return null
   if (row.settings.classType === 'full') return row.settings.withMeal ? rates.value.fullMealDaily : rates.value.fullDaily
   return row.settings.withMeal ? rates.value.halfMealDaily : rates.value.halfDaily
 }
 
 // ── 組合列表 ──
-const rows = computed(() =>
-  students.value.map(student => {
-    const s   = settings.value[student.id]   || { classType: 'full', withMeal: false }
-    const att = attendance.value[student.id]?.[monthKey.value] || { totalDays: 22, absentDays: 0 }
-    const attendDays = Math.max(0, att.totalDays - att.absentDays)
-    return { student, settings: s, attendance: { ...att, attendDays }, fee: calcFee(s.classType, s.withMeal, att.totalDays, att.absentDays) }
-  }).sort((a, b) =>
-    a.student.grade !== b.student.grade
-      ? a.student.grade - b.student.grade
-      : a.student.name.localeCompare(b.student.name, 'zh-TW')
-  )
-)
+const rows = computed(() => {
+  if (!enrollment.value) return []
+  return Object.entries(enrollment.value)
+    .map(([studentId, s]) => {
+      const student = allStudents.value.find(x => x.id === studentId)
+      if (!student) return null
+      const att = attendance.value[studentId] || { totalDays: 22, absentDays: 0 }
+      const attendDays = Math.max(0, att.totalDays - att.absentDays)
+      return { id: studentId, student, settings: s, attendance: { ...att, attendDays }, fee: calcFee(s.classType, s.withMeal, att.totalDays, att.absentDays) }
+    })
+    .filter(Boolean)
+    .sort((a, b) =>
+      a.student.grade !== b.student.grade
+        ? a.student.grade - b.student.grade
+        : a.student.name.localeCompare(b.student.name, 'zh-TW')
+    )
+})
 
 const filteredRows = computed(() => {
   let list = rows.value
@@ -805,13 +759,30 @@ const filteredRows = computed(() => {
   return list
 })
 
-const totalFee = computed(() => filteredRows.value.reduce((s, r) => s + r.fee, 0))
+const totalFee = computed(() =>
+  hasRates.value
+    ? filteredRows.value.reduce((s, r) => s + (r.fee ?? 0), 0)
+    : null
+)
 
-// ── 更新設定 ──
+// ── 更新報名設定 ──
 function updateSetting(studentId, key, value) {
-  if (!settings.value[studentId]) settings.value[studentId] = { classType: 'full', withMeal: false }
-  settings.value[studentId] = { ...settings.value[studentId], [key]: value }
-  tuitionService.updateSetting(studentId, key, value)
+  if (!enrollment.value?.[studentId]) return
+  enrollment.value[studentId] = { ...enrollment.value[studentId], [key]: value }
+  tuitionService.updateEnrollmentSetting(monthKey.value, studentId, key, value)
+}
+
+// ── 載入學生建立名單 ──
+async function loadStudentsForMonth() {
+  const mk = monthKey.value
+  const defaultEnrollment = {}
+  allStudents.value.forEach(s => {
+    defaultEnrollment[s.id] = { classType: 'full', withMeal: false }
+  })
+  await tuitionService.createEnrollment(mk, defaultEnrollment)
+  enrollment.value = { ...defaultEnrollment }
+  initializeCalendars()
+  $q.notify({ message: `已載入 ${allStudents.value.length} 位學生`, color: 'positive', icon: 'group' })
 }
 
 
@@ -832,7 +803,7 @@ function exportExcel() {
     '上課總天數': r.attendance.totalDays,
     '請假天數':   r.attendance.absentDays,
     '出席天數':   r.attendance.attendDays,
-    '計費方式':   r.attendance.absentDays > rates.value.absentThreshold ? `按日計費（$${dailyRate(r)}/天）` : '月費制',
+    '計費方式':   !rates.value ? 'N/A' : r.attendance.absentDays > rates.value.absentThreshold ? `按日計費（$${dailyRate(r)}/天）` : '月費制',
     '應收學費':   r.fee
   }))
   data.push({
