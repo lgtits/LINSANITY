@@ -1,0 +1,1 @@
+import{on as e}from"./index-Pg-AEsCD.js";function t(){return e(`_q_`)}export{t};
