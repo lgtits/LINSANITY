@@ -1,65 +1,123 @@
 [
   {
-    "id": "s1", "name": "王小明", "grade": 3,
-    "parentName": "王大明", "phone": "0912-345-678",
-    "scheduleDays": [1, 3, 5], "notes": "對花生過敏",
+    "id": "s1",
+    "name": "王小明",
+    "grade": 3,
+    "parentId": "p1",
+    "scheduleDays": [1, 3, 5],
+    "notes": "對花生過敏",
     "lineUserId": "Uabc1234567890demo1",
-    "archived": false, "deleted": false
+    "archived": false,
+    "deleted": false
   },
   {
-    "id": "s2", "name": "李小華", "grade": 4,
-    "parentName": "李志明", "phone": "0923-456-789",
-    "scheduleDays": [2, 4], "notes": "",
+    "id": "s2",
+    "name": "李小華",
+    "grade": 4,
+    "parentId": "p2",
+    "scheduleDays": [2, 4],
+    "notes": "",
     "lineUserId": "Uabc1234567890demo2",
-    "archived": false, "deleted": false
+    "archived": false,
+    "deleted": false
   },
   {
-    "id": "s3", "name": "陳美玲", "grade": 3,
-    "parentName": "陳建國", "phone": "0934-567-890",
-    "scheduleDays": [1, 2, 3, 4, 5], "notes": "素食",
+    "id": "s3",
+    "name": "陳美玲",
+    "grade": 3,
+    "parentId": "p3",
+    "scheduleDays": [1, 2, 3, 4, 5],
+    "notes": "素食",
     "lineUserId": "",
-    "archived": false, "deleted": false
+    "archived": false,
+    "deleted": false
   },
   {
-    "id": "s4", "name": "張志豪", "grade": 5,
-    "parentName": "張文雄", "phone": "0945-678-901",
-    "scheduleDays": [1, 3], "notes": "",
+    "id": "s4",
+    "name": "張志豪",
+    "grade": 5,
+    "parentId": "p4",
+    "scheduleDays": [1, 3],
+    "notes": "",
     "lineUserId": "Uabc1234567890demo4",
-    "archived": false, "deleted": false
+    "archived": false,
+    "deleted": false
   },
   {
-    "id": "s5", "name": "林佳芬", "grade": 2,
-    "parentName": "林秀蘭", "phone": "0956-789-012",
-    "scheduleDays": [2, 4, 5], "notes": "",
+    "id": "s5",
+    "name": "林佳芬",
+    "grade": 2,
+    "parentId": "p5",
+    "scheduleDays": [2, 4, 5],
+    "notes": "",
     "lineUserId": "",
-    "archived": false, "deleted": false
+    "archived": false,
+    "deleted": false
   },
   {
-    "id": "s6", "name": "吳俊賢", "grade": 6,
-    "parentName": "吳勇志", "phone": "0967-890-123",
-    "scheduleDays": [1, 2, 3, 4, 5], "notes": "",
+    "id": "s6",
+    "name": "吳俊賢",
+    "grade": 6,
+    "parentId": "p6",
+    "scheduleDays": [1, 2, 3, 4, 5],
+    "notes": "",
     "lineUserId": "Uabc1234567890demo6",
-    "archived": false, "deleted": false
+    "archived": false,
+    "deleted": false
   },
   {
-    "id": "s7", "name": "趙小玲", "grade": 5,
-    "parentName": "趙建華", "phone": "0978-901-234",
-    "scheduleDays": [1, 3, 5], "notes": "已畢業，保留記錄",
+    "id": "s7",
+    "name": "趙小玲",
+    "grade": 5,
+    "parentId": "p7",
+    "scheduleDays": [1, 3, 5],
+    "notes": "已畢業，保留記錄",
     "lineUserId": "",
-    "archived": true, "deleted": false
+    "archived": true,
+    "deleted": false
   },
   {
-    "id": "s8", "name": "劉宗翰", "grade": 6,
-    "parentName": "劉志遠", "phone": "0989-012-345",
-    "scheduleDays": [2, 4], "notes": "",
+    "id": "s8",
+    "name": "劉宗翰",
+    "grade": 6,
+    "parentId": "p8",
+    "scheduleDays": [2, 4],
+    "notes": "",
     "lineUserId": "",
-    "archived": true, "deleted": false
+    "archived": true,
+    "deleted": false
   },
   {
-    "id": "s9", "name": "蔡依婷", "grade": 4,
-    "parentName": "蔡明宏", "phone": "0990-123-456",
-    "scheduleDays": [1, 2, 3], "notes": "轉學",
+    "id": "s9",
+    "name": "蔡依婷",
+    "grade": 4,
+    "parentId": "p9",
+    "scheduleDays": [1, 2, 3],
+    "notes": "轉學",
     "lineUserId": "",
-    "archived": false, "deleted": true
+    "archived": false,
+    "deleted": true
+  },
+  {
+    "id": "s10",
+    "name": "王小芳",
+    "grade": 1,
+    "parentId": "p1",
+    "scheduleDays": [1, 3, 5],
+    "notes": "",
+    "lineUserId": "",
+    "archived": false,
+    "deleted": false
+  },
+  {
+    "id": "s11",
+    "name": "吳小雯",
+    "grade": 4,
+    "parentId": "p6",
+    "scheduleDays": [1, 2, 3, 4, 5],
+    "notes": "",
+    "lineUserId": "",
+    "archived": false,
+    "deleted": false
   }
 ]

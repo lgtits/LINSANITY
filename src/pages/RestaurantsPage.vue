@@ -99,7 +99,9 @@
                   <q-badge :color="m.available ? 'positive' : 'grey'">{{ m.available ? '供應中' : '停供' }}</q-badge>
                 </div>
                 <div class="text-body2 text-grey-7">{{ restaurantName(m.restaurantId) }}</div>
-                <div class="text-h6 text-primary q-mt-xs">${{ m.price }}</div>
+                <div class="text-h6 text-primary q-mt-xs">${{ m.price }}
+                  <span class="text-body2 text-grey-6 q-ml-xs">預設 {{ m.defaultQty ?? 1 }} 份</span>
+                </div>
               </div>
               <div class="col-auto column q-gutter-xs">
                 <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEditMenu(m)" />
@@ -196,6 +198,7 @@
             />
             <q-input v-model="mForm.name" label="餐點名稱 *" outlined dense :rules="[v => !!v || '必填']" />
             <q-input v-model.number="mForm.price" label="價格 *" outlined dense type="number" :rules="[v => v > 0 || '請輸入正確價格']" />
+            <q-input v-model.number="mForm.defaultQty" label="預設數量 *" outlined dense type="number" min="1" :rules="[v => v >= 1 || '至少為 1']" />
             <div class="row justify-end q-mt-md q-gutter-sm">
               <q-btn flat label="取消" v-close-popup />
               <q-btn type="submit" color="primary" :label="isEdit ? '更新' : '新增'" />
@@ -224,7 +227,7 @@ const showRestaurantDialog = ref(false)
 const showMenuDialog = ref(false)
 
 const emptyR = () => ({ name: '', phone: '', address: '' })
-const emptyM = () => ({ restaurantId: '', name: '', price: 0 })
+const emptyM = () => ({ restaurantId: '', name: '', price: 0, defaultQty: 1 })
 const rForm = ref(emptyR())
 const mForm = ref(emptyM())
 
@@ -237,11 +240,12 @@ const rColumns = [
 ]
 
 const mColumns = [
-  { name: 'restaurantId', label: '餐廳', field: 'restaurantId', align: 'left' },
-  { name: 'name',         label: '餐點', field: 'name',         align: 'left', sortable: true },
-  { name: 'price',        label: '價格', field: 'price',        align: 'right', sortable: true },
-  { name: 'available',    label: '狀態', field: 'available',    align: 'center' },
-  { name: 'actions',      label: '操作', field: 'actions',      align: 'center' }
+  { name: 'restaurantId', label: '餐廳',   field: 'restaurantId', align: 'left' },
+  { name: 'name',         label: '餐點',   field: 'name',         align: 'left', sortable: true },
+  { name: 'price',        label: '價格',   field: 'price',        align: 'right', sortable: true },
+  { name: 'defaultQty',   label: '預設數量', field: 'defaultQty', align: 'center' },
+  { name: 'available',    label: '狀態',   field: 'available',    align: 'center' },
+  { name: 'actions',      label: '操作',   field: 'actions',      align: 'center' }
 ]
 
 const restaurantOptions = computed(() =>

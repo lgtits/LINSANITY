@@ -13,7 +13,6 @@
       </div>
       <q-separator />
       <q-list padding>
-
         <!-- 學生管理 群組 -->
         <q-expansion-item
           icon="people"
@@ -24,9 +23,12 @@
           <q-item
             v-for="item in studentNavItems"
             :key="item.to"
-            clickable :to="item.to" exact
+            clickable
+            :to="item.to"
+            exact
             active-class="text-primary bg-green-1"
-            rounded v-ripple
+            rounded
+            v-ripple
             class="q-pl-lg"
             @click="$q.screen.lt.md && (drawerOpen = false)"
           >
@@ -37,13 +39,16 @@
           </q-item>
         </q-expansion-item>
 
-        <!-- 單層：點餐、餐費記錄、餐廳管理 -->
+        <!-- 單層：點餐、餐費記錄、訂餐管理 -->
         <q-item
           v-for="item in singleNavItems"
           :key="item.to"
-          clickable :to="item.to" exact
+          clickable
+          :to="item.to"
+          exact
           active-class="text-primary bg-green-1"
-          rounded v-ripple
+          rounded
+          v-ripple
           @click="$q.screen.lt.md && (drawerOpen = false)"
         >
           <q-item-section avatar>
@@ -62,9 +67,12 @@
           <q-item
             v-for="item in tuitionNavItems"
             :key="item.to"
-            clickable :to="item.to" exact
+            clickable
+            :to="item.to"
+            exact
             active-class="text-primary bg-green-1"
-            rounded v-ripple
+            rounded
+            v-ripple
             class="q-pl-lg"
             @click="$q.screen.lt.md && (drawerOpen = false)"
           >
@@ -85,9 +93,12 @@
           <q-item
             v-for="item in broadcastNavItems"
             :key="item.to"
-            clickable :to="item.to" exact
+            clickable
+            :to="item.to"
+            exact
             active-class="text-primary bg-green-1"
-            rounded v-ripple
+            rounded
+            v-ripple
             class="q-pl-lg"
             @click="$q.screen.lt.md && (drawerOpen = false)"
           >
@@ -97,7 +108,6 @@
             <q-item-section>{{ item.label }}</q-item-section>
           </q-item>
         </q-expansion-item>
-
       </q-list>
     </q-drawer>
 
@@ -117,39 +127,43 @@ const $q = useQuasar()
 const drawerOpen = ref(true)
 
 const studentNavItems = [
-  { to: '/students',          icon: 'format_list_bulleted', label: '學生列表' },
-  { to: '/students/archived', icon: 'archive',              label: '封存學生' },
-  { to: '/students/deleted',  icon: 'delete_sweep',         label: '刪除記錄' }
+  { to: '/students', icon: 'format_list_bulleted', label: '學生列表' },
+  { to: '/students/parents', icon: 'family_restroom', label: '家長管理' },
+  { to: '/students/archived', icon: 'archive', label: '封存學生' },
+  { to: '/students/deleted', icon: 'delete_sweep', label: '刪除記錄' },
 ]
 
 const singleNavItems = [
-  { to: '/ordering',    icon: 'restaurant_menu',        label: '點餐' },
-  { to: '/meals',       icon: 'account_balance_wallet', label: '餐費記錄' },
-  { to: '/restaurants', icon: 'restaurant',             label: '餐廳管理' }
+  { to: '/ordering', icon: 'restaurant_menu', label: '點餐' },
+  { to: '/meals', icon: 'account_balance_wallet', label: '餐費記錄' },
+  { to: '/restaurants', icon: 'restaurant', label: '訂餐管理' },
 ]
 
 const tuitionNavItems = [
-  { to: '/tuition',       icon: 'calculate',  label: '費率計算' },
-  { to: '/tuition/rates', icon: 'tune',       label: '費率管理' }
+  { to: '/tuition',            icon: 'calculate',      label: '費率計算' },
+  { to: '/tuition/rates',      icon: 'tune',           label: '費率管理' },
+  { to: '/tuition/attendance', icon: 'fact_check',     label: '簽到記錄' },
 ]
 
 const broadcastNavItems = [
-  { to: '/broadcast',           icon: 'send',        label: '發送訊息' },
-  { to: '/broadcast/history',   icon: 'history',     label: '訊息記錄' },
-  { to: '/broadcast/templates', icon: 'description', label: '訊息模板' }
+  { to: '/broadcast', icon: 'send', label: '發送訊息' },
+  { to: '/broadcast/history', icon: 'history', label: '訊息記錄' },
+  { to: '/broadcast/templates', icon: 'description', label: '訊息模板' },
 ]
 
 const allTitles = {
-  '/students':          '學生列表',
+  '/students': '學生列表',
+  '/students/parents': '家長管理',
   '/students/archived': '封存學生',
-  '/students/deleted':  '刪除記錄',
-  '/ordering':          '點餐',
-  '/meals':             '餐費記錄',
-  '/restaurants':       '餐廳管理',
-  '/tuition':           '費率計算',
-  '/tuition/rates':     '費率管理',
-  '/broadcast':           '發送訊息',
-  '/broadcast/history':   '訊息記錄',
+  '/students/deleted': '刪除記錄',
+  '/ordering': '點餐',
+  '/meals': '餐費記錄',
+  '/restaurants': '訂餐管理',
+  '/tuition': '費率計算',
+  '/tuition/rates': '費率管理',
+  '/tuition/attendance': '簽到記錄',
+  '/broadcast': '發送訊息',
+  '/broadcast/history': '訊息記錄',
   '/broadcast/templates': '訊息模板',
 }
 

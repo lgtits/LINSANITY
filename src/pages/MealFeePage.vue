@@ -198,6 +198,7 @@ import { useQuasar } from 'quasar'
 import * as XLSX from 'xlsx'
 import { mealService } from '../services/mealService'
 import { orderService } from '../services/orderService'
+import { studentService } from '../services/studentService'
 
 const $q = useQuasar()
 const loading = ref(true)
@@ -219,8 +220,21 @@ function getWeekdayText(dateStr) {
 const todayOrders   = ref([])
 const historyOrders = ref([])
 const historyLoaded = ref(false)
-const balances      = ref({})
+const balances      = ref({})   // { parentId: balance }
+const allStudents   = ref([])
 const recordTab     = ref('today')
+
+// studentId → parentId 對照表
+const studentParentMap = computed(() => {
+  const map = {}
+  for (const s of allStudents.value) map[s.id] = s.parentId
+  return map
+})
+
+function parentIdOf(studentId) {
+  return studentParentMap.value[studentId] ?? studentId
+}
+
 
 function groupByStudent(orderList) {
   const map = new Map()
@@ -295,16 +309,21 @@ watch(recordTab, tab => { if (tab === 'history') loadHistory() })
 
 onMounted(async () => {
   try {
-    todayOrders.value = await orderService.getToday()
-    balances.value    = await mealService.getAllBalances()
+    ;[todayOrders.value, balances.value, allStudents.value] = await Promise.all([
+      orderService.getToday(),
+      mealService.getAllBalances(),
+      studentService.getAll()
+    ])
   } finally {
     loading.value = false
   }
 })
 
 async function refreshOrders() {
-  todayOrders.value = await orderService.getToday()
-  balances.value    = await mealService.getAllBalances()
+  ;[todayOrders.value, balances.value] = await Promise.all([
+    orderService.getToday(),
+    mealService.getAllBalances()
+  ])
   if (historyLoaded.value) {
     const all = await orderService.getAll()
     historyOrders.value = all.filter(o => o.date !== todayStr)
@@ -321,7 +340,7 @@ function confirmDeleteOrder(order) {
     persistent: true
   }).onOk(async () => {
     await orderService.deleteOrder(order.id)
-    await mealService.topup(order.studentId, order.total, `退款：${order.restaurantName} ${order.date}`)
+    await mealService.topup(parentIdOf(order.studentId), order.total, `退款：${order.restaurantName} ${order.date}`)
     await refreshOrders()
     $q.notify({ message: `已退款 $${order.total} 給 ${order.studentName}`, color: 'positive', icon: 'savings' })
   })
@@ -337,31 +356,42 @@ function confirmDeleteItem(order, item) {
   }).onOk(async () => {
     const refund = item.price * (item.qty || 1)
     await orderService.deleteOrderItem(order.id, item.itemId)
-    await mealService.topup(order.studentId, refund, `退款：${order.restaurantName} - ${item.menuItemName}${item.qty > 1 ? '×' + item.qty : ''}`)
+    await mealService.topup(parentIdOf(order.studentId), refund, `退款：${order.restaurantName} - ${item.menuItemName}${item.qty > 1 ? '×' + item.qty : ''}`)
     await refreshOrders()
     $q.notify({ message: `已退款 $${refund}（${item.menuItemName}${item.qty > 1 ? '×' + item.qty : ''}）`, color: 'positive', icon: 'savings' })
   })
 }
 
-// ── 通知文字 ──
-function buildStudentDayNotification(record) {
+// ── 通知文字（以家長為單位，含當日所有孩子訂單）──
+function buildParentDayNotification(record) {
+  const parentId = parentIdOf(record.studentId)
+  const familyRecords = todayRecords.value.filter(r => parentIdOf(r.studentId) === parentId)
+  const parentBalance = balances.value[parentId] ?? 0
+  const warning = parentBalance < 100 ? '\n⚠️ 餘額不足，請盡快儲值' : ''
   const wt = getWeekdayText(record.date)
-  const balance = balances.value[record.studentId] ?? 0
-  const warning = balance < 100 ? '\n⚠️ 餘額不足，請盡快儲值' : ''
+  const isMultiChild = familyRecords.length > 1
   const lines = [`📢 點餐通知 ${record.date}（${wt}）`]
-  for (const order of record.orders) {
-    const itemsText = order.items.map(i =>
-      i.qty > 1 ? `${i.menuItemName}×${i.qty} $${i.price * i.qty}` : `${i.menuItemName} $${i.price}`
-    ).join('、')
-    lines.push(`🍱 ${order.restaurantName}：${itemsText}`)
+
+  for (const rec of familyRecords) {
+    if (isMultiChild) lines.push(`👤 ${rec.studentName}`)
+    for (const order of rec.orders) {
+      const itemsText = order.items.map(i =>
+        i.qty > 1 ? `${i.menuItemName}×${i.qty} $${i.price * i.qty}` : `${i.menuItemName} $${i.price}`
+      ).join('、')
+      lines.push(`🍱 ${order.restaurantName}：${itemsText}`)
+    }
+    if (isMultiChild) lines.push(`  小計 $${rec.totalAmount}`)
   }
-  lines.push(`共 $${record.totalAmount}｜餘額 $${balance}${warning}`)
+
+  const familyTotal = familyRecords.reduce((s, r) => s + r.totalAmount, 0)
+  const balanceLabel = isMultiChild ? '家長餘額' : '餘額'
+  lines.push(`共 $${familyTotal}｜${balanceLabel} $${parentBalance}${warning}`)
   return lines.join('\n')
 }
 
 async function copyOneStudentNotification(record) {
   try {
-    await navigator.clipboard.writeText(buildStudentDayNotification(record))
+    await navigator.clipboard.writeText(buildParentDayNotification(record))
     $q.notify({ message: `${record.studentName} 通知已複製！`, color: 'positive', icon: 'content_copy' })
   } catch {
     $q.notify({ message: '複製失敗', color: 'warning' })
@@ -371,14 +401,35 @@ async function copyOneStudentNotification(record) {
 async function copyAllNotification() {
   const divider = '─'.repeat(22)
   const lines = [`📢 今日點餐通知 ${todayStr}（${todayWeekday}）`, divider]
+
+  const seenParents = new Set()
   for (const record of todayRecords.value) {
-    const balance = balances.value[record.studentId] ?? 0
+    const pid = parentIdOf(record.studentId)
+    if (seenParents.has(pid)) continue
+    seenParents.add(pid)
+
+    const familyRecords = todayRecords.value.filter(r => parentIdOf(r.studentId) === pid)
+    const balance = balances.value[pid] ?? 0
     const warning = balance < 100 ? ' ⚠️' : ''
-    const allItems = record.orders.flatMap(o =>
-      o.items.map(i => i.qty > 1 ? `${i.menuItemName}×${i.qty}` : i.menuItemName)
-    ).join('、')
-    lines.push(`${record.studentName}：${allItems} $${record.totalAmount}｜餘額 $${balance}${warning}`)
+    const familyTotal = familyRecords.reduce((s, r) => s + r.totalAmount, 0)
+
+    if (familyRecords.length === 1) {
+      const rec = familyRecords[0]
+      const allItems = rec.orders.flatMap(o =>
+        o.items.map(i => i.qty > 1 ? `${i.menuItemName}×${i.qty}` : i.menuItemName)
+      ).join('、')
+      lines.push(`${rec.studentName}：${allItems} $${familyTotal}｜餘額 $${balance}${warning}`)
+    } else {
+      for (const rec of familyRecords) {
+        const allItems = rec.orders.flatMap(o =>
+          o.items.map(i => i.qty > 1 ? `${i.menuItemName}×${i.qty}` : i.menuItemName)
+        ).join('、')
+        lines.push(`${rec.studentName}：${allItems} $${rec.totalAmount}`)
+      }
+      lines.push(`  家長共 $${familyTotal}｜餘額 $${balance}${warning}`)
+    }
   }
+
   lines.push(divider)
   lines.push(`共 ${todayRecords.value.length} 位・總計 $${todayTotal.value}`)
   try {

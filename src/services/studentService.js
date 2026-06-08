@@ -1,12 +1,16 @@
 import { api } from '../lib/api'
 import { supabase, isDemoMode } from '../lib/supabase'
 
+// 家長姓名/電話為衍生欄位：supabase 用 join、demo 用 parents 拼接，單一真相在 parents
+const SELECT = '*, parents(name, phone)'
+
 const toApp = row => ({
   id: row.id,
   name: row.name,
   grade: row.grade,
-  parentName: row.parent_name ?? row.parentName,
-  phone: row.phone,
+  parentId: row.parent_id ?? row.parentId ?? '',
+  parentName: row.parents?.name ?? '',
+  phone: row.parents?.phone ?? '',
   scheduleDays: row.schedule_days ?? row.scheduleDays ?? [],
   notes: row.notes || '',
   lineUserId: row.line_user_id ?? row.lineUserId ?? '',
@@ -17,8 +21,7 @@ const toApp = row => ({
 const toDb = data => ({
   name: data.name,
   grade: data.grade,
-  parent_name: data.parentName,
-  phone: data.phone,
+  parent_id: data.parentId,
   line_user_id: data.lineUserId ?? '',
   schedule_days: data.scheduleDays,
   notes: data.notes,
@@ -26,14 +29,25 @@ const toDb = data => ({
   deleted: data.deleted ?? false
 })
 
+// demo：用 parents 補上家長姓名/電話
+async function stitchParents(students) {
+  const parents = await api.get('parents')
+  const map = Object.fromEntries(parents.map(p => [p.id, p]))
+  return students.map(s => ({
+    ...s,
+    parentName: map[s.parentId]?.name ?? '',
+    phone: map[s.parentId]?.phone ?? ''
+  }))
+}
+
 export const studentService = {
   // 只回傳在籍學生（未封存、未刪除）
   async getAll() {
     if (isDemoMode) {
       const all = await api.get('students')
-      return all.filter(s => !s.archived && !s.deleted)
+      return stitchParents(all.filter(s => !s.archived && !s.deleted))
     }
-    const { data, error } = await supabase.from('students').select('*')
+    const { data, error } = await supabase.from('students').select(SELECT)
       .eq('archived', false).eq('deleted', false).order('grade').order('name')
     if (error) throw error
     return data.map(toApp)
@@ -42,9 +56,9 @@ export const studentService = {
   async getByDay(weekday) {
     if (isDemoMode) {
       const all = await api.get('students')
-      return all.filter(s => !s.archived && !s.deleted && s.scheduleDays.includes(weekday))
+      return stitchParents(all.filter(s => !s.archived && !s.deleted && s.scheduleDays.includes(weekday)))
     }
-    const { data, error } = await supabase.from('students').select('*')
+    const { data, error } = await supabase.from('students').select(SELECT)
       .eq('archived', false).eq('deleted', false)
       .filter('schedule_days', 'cs', `{${weekday}}`)
     if (error) throw error
@@ -54,9 +68,9 @@ export const studentService = {
   async getArchived() {
     if (isDemoMode) {
       const all = await api.get('students')
-      return all.filter(s => s.archived && !s.deleted)
+      return stitchParents(all.filter(s => s.archived && !s.deleted))
     }
-    const { data, error } = await supabase.from('students').select('*')
+    const { data, error } = await supabase.from('students').select(SELECT)
       .eq('archived', true).eq('deleted', false).order('grade').order('name')
     if (error) throw error
     return data.map(toApp)
@@ -65,24 +79,32 @@ export const studentService = {
   async getDeleted() {
     if (isDemoMode) {
       const all = await api.get('students')
-      return all.filter(s => s.deleted)
+      return stitchParents(all.filter(s => s.deleted))
     }
-    const { data, error } = await supabase.from('students').select('*')
+    const { data, error } = await supabase.from('students').select(SELECT)
       .eq('deleted', true).order('grade').order('name')
     if (error) throw error
     return data.map(toApp)
   },
 
   async create(data) {
-    if (isDemoMode) return api.post('students', { ...data, archived: false, deleted: false })
-    const { data: result, error } = await supabase.from('students').insert(toDb(data)).select().single()
+    if (isDemoMode) {
+      const created = await api.post('students', { ...toCleanDemo(data), archived: false, deleted: false })
+      return (await stitchParents([created]))[0]
+    }
+    const { data: result, error } = await supabase.from('students')
+      .insert(toDb(data)).select(SELECT).single()
     if (error) throw error
     return toApp(result)
   },
 
   async update(id, data) {
-    if (isDemoMode) return api.put('students', id, data)
-    const { data: result, error } = await supabase.from('students').update(toDb(data)).eq('id', id).select().single()
+    if (isDemoMode) {
+      const updated = await api.put('students', id, toCleanDemo(data))
+      return (await stitchParents([updated]))[0]
+    }
+    const { data: result, error } = await supabase.from('students')
+      .update(toDb(data)).eq('id', id).select(SELECT).single()
     if (error) throw error
     return toApp(result)
   },
@@ -115,5 +137,19 @@ export const studentService = {
     if (isDemoMode) return api.remove('students', id)
     const { error } = await supabase.from('students').delete().eq('id', id)
     if (error) throw error
+  }
+}
+
+// demo 寫入只保留正規化欄位，不存 parentName/phone（避免反正規化複本）
+function toCleanDemo(data) {
+  return {
+    name: data.name,
+    grade: data.grade,
+    parentId: data.parentId,
+    lineUserId: data.lineUserId ?? '',
+    scheduleDays: data.scheduleDays,
+    notes: data.notes ?? '',
+    ...(data.archived !== undefined ? { archived: data.archived } : {}),
+    ...(data.deleted !== undefined ? { deleted: data.deleted } : {})
   }
 }

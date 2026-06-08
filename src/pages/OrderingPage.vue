@@ -95,50 +95,6 @@
         </q-card-section>
       </q-card>
 
-      <!-- 加入其他學生 -->
-      <q-select
-        v-model="extraStudentId"
-        :options="extraStudentOptions"
-        label="＋ 加入其他學生"
-        outlined dense emit-value map-options clearable
-        class="q-mb-lg"
-        @update:model-value="addExtraStudent"
-      />
-
-      <!-- 點餐總覽 -->
-      <q-card class="bg-grey-1" flat bordered>
-        <q-card-section>
-          <div class="text-subtitle1 text-weight-bold q-mb-md">
-            <q-icon name="receipt_long" class="q-mr-xs" />點餐總覽
-          </div>
-          <div v-for="order in orderedStudents" :key="order.studentId" class="q-mb-sm">
-            <div class="row items-center justify-between">
-              <span class="text-weight-bold">{{ order.studentName }}</span>
-              <span class="text-primary text-weight-bold">${{ getSubtotal(order) }}</span>
-            </div>
-            <div v-for="item in order.items" :key="item.itemId"
-              class="row items-center q-pl-sm text-body2 text-grey-7">
-              <q-icon name="fiber_manual_record" size="6px" color="grey-5" class="q-mr-xs" />
-              <span class="col">
-                {{ item.menuItemName }}
-                <span v-if="item.qty > 1" class="text-primary"> ×{{ item.qty }}</span>
-              </span>
-              <span>${{ item.price * item.qty }}</span>
-            </div>
-          </div>
-          <q-separator class="q-my-sm" />
-          <div class="row justify-between">
-            <span class="text-subtitle1 text-weight-bold">總計</span>
-            <span class="text-h5 text-primary text-weight-bold">${{ grandTotal }}</span>
-          </div>
-        </q-card-section>
-        <q-card-actions align="right" class="q-pa-md">
-          <q-btn color="primary" icon="check_circle" label="確認點餐" size="md"
-            :disable="grandTotal === 0" @click="confirmOrder">
-            <q-tooltip v-if="grandTotal === 0">請先為學生選擇餐點</q-tooltip>
-          </q-btn>
-        </q-card-actions>
-      </q-card>
     </template>
 
     <!-- 空狀態 -->
@@ -148,6 +104,52 @@
         {{ hasLoaded ? '今日無學生點餐' : '請選擇日期與餐廳後點擊「載入學生」' }}
       </div>
     </div>
+
+    <!-- 加入其他學生（載入後顯示，不論人數） -->
+    <q-select
+      v-if="hasLoaded"
+      v-model="extraStudentId"
+      :options="extraStudentOptions"
+      label="＋ 加入其他學生"
+      outlined dense emit-value map-options clearable
+      class="q-mb-lg"
+      @update:model-value="addExtraStudent"
+    />
+
+    <!-- 點餐總覽 -->
+    <q-card v-if="studentOrders.length" class="bg-grey-1" flat bordered>
+      <q-card-section>
+        <div class="text-subtitle1 text-weight-bold q-mb-md">
+          <q-icon name="receipt_long" class="q-mr-xs" />點餐總覽
+        </div>
+        <div v-for="order in orderedStudents" :key="order.studentId" class="q-mb-sm">
+          <div class="row items-center justify-between">
+            <span class="text-weight-bold">{{ order.studentName }}</span>
+            <span class="text-primary text-weight-bold">${{ getSubtotal(order) }}</span>
+          </div>
+          <div v-for="item in order.items" :key="item.itemId"
+            class="row items-center q-pl-sm text-body2 text-grey-7">
+            <q-icon name="fiber_manual_record" size="6px" color="grey-5" class="q-mr-xs" />
+            <span class="col">
+              {{ item.menuItemName }}
+              <span v-if="item.qty > 1" class="text-primary"> ×{{ item.qty }}</span>
+            </span>
+            <span>${{ item.price * item.qty }}</span>
+          </div>
+        </div>
+        <q-separator class="q-my-sm" />
+        <div class="row justify-between">
+          <span class="text-subtitle1 text-weight-bold">總計</span>
+          <span class="text-h5 text-primary text-weight-bold">${{ grandTotal }}</span>
+        </div>
+      </q-card-section>
+      <q-card-actions align="right" class="q-pa-md">
+        <q-btn color="primary" icon="check_circle" label="確認點餐" size="md"
+          :disable="grandTotal === 0" @click="confirmOrder">
+          <q-tooltip v-if="grandTotal === 0">請先為學生選擇餐點</q-tooltip>
+        </q-btn>
+      </q-card-actions>
+    </q-card>
 
     <!-- ══════ 當日已確認訂單（以 batch 為單位） ══════ -->
     <template v-if="confirmedBatches.length">
@@ -182,6 +184,26 @@
                 </div>
               </div>
               <span class="text-primary text-weight-bold q-ml-sm">${{ order.total }}</span>
+            </div>
+          </div>
+
+          <!-- 品項彙總（方便叫餐） -->
+          <q-separator class="q-my-sm" />
+          <div class="bg-blue-1 rounded-borders q-pa-sm">
+            <div class="text-caption text-weight-bold text-blue-9 q-mb-xs">
+              <q-icon name="receipt" size="14px" class="q-mr-xs" />品項彙總
+            </div>
+            <div v-for="s in batch.itemSummary" :key="s.name + '_' + s.qty"
+              class="row items-center text-body2 q-pl-xs">
+              <span class="col">
+                {{ s.name }}
+                <span v-if="s.qty > 1" class="text-grey-7">×{{ s.qty }}</span>
+              </span>
+              <span class="text-primary text-weight-bold q-mr-md">×{{ s.count }}份</span>
+              <span class="text-grey-7" style="min-width:48px;text-align:right">${{ s.amount }}</span>
+            </div>
+            <div class="row justify-end text-caption text-grey-7 q-mt-xs">
+              合計 {{ batch.portions }} 份・${{ batch.batchTotal }}
             </div>
           </div>
         </q-card-section>
@@ -258,7 +280,25 @@ const confirmedBatches = computed(() => {
     batch.studentOrders.push(order)
     batch.batchTotal += order.total
   }
-  return [...map.values()].sort((a, b) => (a.datetime || '').localeCompare(b.datetime || ''))
+  // 每筆 batch 的品項彙總：依「品項＋每份數量」分組，算份數，方便叫餐
+  // 例：兩位都點水餃×10 → 豬肉水餃 ×10 ×2份；三位都點便當 → 排骨便當 ×3份
+  const batches = [...map.values()]
+  for (const b of batches) {
+    const im = new Map()
+    for (const order of b.studentOrders) {
+      for (const item of order.items) {
+        const qty = item.qty || 1
+        const k = `${item.menuItemId || item.menuItemName}__${qty}`
+        if (!im.has(k)) im.set(k, { name: item.menuItemName, qty, count: 0, amount: 0 })
+        const e = im.get(k)
+        e.count += 1
+        e.amount += item.price * qty
+      }
+    }
+    b.itemSummary = [...im.values()].sort((a, c) => c.count - a.count || a.name.localeCompare(c.name, 'zh-TW'))
+    b.portions = b.itemSummary.reduce((s, i) => s + i.count, 0)
+  }
+  return batches.sort((a, b) => (a.datetime || '').localeCompare(b.datetime || ''))
 })
 
 const confirmedTotal = computed(() => confirmedBatches.value.reduce((s, b) => s + b.batchTotal, 0))
@@ -280,7 +320,7 @@ function batchUid() {
 
 function makeOrder(s, scheduled = true) {
   addingSelection[s.id] = null
-  return { studentId: s.id, studentName: s.name, grade: s.grade, items: [], scheduled }
+  return { studentId: s.id, studentName: s.name, grade: s.grade, parentId: s.parentId, items: [], scheduled }
 }
 
 function addItemToOrder(order, menuItemId) {
@@ -292,7 +332,7 @@ function addItemToOrder(order, menuItemId) {
     menuItemId: item.id,
     menuItemName: item.name,
     price: item.price,
-    qty: 1
+    qty: item.defaultQty || 1
   })
   addingSelection[order.studentId] = null
 }
@@ -300,7 +340,8 @@ function addItemToOrder(order, menuItemId) {
 function removeItem(order, idx) { order.items.splice(idx, 1) }
 
 async function loadConfirmedOrders() {
-  confirmedOrders.value = await orderService.getByDate(orderDate.value)
+  // 讀 saveOrder 寫入的同一份訂單（demo: todayOrders；supabase: orders），依日期過濾
+  confirmedOrders.value = await orderService.getConfirmedByDate(orderDate.value)
 }
 
 onMounted(async () => {
@@ -360,10 +401,11 @@ async function confirmOrder() {
       studentId: o.studentId,
       studentName: o.studentName,
       grade: o.grade,
+      parentId: o.parentId,
       items: o.items
     })
     const itemsText = o.items.map(i => i.qty > 1 ? `${i.menuItemName}×${i.qty}` : i.menuItemName).join('、')
-    await mealService.deduct(o.studentId, total, `${restaurant.name} - ${itemsText}`, orderDate.value)
+    await mealService.deduct(o.parentId, o.studentId, total, `${restaurant.name} - ${itemsText}`, orderDate.value)
   }
 
   $q.notify({

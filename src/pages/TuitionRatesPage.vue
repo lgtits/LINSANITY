@@ -222,8 +222,6 @@ const $q = useQuasar()
 const loading = ref(true)
 const allRates = ref({})
 
-const SAVED_KEY = 'linsanity_tuition_monthly_rates'
-
 const defaultForm = () => ({
   monthKey: '',
   absentThreshold: 7,
@@ -266,20 +264,11 @@ function fmtNum(n) { return Number(n).toLocaleString('zh-TW') }
 
 onMounted(async () => {
   try {
-    const saved = localStorage.getItem(SAVED_KEY)
-    if (saved) {
-      try { allRates.value = JSON.parse(saved) } catch (e) { console.warn(e) }
-    }
-    const fetched = await tuitionService.getRates()
-    allRates.value = { ...fetched, ...allRates.value }
+    allRates.value = await tuitionService.getRates()
   } finally {
     loading.value = false
   }
 })
-
-function persist() {
-  localStorage.setItem(SAVED_KEY, JSON.stringify(allRates.value))
-}
 
 // ── 新增/編輯 ──
 const showDialog = ref(false)
@@ -311,7 +300,7 @@ async function save() {
   }
   allRates.value = { ...allRates.value, [mk]: rateData }
   await tuitionService.updateRates(mk, rateData)
-  persist()
+
   showDialog.value = false
   $q.notify({ message: `${mk} 費率已儲存`, color: 'positive', icon: 'check' })
 }
@@ -331,7 +320,7 @@ async function doCopy() {
   const source = allRates.value[copySourceKey.value]
   allRates.value = { ...allRates.value, [copyTargetKey.value]: { ...source } }
   await tuitionService.updateRates(copyTargetKey.value, source)
-  persist()
+
   showCopyDialog.value = false
   $q.notify({ message: `已複製到 ${copyTargetKey.value}`, color: 'positive', icon: 'content_copy' })
 }

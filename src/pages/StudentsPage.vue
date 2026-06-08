@@ -77,8 +77,8 @@
         <q-card-actions class="q-px-md q-py-xs row items-center">
           <span class="text-body2">
             餘額：
-            <q-badge :color="balanceColor(balances[s.id])" class="q-pa-xs" style="font-size: 13px">
-              ${{ balances[s.id] ?? 0 }}
+            <q-badge :color="balanceColor(balances[s.parentId])" class="q-pa-xs" style="font-size: 13px">
+              ${{ balances[s.parentId] ?? 0 }}
             </q-badge>
           </span>
           <q-space />
@@ -134,11 +134,11 @@
         <q-td :props="props">
           <span class="text-body2">
             <q-badge
-              :color="balanceColor(balances[props.row.id])"
+              :color="balanceColor(balances[props.row.parentId])"
               class="q-pa-xs"
               style="font-size: 13px"
             >
-              ${{ balances[props.row.id] ?? 0 }}
+              ${{ balances[props.row.parentId] ?? 0 }}
             </q-badge>
           </span>
         </q-td>
@@ -209,8 +209,29 @@
               map-options
               :rules="[(v) => !!v || '請選擇年級']"
             />
-            <q-input v-model="form.parentName" label="家長姓名" outlined dense />
-            <q-input v-model="form.phone" label="聯絡電話" outlined dense />
+            <q-select
+              v-model="form.parentId"
+              :options="parentSelectOptions"
+              label="家長 *"
+              outlined dense emit-value map-options use-input input-debounce="0"
+              @filter="filterParents"
+              :rules="[(v) => !!v || '請選擇家長']"
+            >
+              <template #no-option>
+                <q-item>
+                  <q-item-section class="text-grey">查無家長，點右側 + 新增</q-item-section>
+                </q-item>
+              </template>
+              <template #after>
+                <q-btn flat dense round icon="person_add" color="primary" @click="openInlineParent">
+                  <q-tooltip>新增家長</q-tooltip>
+                </q-btn>
+              </template>
+            </q-select>
+            <div v-if="selectedParent" class="text-caption text-grey-7 q-pl-sm q-mb-xs">
+              <q-icon name="phone" size="14px" />{{ selectedParent.phone || '未填電話' }}
+              ・名下 {{ siblingCount }} 位學生
+            </div>
             <q-input v-model="form.lineUserId" label="LINE ID" outlined dense clearable />
             <div class="text-body2 text-grey-8 q-mt-sm">上課星期</div>
             <div class="row q-gutter-sm">
@@ -259,9 +280,9 @@
           <div class="text-body2 text-grey-6">剩餘餐費</div>
           <div
             class="text-h3 text-weight-bold"
-            :class="'text-' + balanceColor(balances[detailStudent?.id])"
+            :class="'text-' + balanceColor(balances[detailStudent?.parentId])"
           >
-            ${{ balances[detailStudent?.id] ?? 0 }}
+            ${{ balances[detailStudent?.parentId] ?? 0 }}
           </div>
         </q-card-section>
 
@@ -294,6 +315,29 @@
             </q-item>
           </q-list>
         </q-scroll-area>
+      </q-card>
+    </q-dialog>
+
+    <!-- ══════════ 新增家長 Dialog（學生表單內 inline）══════════ -->
+    <q-dialog v-model="showInlineParent" persistent>
+      <q-card style="width: min(95vw, 360px)">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">新增家長</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <q-card-section>
+          <q-form @submit.prevent="createParentInline" class="q-gutter-sm">
+            <q-input v-model="inlineParent.name" label="家長姓名 *" outlined dense
+              :rules="[(v) => !!v || '請填寫姓名']" />
+            <q-input v-model="inlineParent.phone" label="聯絡電話" outlined dense
+              hint="作為防止重複的依據，建議填寫" />
+            <div class="row justify-end q-mt-md q-gutter-sm">
+              <q-btn flat label="取消" v-close-popup />
+              <q-btn type="submit" color="primary" label="新增並選用" />
+            </div>
+          </q-form>
+        </q-card-section>
       </q-card>
     </q-dialog>
 
@@ -334,11 +378,13 @@ import { useQuasar } from 'quasar'
 import * as XLSX from 'xlsx'
 import { studentService } from '../services/studentService'
 import { mealService } from '../services/mealService'
+import { parentService } from '../services/parentService'
 
 const $q = useQuasar()
 
 const loading = ref(true)
 const students = ref([])
+const parents = ref([])
 const balances = ref({})
 const allTransactions = ref([])
 const search = ref('')
@@ -389,11 +435,11 @@ const filtered = computed(() => {
   )
 })
 
-const txByStudent = computed(() => {
+const txByParent = computed(() => {
   const map = {}
   for (const tx of allTransactions.value) {
-    if (!map[tx.studentId]) map[tx.studentId] = []
-    map[tx.studentId].push(tx)
+    if (!map[tx.parentId]) map[tx.parentId] = []
+    map[tx.parentId].push(tx)
   }
   for (const id of Object.keys(map)) {
     map[id].sort((a, b) => (b.datetime || b.date).localeCompare(a.datetime || a.date))
@@ -403,13 +449,37 @@ const txByStudent = computed(() => {
 
 onMounted(async () => {
   try {
-    students.value = await studentService.getAll()
-    balances.value = await mealService.getAllBalances()
-    allTransactions.value = await mealService.getAllTransactions()
+    ;[students.value, parents.value, balances.value, allTransactions.value] = await Promise.all([
+      studentService.getAll(),
+      parentService.getAll(),
+      mealService.getAllBalances(),
+      mealService.getAllTransactions(),
+    ])
   } finally {
     loading.value = false
   }
 })
+
+// ── 家長下拉（可搜尋）──
+const allParentOptions = computed(() =>
+  parents.value
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, 'zh-TW'))
+    .map((p) => ({ label: `${p.name}${p.phone ? '　' + p.phone : ''}`, value: p.id })),
+)
+const parentSelectOptions = ref([])
+function filterParents(val, update) {
+  update(() => {
+    const needle = val.toLowerCase()
+    parentSelectOptions.value = val
+      ? allParentOptions.value.filter((o) => o.label.toLowerCase().includes(needle))
+      : allParentOptions.value
+  })
+}
+const selectedParent = computed(() => parents.value.find((p) => p.id === form.value.parentId) || null)
+const siblingCount = computed(() =>
+  form.value.parentId ? students.value.filter((s) => s.parentId === form.value.parentId).length : 0,
+)
 
 async function refreshBalances() {
   balances.value = await mealService.getAllBalances()
@@ -422,8 +492,7 @@ const isEdit = ref(false)
 const emptyForm = () => ({
   name: '',
   grade: null,
-  parentName: '',
-  phone: '',
+  parentId: null,
   lineUserId: '',
   scheduleDays: [],
   notes: '',
@@ -433,23 +502,68 @@ const form = ref(emptyForm())
 function openAdd() {
   isEdit.value = false
   form.value = emptyForm()
+  parentSelectOptions.value = allParentOptions.value
   showFormDialog.value = true
 }
 
 function openEdit(student) {
   isEdit.value = true
   form.value = { ...student, scheduleDays: [...student.scheduleDays] }
+  parentSelectOptions.value = allParentOptions.value
   showFormDialog.value = true
 }
 
+// ── inline 新增家長 ──
+const showInlineParent = ref(false)
+const inlineParent = ref({ name: '', phone: '' })
+
+function openInlineParent() {
+  inlineParent.value = { name: '', phone: '' }
+  showInlineParent.value = true
+}
+
+async function createParentInline() {
+  // 防重複：同電話已存在就直接選用既有家長，不建立重複
+  if (inlineParent.value.phone) {
+    const existing = await parentService.findByPhone(inlineParent.value.phone)
+    if (existing) {
+      if (!parents.value.some((p) => p.id === existing.id)) parents.value.push(existing)
+      form.value.parentId = existing.id
+      showInlineParent.value = false
+      $q.notify({ message: `此電話已是「${existing.name}」，已為你選用`, color: 'info', icon: 'info' })
+      return
+    }
+  }
+  const created = await parentService.create({ name: inlineParent.value.name, phone: inlineParent.value.phone })
+  parents.value.push(created)
+  form.value.parentId = created.id
+  showInlineParent.value = false
+  $q.notify({ message: `已新增家長「${created.name}」並選用`, color: 'positive', icon: 'check' })
+}
+
 async function saveStudent() {
+  if (!form.value.parentId || !parents.value.some((p) => p.id === form.value.parentId)) {
+    $q.notify({ message: '請選擇家長', color: 'negative', icon: 'error' })
+    return
+  }
+  // 只送正規化欄位；家長姓名/電話由 service 從 parents 帶出（單一真相）
+  const payload = {
+    id: form.value.id,
+    name: form.value.name,
+    grade: form.value.grade,
+    parentId: form.value.parentId,
+    lineUserId: form.value.lineUserId ?? '',
+    scheduleDays: form.value.scheduleDays,
+    notes: form.value.notes ?? '',
+  }
+
   if (isEdit.value) {
-    await studentService.update(form.value.id, form.value)
-    const idx = students.value.findIndex((s) => s.id === form.value.id)
-    if (idx !== -1) students.value[idx] = { ...form.value }
+    const updated = await studentService.update(payload.id, payload)
+    const idx = students.value.findIndex((s) => s.id === payload.id)
+    if (idx !== -1) students.value[idx] = updated
     $q.notify({ message: '學生資料已更新', color: 'positive', icon: 'check' })
   } else {
-    const created = await studentService.create(form.value)
+    const created = await studentService.create(payload)
     students.value.push(created)
     $q.notify({ message: '學生新增成功', color: 'positive', icon: 'check' })
   }
@@ -478,7 +592,7 @@ const detailTransactions = ref([])
 
 function openDetail(student) {
   detailStudent.value = student
-  detailTransactions.value = txByStudent.value[student.id] || []
+  detailTransactions.value = txByParent.value[student.parentId] || []
   showDetail.value = true
 }
 
@@ -497,14 +611,14 @@ function openTopup(student) {
 
 async function doTopup() {
   await mealService.topup(
-    topupTarget.value.id,
+    topupTarget.value.parentId,
     topupAmount.value,
     topupNote.value || `儲值 $${topupAmount.value}`,
   )
   await refreshBalances()
   showTopupDialog.value = false
   $q.notify({
-    message: `儲值成功！${topupTarget.value.name} 餘額 $${balances.value[topupTarget.value.id]}`,
+    message: `儲值成功！${topupTarget.value.name} 餘額 $${balances.value[topupTarget.value.parentId]}`,
     color: 'positive',
     icon: 'savings',
   })
@@ -518,7 +632,7 @@ function exportStudents() {
     家長: s.parentName,
     電話: s.phone,
     上課日: s.scheduleDays.map((d) => dayLabel[d]).join('、'),
-    剩餘餐費: balances.value[s.id] ?? 0,
+    剩餘餐費: balances.value[s.parentId] ?? 0,
     備註: s.notes,
   }))
   writeExcel(data, [8, 7, 8, 13, 16, 10, 14], '學生列表', `學生列表_${today()}.xlsx`)

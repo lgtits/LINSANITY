@@ -20,5 +20,16 @@
     "halfFlatMeal": 5500,
     "halfDaily": 200,
     "halfMealDaily": 250
+  },
+  "2026-08": {
+    "absentThreshold": 7,
+    "fullFlat": 10000,
+    "fullFlatMeal": 10500,
+    "fullDaily": 400,
+    "fullMealDaily": 450,
+    "halfFlat": 5000,
+    "halfFlatMeal": 5500,
+    "halfDaily": 200,
+    "halfMealDaily": 250
   }
 }

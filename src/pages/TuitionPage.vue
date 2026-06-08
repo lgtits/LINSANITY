@@ -412,7 +412,7 @@
                 <!-- 右：日曆（不上課時隱藏） -->
                 <div v-if="props.row.settings.classType !== 'none'" class="col-12 col-md-6 flex flex-column">
                   <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
-                    <q-icon name="calendar_month" size="14px" class="q-mr-xs" />上課日曆與簽到
+                    <q-icon name="calendar_month" size="14px" class="q-mr-xs" />預計上課安排
                   </div>
                   <q-card flat bordered class="q-pa-md col flex justify-center items-center">
                     <div class="attendance-calendar-container full-width">
@@ -526,7 +526,6 @@ const classTypeOptions = [
 ]
 
 // ── 費率 ──
-const SAVED_MONTHLY_RATES_KEY = 'linsanity_tuition_monthly_rates'
 const allRates = ref({})
 
 const rates = computed(() => allRates.value[monthKey.value] || null)
@@ -689,10 +688,6 @@ watch(monthKey, loadMonth)
 
 onMounted(async () => {
   try {
-    const saved = localStorage.getItem(SAVED_MONTHLY_RATES_KEY)
-    if (saved) {
-      try { allRates.value = JSON.parse(saved) } catch (e) { console.warn('Failed to parse saved rates', e) }
-    }
     const mk = monthKey.value
     const [fetchedStudents, fetchedRates, enr, att] = await Promise.all([
       studentService.getAll(),
@@ -701,7 +696,7 @@ onMounted(async () => {
       tuitionService.getAttendance(mk)
     ])
     allStudents.value = fetchedStudents
-    allRates.value    = { ...fetchedRates, ...allRates.value }
+    allRates.value    = fetchedRates
     enrollment.value  = enr
     attendance.value  = att
     if (enrollment.value) initializeCalendars()
