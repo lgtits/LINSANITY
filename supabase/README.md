@@ -49,6 +49,15 @@
   `migrate-phase2.sql` 把那兩欄移除即可（程式即使欄位還在也能正常運作，移除只是清乾淨）。
 - 訂單的 `student_name`/`grade`/`restaurant_name` 仍是**下單當下快照**，**不要**改成即時 join。
 
+## LINE 推播 ID 放在家長（已完成）
+
+- LINE 是發給家長的（一個家長一個帳號、孩子共用），故 `line_user_id` 在 **`parents`**，
+  不在 students。學生表單不再填 LINE，改在「家長管理」維護。
+- **廣播改為家長導向**：收件人是家長，兄弟姊妹合併成一則；餐費通知彙整名下孩子當日費用 + 家庭餘額。
+- 廣播記錄的 `records` 由 `{studentId, studentName}` 改為 `{parentId, parentName}`。
+- **舊資料庫**（parents 沒有 `line_user_id`、students 還有）請跑一次 `migrate-line-to-parent.sql`
+  （會把 students 的 LINE 搬到 parents，再移除 students 的欄位）。
+
 ## Service 的 Supabase 分支（已全部補完）
 
 所有 service 都已具備 `isDemoMode ? demo : supabase` 雙分支，並用 mapper

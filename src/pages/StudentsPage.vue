@@ -62,9 +62,6 @@
             <q-badge v-for="d in s.scheduleDays" :key="d" color="primary" outline style="font-size: 12px">
               {{ dayLabel[d] }}
             </q-badge>
-            <q-badge v-if="s.lineUserId" color="green-1" text-color="positive" style="font-size: 12px">
-              <q-icon name="link" size="12px" class="q-mr-xs" />LINE
-            </q-badge>
           </div>
 
           <div v-if="s.notes" class="text-body2 text-grey-7" style="font-size: 12px">
@@ -104,15 +101,6 @@
     >
       <template #body-cell-grade="props">
         <q-td :props="props">{{ gradeText(props.row.grade) }}</q-td>
-      </template>
-      <template #body-cell-lineUserId="props">
-        <q-td :props="props">
-          <span v-if="props.row.lineUserId" class="row items-center no-wrap q-gutter-xs">
-            <q-icon name="check_circle" color="positive" size="16px" />
-            <span class="text-body2 text-grey-8" style="font-size: 12px">{{ props.row.lineUserId }}</span>
-          </span>
-          <span v-else class="text-grey-4">-</span>
-        </q-td>
       </template>
       <template #body-cell-scheduleDays="props">
         <q-td :props="props">
@@ -231,8 +219,10 @@
             <div v-if="selectedParent" class="text-caption text-grey-7 q-pl-sm q-mb-xs">
               <q-icon name="phone" size="14px" />{{ selectedParent.phone || '未填電話' }}
               ・名下 {{ siblingCount }} 位學生
+              <span v-if="selectedParent.lineUserId" class="text-positive q-ml-xs">
+                <q-icon name="link" size="13px" />已綁 LINE
+              </span>
             </div>
-            <q-input v-model="form.lineUserId" label="LINE ID" outlined dense clearable />
             <div class="text-body2 text-grey-8 q-mt-sm">上課星期</div>
             <div class="row q-gutter-sm">
               <q-checkbox
@@ -418,7 +408,6 @@ const columns = [
   { name: 'name', label: '姓名', field: 'name', align: 'left', sortable: true },
   { name: 'parentName', label: '家長', field: 'parentName', align: 'left' },
   { name: 'phone', label: '電話', field: 'phone', align: 'left' },
-  { name: 'lineUserId', label: 'LINE ID', field: 'lineUserId', align: 'left' },
   { name: 'scheduleDays', label: '上課日', field: 'scheduleDays', align: 'left' },
   { name: 'notes', label: '備註', field: 'notes', align: 'left' },
   { name: 'balance', label: '剩餘餐費', field: 'id', align: 'left' },
@@ -493,7 +482,6 @@ const emptyForm = () => ({
   name: '',
   grade: null,
   parentId: null,
-  lineUserId: '',
   scheduleDays: [],
   notes: '',
 })
@@ -552,7 +540,6 @@ async function saveStudent() {
     name: form.value.name,
     grade: form.value.grade,
     parentId: form.value.parentId,
-    lineUserId: form.value.lineUserId ?? '',
     scheduleDays: form.value.scheduleDays,
     notes: form.value.notes ?? '',
   }

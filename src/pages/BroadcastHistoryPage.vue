@@ -74,9 +74,9 @@
 
         <!-- 展開：每個收件人的訊息 -->
         <q-list separator class="bg-grey-1">
-          <q-item v-for="rec in log.records" :key="rec.studentId" class="q-py-sm">
+          <q-item v-for="rec in log.records" :key="rec.parentId ?? rec.studentId" class="q-py-sm">
             <q-item-section>
-              <div class="text-weight-bold text-body2 q-mb-xs">{{ rec.studentName }}</div>
+              <div class="text-weight-bold text-body2 q-mb-xs">{{ rec.parentName ?? rec.studentName }}</div>
               <div style="font-size: 13px; white-space: pre-line; line-height: 1.7; color: #555">
                 {{ rec.message }}
               </div>
@@ -126,7 +126,7 @@ const filtered = computed(() => {
   if (dateTo.value) list = list.filter(l => l.sentAt.slice(0, 10) <= dateTo.value)
   if (nameSearch.value.trim()) {
     const q = nameSearch.value.trim().toLowerCase()
-    list = list.filter(l => l.records.some(r => r.studentName.toLowerCase().includes(q)))
+    list = list.filter(l => l.records.some(r => (r.parentName ?? r.studentName ?? '').toLowerCase().includes(q)))
   }
   const sorters = {
     date_desc:  (a, b) => b.sentAt.localeCompare(a.sentAt),

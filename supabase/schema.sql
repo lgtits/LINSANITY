@@ -29,10 +29,11 @@ drop table if exists parents              cascade;
 -- ─────────────────────── 家長 ───────────────────────
 -- phone 是「自動配對家長」的鍵：新增學生時用電話找既有家長
 create table parents (
-  id         text primary key default gen_random_uuid()::text,
-  name       text not null,
-  phone      text,
-  created_at timestamptz default now()
+  id           text primary key default gen_random_uuid()::text,
+  name         text not null,
+  phone        text,
+  line_user_id text default '',          -- LINE 推播 ID（家長一個帳號，孩子共用）
+  created_at   timestamptz default now()
 );
 -- 電話唯一，但允許多筆未填（NULL／空字串不納入限制）
 create unique index parents_phone_key on parents (phone) where phone is not null and phone <> '';
@@ -47,7 +48,6 @@ create table students (
   parent_id     text references parents(id),
   schedule_days int[] not null default '{}',     -- 上課星期，對應 JS getDay()：0=日 1=一 … 6=六
   notes         text default '',
-  line_user_id  text default '',
   archived      boolean not null default false,
   deleted       boolean not null default false,
   created_at    timestamptz default now()

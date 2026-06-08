@@ -12,30 +12,30 @@ truncate table
 restart identity cascade;
 
 -- ─────────────────────── 家長 ───────────────────────
-insert into parents (id, name, phone) values
-  ('p1','王大明','0912-345-678'),
-  ('p2','李志明','0923-456-789'),
-  ('p3','陳建國','0934-567-890'),
-  ('p4','張文雄','0945-678-901'),
-  ('p5','林秀蘭','0956-789-012'),
-  ('p6','吳勇志','0967-890-123'),
-  ('p7','趙建華','0978-901-234'),
-  ('p8','劉志遠','0989-012-345'),
-  ('p9','蔡明宏','0990-123-456');
+insert into parents (id, name, phone, line_user_id) values
+  ('p1','王大明','0912-345-678','Uabc1234567890demo1'),
+  ('p2','李志明','0923-456-789','Uabc1234567890demo2'),
+  ('p3','陳建國','0934-567-890',''),
+  ('p4','張文雄','0945-678-901','Uabc1234567890demo4'),
+  ('p5','林秀蘭','0956-789-012',''),
+  ('p6','吳勇志','0967-890-123','Uabc1234567890demo6'),
+  ('p7','趙建華','0978-901-234',''),
+  ('p8','劉志遠','0989-012-345',''),
+  ('p9','蔡明宏','0990-123-456','');
 
 -- ─────────────────────── 學生 ───────────────────────
-insert into students (id, name, grade, parent_id, schedule_days, notes, line_user_id, archived, deleted) values
-  ('s1','王小明',3,'p1','{1,3,5}','對花生過敏','Uabc1234567890demo1',false,false),
-  ('s2','李小華',4,'p2','{2,4}','','Uabc1234567890demo2',false,false),
-  ('s3','陳美玲',3,'p3','{1,2,3,4,5}','素食','',false,false),
-  ('s4','張志豪',5,'p4','{1,3}','','Uabc1234567890demo4',false,false),
-  ('s5','林佳芬',2,'p5','{2,4,5}','','',false,false),
-  ('s6','吳俊賢',6,'p6','{1,2,3,4,5}','','Uabc1234567890demo6',false,false),
-  ('s7','趙小玲',5,'p7','{1,3,5}','已畢業，保留記錄','',true,false),
-  ('s8','劉宗翰',6,'p8','{2,4}','','',true,false),
-  ('s9','蔡依婷',4,'p9','{1,2,3}','轉學','',false,true),
-  ('s10','王小芳',1,'p1','{1,3,5}','','',false,false),
-  ('s11','吳小雯',4,'p6','{1,2,3,4,5}','','',false,false);
+insert into students (id, name, grade, parent_id, schedule_days, notes, archived, deleted) values
+  ('s1','王小明',3,'p1','{1,3,5}','對花生過敏',false,false),
+  ('s2','李小華',4,'p2','{2,4}','',false,false),
+  ('s3','陳美玲',3,'p3','{1,2,3,4,5}','素食',false,false),
+  ('s4','張志豪',5,'p4','{1,3}','',false,false),
+  ('s5','林佳芬',2,'p5','{2,4,5}','',false,false),
+  ('s6','吳俊賢',6,'p6','{1,2,3,4,5}','',false,false),
+  ('s7','趙小玲',5,'p7','{1,3,5}','已畢業，保留記錄',true,false),
+  ('s8','劉宗翰',6,'p8','{2,4}','',true,false),
+  ('s9','蔡依婷',4,'p9','{1,2,3}','轉學',false,true),
+  ('s10','王小芳',1,'p1','{1,3,5}','',false,false),
+  ('s11','吳小雯',4,'p6','{1,2,3,4,5}','',false,false);
 
 -- ─────────────────────── 餐廳 / 菜單 ───────────────────────
 insert into restaurants (id, name, phone, address, active) values
@@ -175,15 +175,15 @@ insert into broadcast_templates (id, name, content) values
 -- ─────────────────────── 訊息記錄 ───────────────────────
 insert into broadcast_logs (id, type, sent_at, recipient_count, records) values
   ('log1','expense','2026-06-03 12:30',3, '[
-    {"studentId":"s1","studentName":"王小明","message":"您好，王大明 家長：\n王小明 今日餐費 $80，目前帳戶餘額 $320。"},
-    {"studentId":"s2","studentName":"李小華","message":"您好，李志明 家長：\n李小華 今日餐費 $120，目前帳戶餘額 $50。\n⚠️ 餘額偏低，請盡快儲值！"},
-    {"studentId":"s3","studentName":"陳美玲","message":"您好，陳建國 家長：\n陳美玲 今日餐費 $60，目前帳戶餘額 $180。"}
+    {"parentId":"p1","parentName":"王大明","message":"您好，王大明 家長：\n王小明 今日餐費 $80\n目前帳戶餘額 $320。"},
+    {"parentId":"p2","parentName":"李志明","message":"您好，李志明 家長：\n李小華 今日餐費 $120\n目前帳戶餘額 $50。\n⚠️ 餘額偏低，請盡快儲值！"},
+    {"parentId":"p3","parentName":"陳建國","message":"您好，陳建國 家長：\n陳美玲 今日餐費 $60\n目前帳戶餘額 $180。"}
   ]'::jsonb),
   ('log2','general','2026-06-01 09:00',6, '[
-    {"studentId":"s1","studentName":"王小明","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
-    {"studentId":"s2","studentName":"李小華","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
-    {"studentId":"s3","studentName":"陳美玲","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
-    {"studentId":"s4","studentName":"張志豪","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
-    {"studentId":"s5","studentName":"林佳芬","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
-    {"studentId":"s6","studentName":"吳俊賢","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"}
+    {"parentId":"p1","parentName":"王大明","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
+    {"parentId":"p2","parentName":"李志明","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
+    {"parentId":"p3","parentName":"陳建國","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
+    {"parentId":"p4","parentName":"張文雄","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
+    {"parentId":"p5","parentName":"林秀蘭","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
+    {"parentId":"p6","parentName":"吳勇志","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"}
   ]'::jsonb);

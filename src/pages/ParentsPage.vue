@@ -28,6 +28,9 @@
               <span class="text-body2 text-grey-6 q-ml-sm">
                 <q-icon name="phone" size="14px" />{{ p.phone || '—' }}
               </span>
+              <q-badge v-if="p.lineUserId" color="green-1" text-color="positive" class="q-ml-sm" style="font-size:12px">
+                <q-icon name="link" size="12px" class="q-mr-xs" />LINE
+              </q-badge>
             </div>
             <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEdit(p)" />
           </div>
@@ -37,11 +40,14 @@
             </q-badge>
             <span v-if="!p.students.length" class="text-body2 text-grey-5">尚無在籍學生</span>
           </div>
-          <div class="text-body2">
-            家庭餘額：
-            <q-badge :color="balanceColor(p.balance)" class="q-pa-xs" style="font-size:13px">
+          <div class="row items-center">
+            <span class="text-body2">家庭餘額：</span>
+            <q-badge :color="balanceColor(p.balance)" class="q-pa-xs q-ml-xs" style="font-size:13px">
               ${{ p.balance }}
             </q-badge>
+            <q-space />
+            <q-btn flat dense icon="savings" label="儲值" color="primary" size="sm" @click="openTopup(p)" />
+            <q-btn flat dense icon="history" label="記錄" color="grey-7" size="sm" @click="openDetail(p)" />
           </div>
         </q-card-section>
       </q-card>
@@ -54,6 +60,14 @@
     <!-- 桌機：表格 -->
     <q-table v-else :rows="filtered" :columns="columns" row-key="id"
       flat bordered :rows-per-page-options="[10, 20, 0]">
+      <template #body-cell-line="props">
+        <q-td :props="props" class="text-center">
+          <q-icon v-if="props.row.lineUserId" name="check_circle" color="positive" size="18px">
+            <q-tooltip>{{ props.row.lineUserId }}</q-tooltip>
+          </q-icon>
+          <span v-else class="text-grey-4">—</span>
+        </q-td>
+      </template>
       <template #body-cell-students="props">
         <q-td :props="props">
           <q-badge v-for="s in props.row.students" :key="s.id" color="primary" outline class="q-mr-xs">
@@ -71,6 +85,12 @@
       </template>
       <template #body-cell-actions="props">
         <q-td :props="props" class="text-center">
+          <q-btn flat dense round icon="savings" color="primary" size="sm" @click="openTopup(props.row)">
+            <q-tooltip>儲值</q-tooltip>
+          </q-btn>
+          <q-btn flat dense round icon="history" color="grey-7" size="sm" @click="openDetail(props.row)">
+            <q-tooltip>消費記錄</q-tooltip>
+          </q-btn>
           <q-btn flat dense round icon="edit" color="primary" size="sm" @click="openEdit(props.row)" />
         </q-td>
       </template>
@@ -90,6 +110,8 @@
               :rules="[v => !!v || '請填寫姓名']" />
             <q-input v-model="form.phone" label="聯絡電話" outlined dense
               hint="作為防止重複的依據，建議填寫" />
+            <q-input v-model="form.lineUserId" label="LINE ID" outlined dense clearable
+              hint="LINE 推播通知用，全家共用此帳號" />
             <div v-if="isEdit && editingStudents.length"
               class="text-caption text-orange-9 bg-orange-1 rounded-borders q-pa-sm">
               <q-icon name="info" size="14px" class="q-mr-xs" />
@@ -101,6 +123,75 @@
             </div>
           </q-form>
         </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <!-- ══════ 儲值 Dialog ══════ -->
+    <q-dialog v-model="showTopup" persistent>
+      <q-card style="width: min(95vw, 360px)">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">儲值 - {{ topupTarget?.name }}</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <q-card-section>
+          <div class="text-body2 text-grey-7 q-mb-sm">
+            目前家庭餘額 <span class="text-weight-bold">${{ balances[topupTarget?.id] ?? 0 }}</span>
+          </div>
+          <q-form @submit.prevent="doTopup" class="q-gutter-sm">
+            <q-input v-model.number="topupAmount" label="儲值金額 *" outlined dense type="number" prefix="$"
+              :rules="[v => v > 0 || '請輸入正確金額']" />
+            <q-input v-model="topupNote" label="備註（如：七月儲值）" outlined dense />
+            <div class="row justify-end q-mt-md q-gutter-sm">
+              <q-btn flat label="取消" v-close-popup />
+              <q-btn type="submit" color="primary" label="確認儲值" icon="savings" />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <!-- ══════ 消費記錄 Dialog ══════ -->
+    <q-dialog v-model="showDetail" :maximized="$q.screen.lt.sm">
+      <q-card style="width: min(95vw, 500px); max-height: 88vh" class="column">
+        <q-card-section class="row items-center q-pb-none">
+          <div>
+            <div class="text-h6">{{ detailParent?.name }}</div>
+            <div class="text-body2 text-grey-7">{{ detailParent?.phone || '未填電話' }}</div>
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <q-card-section class="text-center q-py-sm">
+          <div class="text-body2 text-grey-6">家庭餘額</div>
+          <div class="text-h3 text-weight-bold" :class="'text-' + balanceColor(balances[detailParent?.id])">
+            ${{ balances[detailParent?.id] ?? 0 }}
+          </div>
+        </q-card-section>
+        <q-separator />
+        <div class="q-px-md q-pt-md text-subtitle2 text-grey-8">消費記錄</div>
+        <q-scroll-area class="col" style="min-height: 200px">
+          <q-list separator>
+            <q-item v-for="tx in detailTransactions" :key="tx.id" dense>
+              <q-item-section avatar>
+                <q-icon :name="tx.type === 'topup' ? 'add_circle' : 'remove_circle'"
+                  :color="tx.type === 'topup' ? 'positive' : 'negative'" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ tx.note }}</q-item-label>
+                <q-item-label caption>{{ tx.datetime || tx.date }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <span class="text-weight-bold" :class="tx.type === 'topup' ? 'text-positive' : 'text-negative'">
+                  {{ tx.type === 'topup' ? '+' : '' }}{{ tx.amount }}
+                </span>
+              </q-item-section>
+            </q-item>
+            <q-item v-if="!detailTransactions.length">
+              <q-item-section class="text-grey text-center q-pa-md">尚無消費記錄</q-item-section>
+            </q-item>
+          </q-list>
+        </q-scroll-area>
       </q-card>
     </q-dialog>
   </q-page>
@@ -119,11 +210,13 @@ const loading = ref(true)
 const parents = ref([])
 const students = ref([])
 const balances = ref({})
+const allTransactions = ref([])
 const search = ref('')
 
 const columns = [
   { name: 'name',     label: '家長',     field: 'name',  align: 'left', sortable: true },
   { name: 'phone',    label: '電話',     field: 'phone', align: 'left' },
+  { name: 'line',     label: 'LINE',     field: 'lineUserId', align: 'center' },
   { name: 'students', label: '名下學生', field: 'students', align: 'left' },
   { name: 'balance',  label: '家庭餘額', field: 'balance', align: 'left', sortable: true },
   { name: 'actions',  label: '操作',     field: 'actions', align: 'center' },
@@ -161,12 +254,25 @@ const filtered = computed(() => {
 })
 
 async function loadAll() {
-  ;[parents.value, students.value, balances.value] = await Promise.all([
+  ;[parents.value, students.value, balances.value, allTransactions.value] = await Promise.all([
     parentService.getAll(),
     studentService.getAll(),
     mealService.getAllBalances(),
+    mealService.getAllTransactions(),
   ])
 }
+
+const txByParent = computed(() => {
+  const map = {}
+  for (const tx of allTransactions.value) {
+    if (!map[tx.parentId]) map[tx.parentId] = []
+    map[tx.parentId].push(tx)
+  }
+  for (const id of Object.keys(map)) {
+    map[id].sort((a, b) => (b.datetime || b.date).localeCompare(a.datetime || a.date))
+  }
+  return map
+})
 
 onMounted(async () => {
   try { await loadAll() } finally { loading.value = false }
@@ -175,7 +281,7 @@ onMounted(async () => {
 // ── 新增/編輯 ──
 const showDialog = ref(false)
 const isEdit = ref(false)
-const form = ref({ id: null, name: '', phone: '' })
+const form = ref({ id: null, name: '', phone: '', lineUserId: '' })
 
 const editingStudents = computed(() =>
   isEdit.value && form.value.id ? (studentsByParent.value[form.value.id] || []) : []
@@ -183,13 +289,13 @@ const editingStudents = computed(() =>
 
 function openAdd() {
   isEdit.value = false
-  form.value = { id: null, name: '', phone: '' }
+  form.value = { id: null, name: '', phone: '', lineUserId: '' }
   showDialog.value = true
 }
 
 function openEdit(p) {
   isEdit.value = true
-  form.value = { id: p.id, name: p.name, phone: p.phone || '' }
+  form.value = { id: p.id, name: p.name, phone: p.phone || '', lineUserId: p.lineUserId || '' }
   showDialog.value = true
 }
 
@@ -203,14 +309,52 @@ async function save() {
     }
   }
 
+  const payload = { name: form.value.name, phone: form.value.phone, lineUserId: form.value.lineUserId }
   if (isEdit.value) {
-    await parentService.update(form.value.id, { name: form.value.name, phone: form.value.phone })
-    $q.notify({ message: '家長資料已更新（含名下學生）', color: 'positive', icon: 'check' })
+    await parentService.update(form.value.id, payload)
+    $q.notify({ message: '家長資料已更新（名下學生自動同步）', color: 'positive', icon: 'check' })
   } else {
-    await parentService.create({ name: form.value.name, phone: form.value.phone })
+    await parentService.create(payload)
     $q.notify({ message: '家長新增成功', color: 'positive', icon: 'check' })
   }
   showDialog.value = false
   await loadAll()
+}
+
+// ── 儲值 ──
+const showTopup = ref(false)
+const topupTarget = ref(null)
+const topupAmount = ref(200)
+const topupNote = ref('')
+
+function openTopup(p) {
+  topupTarget.value = p
+  topupAmount.value = 200
+  topupNote.value = ''
+  showTopup.value = true
+}
+
+async function doTopup() {
+  await mealService.topup(topupTarget.value.id, topupAmount.value, topupNote.value || `儲值 $${topupAmount.value}`)
+  ;[balances.value, allTransactions.value] = await Promise.all([
+    mealService.getAllBalances(),
+    mealService.getAllTransactions(),
+  ])
+  showTopup.value = false
+  $q.notify({
+    message: `儲值成功！${topupTarget.value.name} 餘額 $${balances.value[topupTarget.value.id]}`,
+    color: 'positive', icon: 'savings',
+  })
+}
+
+// ── 消費記錄 ──
+const showDetail = ref(false)
+const detailParent = ref(null)
+const detailTransactions = ref([])
+
+function openDetail(p) {
+  detailParent.value = p
+  detailTransactions.value = txByParent.value[p.id] || []
+  showDetail.value = true
 }
 </script>

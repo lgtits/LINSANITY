@@ -19,19 +19,19 @@
     </div>
 
     <div class="row q-col-gutter-md">
-      <!-- 收件人選擇 -->
+      <!-- 收件人選擇（以家長為單位）-->
       <div class="col-12 col-md-5">
         <q-card flat bordered style="height: 100%">
           <q-card-section class="q-pb-xs">
             <div class="row items-center q-mb-xs">
-              <div class="text-subtitle2">收件人</div>
+              <div class="text-subtitle2">收件家長</div>
               <q-space />
               <q-btn flat dense label="全選" @click="selectAll" />
               <q-btn flat dense label="清除" color="grey-7" @click="clearAll" />
             </div>
             <div class="row q-col-gutter-xs">
               <div class="col-7">
-                <q-input v-model="studentSearch" placeholder="搜尋姓名..." outlined dense clearable>
+                <q-input v-model="parentSearch" placeholder="搜尋家長或學生..." outlined dense clearable>
                   <template #prepend><q-icon name="search" /></template>
                 </q-input>
               </div>
@@ -50,42 +50,42 @@
           <q-scroll-area style="height: 380px">
             <q-list separator>
               <q-item
-                v-for="s in filteredStudents"
-                :key="s.id"
-                :clickable="!!s.lineUserId"
-                :disable="!s.lineUserId"
-                @click="s.lineUserId && toggleStudent(s.id)"
+                v-for="p in filteredParents"
+                :key="p.id"
+                :clickable="!!p.lineUserId"
+                :disable="!p.lineUserId"
+                @click="p.lineUserId && toggleParent(p.id)"
               >
                 <q-item-section avatar>
                   <q-checkbox
-                    :model-value="selectedIds.includes(s.id)"
-                    :disable="!s.lineUserId"
+                    :model-value="selectedIds.includes(p.id)"
+                    :disable="!p.lineUserId"
                     color="primary"
-                    @update:model-value="s.lineUserId && toggleStudent(s.id)"
+                    @update:model-value="p.lineUserId && toggleParent(p.id)"
                   />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>{{ s.name }}</q-item-label>
+                  <q-item-label>{{ p.name }}</q-item-label>
                   <q-item-label style="font-size: 12px" class="text-grey-6">
-                    {{ s.grade }}年級・{{ s.parentName }}
-                    <span v-if="!s.lineUserId" class="text-negative q-ml-xs">未填 LINE ID</span>
+                    {{ p.children.map(c => c.name).join('、') || '無在籍學生' }}
+                    <span v-if="!p.lineUserId" class="text-negative q-ml-xs">未填 LINE ID</span>
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-badge v-if="broadcastType === 'expense' && s.lineUserId" :color="balanceColor(balances[s.id])" outline>
-                    ${{ balances[s.id] ?? 0 }}
+                  <q-badge v-if="broadcastType === 'expense' && p.lineUserId" :color="balanceColor(balances[p.id])" outline>
+                    ${{ balances[p.id] ?? 0 }}
                   </q-badge>
                 </q-item-section>
               </q-item>
-              <q-item v-if="!filteredStudents.length">
-                <q-item-section class="text-grey text-center q-pa-md">無符合學生</q-item-section>
+              <q-item v-if="!filteredParents.length">
+                <q-item-section class="text-grey text-center q-pa-md">無符合家長</q-item-section>
               </q-item>
             </q-list>
           </q-scroll-area>
 
           <q-separator />
           <q-card-section class="q-py-sm">
-            <span class="text-body2 text-grey-7">已選 {{ selectedIds.length }} / {{ linkedStudents.length }} 位</span>
+            <span class="text-body2 text-grey-7">已選 {{ selectedIds.length }} / {{ linkedParents.length }} 位家長</span>
             <span v-if="noLineIdCount > 0" class="text-body2 text-grey-5 q-ml-sm">
               （{{ noLineIdCount }} 位未填 LINE ID）
             </span>
@@ -122,7 +122,7 @@
           </q-card-section>
           <q-card-actions class="q-px-md q-pb-md row items-center">
             <div class="text-body2 text-grey-6">
-              所有收件人將收到相同訊息
+              所有收件家長將收到相同訊息
             </div>
             <q-space />
             <q-btn
@@ -147,15 +147,15 @@
 
             <div v-if="!selectedIds.length" class="text-center text-grey q-pa-xl">
               <q-icon name="people_outline" size="48px" class="q-mb-sm" /><br />
-              請先從左側選擇收件人
+              請先從左側選擇收件家長
             </div>
 
             <q-list v-else separator>
-              <q-item v-for="s in selectedStudents" :key="s.id" class="q-py-sm">
+              <q-item v-for="p in selectedParents" :key="p.id" class="q-py-sm">
                 <q-item-section>
-                  <q-item-label class="text-weight-medium">{{ s.name }}</q-item-label>
+                  <q-item-label class="text-weight-medium">{{ p.name }}</q-item-label>
                   <q-item-label caption style="white-space: pre-line; line-height: 1.6">
-                    {{ buildExpenseMessage(s) }}
+                    {{ buildExpenseMessage(p) }}
                   </q-item-label>
                 </q-item-section>
               </q-item>
@@ -163,7 +163,7 @@
           </q-card-section>
           <q-card-actions class="q-px-md q-pb-md row items-center">
             <div class="text-body2 text-grey-6">
-              每位家長收到各自的費用明細
+              每位家長收到名下孩子合併的費用明細
             </div>
             <q-space />
             <q-btn
@@ -186,6 +186,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { studentService } from '../services/studentService'
+import { parentService } from '../services/parentService'
 import { mealService } from '../services/mealService'
 import { broadcastService } from '../services/broadcastService'
 
@@ -193,22 +194,24 @@ const $q = useQuasar()
 
 const loading = ref(true)
 const sending = ref(false)
+const parents = ref([])
 const students = ref([])
 const balances = ref({})
 const allTransactions = ref([])
 const templates = ref([])
 
 const broadcastType = ref('general')
-const studentSearch = ref('')
+const parentSearch = ref('')
 const gradeFilter = ref(null)
-const selectedIds = ref([])
+const selectedIds = ref([])           // 選定的 parentId
 const selectedTemplateId = ref(null)
 const customMessage = ref('')
 const expenseDate = new Date().toISOString().slice(0, 10)
 
 onMounted(async () => {
   try {
-    [students.value, balances.value, allTransactions.value, templates.value] = await Promise.all([
+    [parents.value, students.value, balances.value, allTransactions.value, templates.value] = await Promise.all([
+      parentService.getAll(),
       studentService.getAll(),
       mealService.getAllBalances(),
       mealService.getAllTransactions(),
@@ -221,24 +224,37 @@ onMounted(async () => {
 
 const gradeFilterOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => ({ label: `${n}年級`, value: n }))
 
-const filteredStudents = computed(() => {
-  let list = students.value
-  if (gradeFilter.value !== null) list = list.filter(s => s.grade === gradeFilter.value)
-  const q = studentSearch.value.trim().toLowerCase()
-  if (q) list = list.filter(s => s.name.toLowerCase().includes(q))
-  return list
+// 每位家長名下在籍學生
+const childrenByParent = computed(() => {
+  const map = {}
+  for (const s of students.value) {
+    if (!map[s.parentId]) map[s.parentId] = []
+    map[s.parentId].push(s)
+  }
+  return map
 })
 
-const selectedStudents = computed(() =>
-  students.value.filter(s => selectedIds.value.includes(s.id))
+// 家長 + 名下學生
+const parentRows = computed(() =>
+  parents.value.map(p => ({ ...p, children: childrenByParent.value[p.id] || [] }))
 )
 
-const linkedStudents = computed(() => students.value.filter(s => s.lineUserId))
-const noLineIdCount = computed(() => students.value.length - linkedStudents.value.length)
+const filteredParents = computed(() => {
+  let list = parentRows.value
+  if (gradeFilter.value !== null) list = list.filter(p => p.children.some(c => c.grade === gradeFilter.value))
+  const q = parentSearch.value.trim().toLowerCase()
+  if (q) list = list.filter(p =>
+    p.name.toLowerCase().includes(q) || p.children.some(c => c.name.toLowerCase().includes(q))
+  )
+  return [...list].sort((a, b) => a.name.localeCompare(b.name, 'zh-TW'))
+})
 
-const templateOptions = computed(() =>
-  templates.value.map(t => ({ label: t.name, value: t.id }))
-)
+const selectedParents = computed(() => parentRows.value.filter(p => selectedIds.value.includes(p.id)))
+
+const linkedParents = computed(() => parents.value.filter(p => p.lineUserId))
+const noLineIdCount = computed(() => parents.value.length - linkedParents.value.length)
+
+const templateOptions = computed(() => templates.value.map(t => ({ label: t.name, value: t.id })))
 
 function balanceColor(b) {
   const v = b ?? 0
@@ -247,16 +263,16 @@ function balanceColor(b) {
   return 'negative'
 }
 
-function toggleStudent(id) {
-  const student = students.value.find(s => s.id === id)
-  if (!student?.lineUserId) return
+function toggleParent(id) {
+  const parent = parents.value.find(p => p.id === id)
+  if (!parent?.lineUserId) return
   const idx = selectedIds.value.indexOf(id)
   if (idx === -1) selectedIds.value.push(id)
   else selectedIds.value.splice(idx, 1)
 }
 
 function selectAll() {
-  selectedIds.value = filteredStudents.value.filter(s => s.lineUserId).map(s => s.id)
+  selectedIds.value = filteredParents.value.filter(p => p.lineUserId).map(p => p.id)
 }
 
 function clearAll() {
@@ -269,30 +285,43 @@ function applyTemplate(id) {
   if (tpl) customMessage.value = tpl.content
 }
 
-function buildExpenseMessage(student) {
-  const dateDeducts = allTransactions.value.filter(
-    t => t.studentId === student.id && t.type === 'deduct' && t.date === expenseDate.value
-  )
-  const todayExpense = dateDeducts.reduce((sum, t) => sum + Math.abs(t.amount), 0)
-  const balance = balances.value[student.id] ?? 0
+// 某學生當日餐費（deduct 加總）
+function todayFeeOf(studentId) {
+  return allTransactions.value
+    .filter(t => t.studentId === studentId && t.type === 'deduct' && t.date === expenseDate)
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+}
 
-  let msg = `您好，${student.parentName} 家長：\n`
-  if (todayExpense > 0) {
-    msg += `${student.name} 今日餐費 $${todayExpense}，目前帳戶餘額 $${balance}。`
-  } else {
-    msg += `${student.name} 今日無用餐記錄，目前帳戶餘額 $${balance}。`
+// 家長層級的餐費通知：合併名下孩子當日費用 + 家庭餘額
+function buildExpenseMessage(parent) {
+  const kids = childrenByParent.value[parent.id] || []
+  const balance = balances.value[parent.id] ?? 0
+  const lines = [`您好，${parent.name} 家長：`]
+
+  const eaten = []
+  let familyTotal = 0
+  for (const kid of kids) {
+    const fee = todayFeeOf(kid.id)
+    if (fee > 0) { eaten.push(`${kid.name} 今日餐費 $${fee}`); familyTotal += fee }
   }
-  if (balance < 100) msg += '\n⚠️ 餘額偏低，請盡快儲值！'
-  return msg
+  if (eaten.length) {
+    lines.push(...eaten)
+    if (eaten.length > 1) lines.push(`本日共 $${familyTotal}`)
+  } else {
+    lines.push('今日無用餐記錄')
+  }
+  lines.push(`目前帳戶餘額 $${balance}。`)
+  if (balance < 100) lines.push('⚠️ 餘額偏低，請盡快儲值！')
+  return lines.join('\n')
 }
 
 async function sendGeneral() {
   if (!selectedIds.value.length || !customMessage.value.trim()) return
   sending.value = true
   try {
-    const records = selectedStudents.value.map(s => ({
-      studentId: s.id,
-      studentName: s.name,
+    const records = selectedParents.value.map(p => ({
+      parentId: p.id,
+      parentName: p.name,
       message: customMessage.value.trim()
     }))
     await broadcastService.send({ type: 'general', records })
@@ -309,10 +338,10 @@ async function sendExpense() {
   if (!selectedIds.value.length) return
   sending.value = true
   try {
-    const records = selectedStudents.value.map(s => ({
-      studentId: s.id,
-      studentName: s.name,
-      message: buildExpenseMessage(s)
+    const records = selectedParents.value.map(p => ({
+      parentId: p.id,
+      parentName: p.name,
+      message: buildExpenseMessage(p)
     }))
     await broadcastService.send({ type: 'expense', records })
     $q.notify({ message: `餐費通知已發送給 ${records.length} 位家長`, color: 'teal', icon: 'check' })

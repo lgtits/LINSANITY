@@ -6,7 +6,6 @@
     "parentId": "p1",
     "scheduleDays": [1, 3, 5],
     "notes": "對花生過敏",
-    "lineUserId": "Uabc1234567890demo1",
     "archived": false,
     "deleted": false
   },
@@ -17,7 +16,6 @@
     "parentId": "p2",
     "scheduleDays": [2, 4],
     "notes": "",
-    "lineUserId": "Uabc1234567890demo2",
     "archived": false,
     "deleted": false
   },
@@ -28,7 +26,6 @@
     "parentId": "p3",
     "scheduleDays": [1, 2, 3, 4, 5],
     "notes": "素食",
-    "lineUserId": "",
     "archived": false,
     "deleted": false
   },
@@ -39,7 +36,6 @@
     "parentId": "p4",
     "scheduleDays": [1, 3],
     "notes": "",
-    "lineUserId": "Uabc1234567890demo4",
     "archived": false,
     "deleted": false
   },
@@ -50,7 +46,6 @@
     "parentId": "p5",
     "scheduleDays": [2, 4, 5],
     "notes": "",
-    "lineUserId": "",
     "archived": false,
     "deleted": false
   },
@@ -61,7 +56,6 @@
     "parentId": "p6",
     "scheduleDays": [1, 2, 3, 4, 5],
     "notes": "",
-    "lineUserId": "Uabc1234567890demo6",
     "archived": false,
     "deleted": false
   },
@@ -72,7 +66,6 @@
     "parentId": "p7",
     "scheduleDays": [1, 3, 5],
     "notes": "已畢業，保留記錄",
-    "lineUserId": "",
     "archived": true,
     "deleted": false
   },
@@ -83,7 +76,6 @@
     "parentId": "p8",
     "scheduleDays": [2, 4],
     "notes": "",
-    "lineUserId": "",
     "archived": true,
     "deleted": false
   },
@@ -94,7 +86,6 @@
     "parentId": "p9",
     "scheduleDays": [1, 2, 3],
     "notes": "轉學",
-    "lineUserId": "",
     "archived": false,
     "deleted": true
   },
@@ -105,7 +96,6 @@
     "parentId": "p1",
     "scheduleDays": [1, 3, 5],
     "notes": "",
-    "lineUserId": "",
     "archived": false,
     "deleted": false
   },
@@ -116,7 +106,6 @@
     "parentId": "p6",
     "scheduleDays": [1, 2, 3, 4, 5],
     "notes": "",
-    "lineUserId": "",
     "archived": false,
     "deleted": false
   }

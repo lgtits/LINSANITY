@@ -13,7 +13,6 @@ const toApp = row => ({
   phone: row.parents?.phone ?? '',
   scheduleDays: row.schedule_days ?? row.scheduleDays ?? [],
   notes: row.notes || '',
-  lineUserId: row.line_user_id ?? row.lineUserId ?? '',
   archived: row.archived ?? false,
   deleted: row.deleted ?? false
 })
@@ -22,7 +21,6 @@ const toDb = data => ({
   name: data.name,
   grade: data.grade,
   parent_id: data.parentId,
-  line_user_id: data.lineUserId ?? '',
   schedule_days: data.scheduleDays,
   notes: data.notes,
   archived: data.archived ?? false,
@@ -146,7 +144,6 @@ function toCleanDemo(data) {
     name: data.name,
     grade: data.grade,
     parentId: data.parentId,
-    lineUserId: data.lineUserId ?? '',
     scheduleDays: data.scheduleDays,
     notes: data.notes ?? '',
     ...(data.archived !== undefined ? { archived: data.archived } : {}),
