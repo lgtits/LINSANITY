@@ -188,9 +188,26 @@ create table broadcast_logs (
   type            text not null,                -- 'expense' | 'general'
   sent_at         timestamptz not null default now(),
   recipient_count int not null default 0,
-  records         jsonb not null default '[]',  -- [{ studentId, studentName, message }]
+  success_count   int not null default 0,
+  fail_count      int not null default 0,
+  -- [{ parentId, parentName, lineUserId, message, status: success|failed|simulated, error? }]
+  records         jsonb not null default '[]',
   created_at      timestamptz default now()
 );
+
+-- ─────────────────────── LINE 聯絡人 ───────────────────────
+-- webhook 收到「加好友／傳訊」時記下對方 userId + 暱稱；後台再綁定到家長。
+-- 綁定 = 設 linked_parent_id 並把該 userId 寫進 parents.line_user_id（發送用）。
+create table line_contacts (
+  user_id          text primary key,          -- LINE userId（U + 32 hex）
+  display_name     text default '',
+  picture_url      text default '',
+  last_message     text,
+  linked_parent_id text references parents(id) on delete set null,
+  created_at       timestamptz default now(),
+  updated_at       timestamptz default now()
+);
+create index line_contacts_linked_idx on line_contacts (linked_parent_id);
 
 -- ════════════════════════════════════════════════════════════════
 --  save_order RPC：一次寫入 orders + order_items 並算 total
@@ -256,7 +273,7 @@ begin
   foreach t in array array[
     'parents','students','restaurants','menu_items','orders','order_items',
     'meal_transactions','tuition_rates','tuition_enrollments','tuition_attendance',
-    'attendance_logs','broadcast_templates','broadcast_logs'
+    'attendance_logs','broadcast_templates','broadcast_logs','line_contacts'
   ]
   loop
     execute format('alter table %I enable row level security;', t);

@@ -173,17 +173,17 @@ insert into broadcast_templates (id, name, content) values
   ('bt4','親師座談邀請','您好，本月底將舉辦親師座談會，歡迎家長踴躍參加，詳情請來電洽詢。');
 
 -- ─────────────────────── 訊息記錄 ───────────────────────
-insert into broadcast_logs (id, type, sent_at, recipient_count, records) values
-  ('log1','expense','2026-06-03 12:30',3, '[
-    {"parentId":"p1","parentName":"王大明","message":"您好，王大明 家長：\n王小明 今日餐費 $80\n目前帳戶餘額 $320。"},
-    {"parentId":"p2","parentName":"李志明","message":"您好，李志明 家長：\n李小華 今日餐費 $120\n目前帳戶餘額 $50。\n⚠️ 餘額偏低，請盡快儲值！"},
-    {"parentId":"p3","parentName":"陳建國","message":"您好，陳建國 家長：\n陳美玲 今日餐費 $60\n目前帳戶餘額 $180。"}
+insert into broadcast_logs (id, type, sent_at, recipient_count, success_count, fail_count, records) values
+  ('log1','expense','2026-06-03 12:30',3,3,0, '[
+    {"parentId":"p1","parentName":"王大明","status":"success","message":"您好，王大明 家長：\n王小明 今日餐費 $80\n目前帳戶餘額 $320。"},
+    {"parentId":"p2","parentName":"李志明","status":"success","message":"您好，李志明 家長：\n李小華 今日餐費 $120\n目前帳戶餘額 $50。\n⚠️ 餘額偏低，請盡快儲值！"},
+    {"parentId":"p3","parentName":"陳建國","status":"success","message":"您好，陳建國 家長：\n陳美玲 今日餐費 $60\n目前帳戶餘額 $180。"}
   ]'::jsonb),
-  ('log2','general','2026-06-01 09:00',6, '[
-    {"parentId":"p1","parentName":"王大明","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
-    {"parentId":"p2","parentName":"李志明","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
-    {"parentId":"p3","parentName":"陳建國","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
-    {"parentId":"p4","parentName":"張文雄","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
-    {"parentId":"p5","parentName":"林秀蘭","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
-    {"parentId":"p6","parentName":"吳勇志","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"}
+  ('log2','general','2026-06-01 09:00',6,6,0, '[
+    {"parentId":"p1","parentName":"王大明","status":"success","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
+    {"parentId":"p2","parentName":"李志明","status":"success","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
+    {"parentId":"p3","parentName":"陳建國","status":"success","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
+    {"parentId":"p4","parentName":"張文雄","status":"success","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
+    {"parentId":"p5","parentName":"林秀蘭","status":"success","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"},
+    {"parentId":"p6","parentName":"吳勇志","status":"success","message":"您好，本週六補習班舉辦親師座談會，歡迎家長踴躍參加！"}
   ]'::jsonb);

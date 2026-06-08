@@ -15,6 +15,8 @@ const logToApp = r => ({
   type: r.type,
   sentAt: fmtDT(r.sent_at),
   recipientCount: r.recipient_count,
+  successCount: r.success_count ?? r.recipient_count,
+  failCount: r.fail_count ?? 0,
   records: r.records || []
 })
 
@@ -61,23 +63,30 @@ export const broadcastService = {
     return data.map(logToApp)
   },
 
-  // records: [{ studentId, studentName, message }]
+  // records: [{ parentId, parentName, lineUserId, message }]
+  // 回傳 { successCount, failCount, log }
   async send({ type, records }) {
     if (isDemoMode) {
-      return api.post('broadcastLogs', {
-        type,
-        sentAt: nowStr(),
-        recipientCount: records.length,
-        records
+      // demo：無 Edge Function，模擬發送（有 LINE ID 視為成功，沒有則失敗）
+      const results = records.map(r => r.lineUserId
+        ? { ...r, status: 'simulated' }
+        : { ...r, status: 'failed', error: '未填 LINE ID' })
+      const successCount = results.filter(r => r.status !== 'failed').length
+      const failCount = results.length - successCount
+      const log = await api.post('broadcastLogs', {
+        type, sentAt: nowStr(),
+        recipientCount: results.length,
+        successCount, failCount,
+        records: results
       })
+      return { successCount, failCount, simulated: true, log }
     }
-    const { data, error } = await supabase.from('broadcast_logs').insert({
-      type,
-      sent_at: nowStr(),
-      recipient_count: records.length,
-      records
-    }).select().single()
+    // supabase：交給 Edge Function 實際打 LINE 並寫 log（service role）
+    const { data, error } = await supabase.functions.invoke('send-broadcast', {
+      body: { type, records }
+    })
     if (error) throw error
-    return logToApp(data)
+    if (data?.error) throw new Error(data.error)
+    return data   // { successCount, failCount, simulated, log }
   }
 }

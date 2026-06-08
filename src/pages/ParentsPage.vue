@@ -13,6 +13,12 @@
         style="font-size:12px" @click="openAdd" />
     </div>
 
+    <!-- 未綁定的 LINE 好友提示 -->
+    <q-banner v-if="unlinkedContacts.length" class="bg-blue-1 text-blue-9 q-mb-md rounded-borders">
+      <template #avatar><q-icon name="link" color="primary" /></template>
+      有 <b>{{ unlinkedContacts.length }}</b> 位已加 LINE 好友但尚未綁定家長。編輯家長時，可在「LINE 聯絡人」選單把對方帶入。
+    </q-banner>
+
     <!-- 搜尋 -->
     <q-input v-model="search" placeholder="搜尋家長姓名或電話..." outlined dense clearable class="q-mb-md">
       <template #prepend><q-icon name="search" /></template>
@@ -111,8 +117,16 @@
               :rules="[v => !!v || '請填寫姓名']" />
             <q-input v-model="form.phone" label="聯絡電話" outlined dense
               hint="作為防止重複的依據，建議填寫" />
-            <q-input v-model="form.lineUserId" label="LINE ID" outlined dense clearable
-              hint="LINE 推播通知用，全家共用此帳號" />
+            <q-select
+              v-if="contactOptions.length"
+              :model-value="null"
+              :options="contactOptions"
+              label="從 LINE 聯絡人帶入（已加好友者）"
+              outlined dense emit-value map-options
+              @update:model-value="onPickContact"
+            />
+            <q-input v-model="form.lineUserId" label="LINE userId" outlined dense clearable
+              hint="從上面選好友帶入，或貼上 U 開頭的 userId（共用此帳號）" />
             <div v-if="isEdit && editingStudents.length"
               class="text-caption text-orange-9 bg-orange-1 rounded-borders q-pa-sm">
               <q-icon name="info" size="14px" class="q-mr-xs" />
@@ -204,6 +218,7 @@ import { useQuasar } from 'quasar'
 import { parentService } from '../services/parentService'
 import { studentService } from '../services/studentService'
 import { mealService } from '../services/mealService'
+import { lineContactService } from '../services/lineContactService'
 
 const $q = useQuasar()
 const loading = ref(true)
@@ -212,6 +227,7 @@ const parents = ref([])
 const students = ref([])
 const balances = ref({})
 const allTransactions = ref([])
+const contacts = ref([])
 const search = ref('')
 
 const columns = [
@@ -255,12 +271,25 @@ const filtered = computed(() => {
 })
 
 async function loadAll() {
-  ;[parents.value, students.value, balances.value, allTransactions.value] = await Promise.all([
+  ;[parents.value, students.value, balances.value, allTransactions.value, contacts.value] = await Promise.all([
     parentService.getAll(),
     studentService.getAll(),
     mealService.getAllBalances(),
     mealService.getAllTransactions(),
+    lineContactService.getAll().catch(() => []),
   ])
+}
+
+const unlinkedContacts = computed(() => contacts.value.filter(c => !c.linkedParentId))
+
+// 編輯時可選的 LINE 聯絡人：未綁定的 + 目前這位家長已綁的
+const contactOptions = computed(() =>
+  contacts.value
+    .filter(c => !c.linkedParentId || c.linkedParentId === form.value.id)
+    .map(c => ({ label: `${c.displayName || '(未命名)'} ・ ${c.userId.slice(0, 12)}…`, value: c.userId })),
+)
+function onPickContact(userId) {
+  if (userId) form.value.lineUserId = userId
 }
 
 const txByParent = computed(() => {
@@ -311,13 +340,24 @@ async function save() {
   }
 
   const payload = { name: form.value.name, phone: form.value.phone, lineUserId: form.value.lineUserId }
+  let pid = form.value.id
   if (isEdit.value) {
-    await parentService.update(form.value.id, payload)
+    await parentService.update(pid, payload)
     $q.notify({ message: '家長資料已更新（名下學生自動同步）', color: 'positive', icon: 'check' })
   } else {
-    await parentService.create(payload)
+    const created = await parentService.create(payload)
+    pid = created.id
     $q.notify({ message: '家長新增成功', color: 'positive', icon: 'check' })
   }
+
+  // 同步 LINE 聯絡人綁定
+  if (form.value.lineUserId && contacts.value.some(c => c.userId === form.value.lineUserId)) {
+    await lineContactService.link(form.value.lineUserId, pid)
+  } else if (!form.value.lineUserId) {
+    const prev = contacts.value.find(c => c.linkedParentId === pid)
+    if (prev) await lineContactService.unlink(prev.userId)
+  }
+
   showDialog.value = false
   await loadAll()
 }

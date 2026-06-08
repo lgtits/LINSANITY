@@ -263,6 +263,20 @@ function balanceColor(b) {
   return 'negative'
 }
 
+function notifyResult(res) {
+  if (res.simulated) {
+    $q.notify({
+      message: `模擬發送完成：${res.successCount} 位（尚未接 LINE token，未真正送出）`,
+      color: 'grey-8', icon: 'science', timeout: 4000
+    })
+  } else {
+    $q.notify({
+      message: `發送完成：成功 ${res.successCount}、失敗 ${res.failCount}`,
+      color: res.failCount ? 'warning' : 'positive', icon: res.failCount ? 'warning' : 'check'
+    })
+  }
+}
+
 function toggleParent(id) {
   const parent = parents.value.find(p => p.id === id)
   if (!parent?.lineUserId) return
@@ -322,10 +336,11 @@ async function sendGeneral() {
     const records = selectedParents.value.map(p => ({
       parentId: p.id,
       parentName: p.name,
+      lineUserId: p.lineUserId,
       message: customMessage.value.trim()
     }))
-    await broadcastService.send({ type: 'general', records })
-    $q.notify({ message: `訊息已發送給 ${records.length} 位家長`, color: 'positive', icon: 'check' })
+    const res = await broadcastService.send({ type: 'general', records })
+    notifyResult(res)
     selectedIds.value = []
     customMessage.value = ''
     selectedTemplateId.value = null
@@ -341,10 +356,11 @@ async function sendExpense() {
     const records = selectedParents.value.map(p => ({
       parentId: p.id,
       parentName: p.name,
+      lineUserId: p.lineUserId,
       message: buildExpenseMessage(p)
     }))
-    await broadcastService.send({ type: 'expense', records })
-    $q.notify({ message: `餐費通知已發送給 ${records.length} 位家長`, color: 'teal', icon: 'check' })
+    const res = await broadcastService.send({ type: 'expense', records })
+    notifyResult(res)
     selectedIds.value = []
   } finally {
     sending.value = false

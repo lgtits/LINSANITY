@@ -68,6 +68,10 @@
             </q-item-label>
             <q-item-label style="font-size: 13px" class="text-grey-6">
               發送 {{ log.recipientCount }} 位家長
+              <span v-if="log.failCount" class="text-negative q-ml-xs">
+                ・成功 {{ log.successCount }}／失敗 {{ log.failCount }}
+              </span>
+              <span v-else class="text-positive q-ml-xs">・全部成功</span>
             </q-item-label>
           </q-item-section>
         </template>
@@ -76,9 +80,15 @@
         <q-list separator class="bg-grey-1">
           <q-item v-for="rec in log.records" :key="rec.parentId ?? rec.studentId" class="q-py-sm">
             <q-item-section>
-              <div class="text-weight-bold text-body2 q-mb-xs">{{ rec.parentName ?? rec.studentName }}</div>
+              <div class="row items-center q-gutter-xs q-mb-xs">
+                <span class="text-weight-bold text-body2">{{ rec.parentName ?? rec.studentName }}</span>
+                <q-badge v-if="rec.status" :color="statusColor(rec.status)" :label="statusLabel(rec.status)" />
+              </div>
               <div style="font-size: 13px; white-space: pre-line; line-height: 1.7; color: #555">
                 {{ rec.message }}
+              </div>
+              <div v-if="rec.error" class="text-negative q-mt-xs" style="font-size: 12px">
+                ⚠️ {{ rec.error }}
               </div>
             </q-item-section>
           </q-item>
@@ -104,6 +114,17 @@ const typeOptions = [
   { label: '一般訊息', value: 'general' },
   { label: '餐費通知', value: 'expense' }
 ]
+
+function statusColor(s) {
+  if (s === 'success') return 'positive'
+  if (s === 'failed') return 'negative'
+  return 'grey-6'   // simulated
+}
+function statusLabel(s) {
+  if (s === 'success') return '成功'
+  if (s === 'failed') return '失敗'
+  return '模擬'
+}
 
 const sortOptions = [
   { label: '時間（新→舊）', value: 'date_desc' },
