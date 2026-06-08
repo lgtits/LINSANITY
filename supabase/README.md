@@ -76,6 +76,23 @@
 - **出席**：`calendar` 為 null 時 service 不帶該欄，讓前端用 total/absent 還原日曆。
 - **時間**：DB timestamptz 讀出後統一格式化為 `YYYY-MM-DD HH:mm` 再回前端。
 
+## 備份 / 還原
+
+免費方案**沒有自動備份**，要自己定期做。已附兩支腳本（讀 `.env.local`）：
+
+```bash
+# 備份：所有表 dump 成 JSON → backups/backup-<時間>/
+npm run backup
+
+# 還原：把某個備份寫回（依外鍵安全順序 upsert，可用在空 DB 或覆蓋）
+npm run restore -- backups/backup-2026-06-08-13-45-57
+```
+
+（`-- ` 後面接備份資料夾路徑；npm 會把它傳給腳本。）
+
+- `backups/` 是你的資料快照，可以保留本機、或 commit 進 git（push 到 GitHub 等於異地備份）。不想進版控就加進 `.gitignore`。
+- 完整 DB 備份（含結構）可改用 `pg_dump`（Dashboard → Project Settings → Database 取連線字串）或 Supabase CLI `supabase db dump`。
+
 ## ⚠️ 安全性
 
 `schema.sql` 最後對所有表開了 `demo_all`（全開放讀寫）policy，只為了讓

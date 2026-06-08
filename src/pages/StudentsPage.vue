@@ -278,7 +278,7 @@
 
         <q-separator />
         <div class="q-px-md q-pt-md text-subtitle2 text-grey-8">消費記錄</div>
-        <q-scroll-area class="col" style="min-height: 200px">
+        <div style="max-height: 50vh; overflow-y: auto">
           <q-list separator>
             <q-item v-for="tx in detailTransactions" :key="tx.id" dense>
               <q-item-section avatar>
@@ -304,7 +304,7 @@
               <q-item-section class="text-grey text-center q-pa-md">尚無消費記錄</q-item-section>
             </q-item>
           </q-list>
-        </q-scroll-area>
+        </div>
       </q-card>
     </q-dialog>
 

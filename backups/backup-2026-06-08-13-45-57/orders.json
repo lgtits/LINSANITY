@@ -1,0 +1,72 @@
+[
+  {
+    "id": "a3e77fd7-ccd4-4582-9e0b-6c101d5dfed7",
+    "batch_id": "b_mq58ufh8hvp",
+    "date": "2026-06-08",
+    "datetime": "2026-06-08T21:25:00+00:00",
+    "restaurant_id": "0c0826c0-c855-44fd-a908-cf9d5713e437",
+    "restaurant_name": "八方雲集",
+    "student_id": "63da9101-fcf1-412c-b409-bedf6de9043b",
+    "student_name": "小陶",
+    "grade": 1,
+    "parent_id": "06b32999-823f-4490-a96f-c002f2f81946",
+    "total": 70,
+    "created_at": "2026-06-08T13:25:38.493982+00:00"
+  },
+  {
+    "id": "e57e6114-c141-48d2-a145-e9d5ade3155f",
+    "batch_id": "b_mq58vucab3z",
+    "date": "2026-06-08",
+    "datetime": "2026-06-08T21:26:00+00:00",
+    "restaurant_id": "0c0826c0-c855-44fd-a908-cf9d5713e437",
+    "restaurant_name": "八方雲集",
+    "student_id": "63da9101-fcf1-412c-b409-bedf6de9043b",
+    "student_name": "小陶",
+    "grade": 1,
+    "parent_id": "06b32999-823f-4490-a96f-c002f2f81946",
+    "total": 70,
+    "created_at": "2026-06-08T13:26:44.394345+00:00"
+  },
+  {
+    "id": "50721dd3-d029-4434-a550-5de45911c64a",
+    "batch_id": "b_mq58vucab3z",
+    "date": "2026-06-08",
+    "datetime": "2026-06-08T21:26:00+00:00",
+    "restaurant_id": "0c0826c0-c855-44fd-a908-cf9d5713e437",
+    "restaurant_name": "八方雲集",
+    "student_id": "efa01539-6e94-406c-af38-f040320ed662",
+    "student_name": "小紀",
+    "grade": 2,
+    "parent_id": "06b32999-823f-4490-a96f-c002f2f81946",
+    "total": 105,
+    "created_at": "2026-06-08T13:26:44.748115+00:00"
+  },
+  {
+    "id": "cad3d40e-aeab-48ea-90ce-b5e9a0b74d8e",
+    "batch_id": "b_mq58ycdeb5k",
+    "date": "2026-06-08",
+    "datetime": "2026-06-08T21:28:00+00:00",
+    "restaurant_id": "0c0826c0-c855-44fd-a908-cf9d5713e437",
+    "restaurant_name": "八方雲集",
+    "student_id": "63da9101-fcf1-412c-b409-bedf6de9043b",
+    "student_name": "小陶",
+    "grade": 1,
+    "parent_id": "06b32999-823f-4490-a96f-c002f2f81946",
+    "total": 70,
+    "created_at": "2026-06-08T13:28:41.079836+00:00"
+  },
+  {
+    "id": "60d641b4-cf8d-4097-bfc2-ae672b8566d3",
+    "batch_id": "b_mq58ycdeb5k",
+    "date": "2026-06-08",
+    "datetime": "2026-06-08T21:28:00+00:00",
+    "restaurant_id": "0c0826c0-c855-44fd-a908-cf9d5713e437",
+    "restaurant_name": "八方雲集",
+    "student_id": "665dba8f-7a67-4c6b-9891-6ad7eede3e95",
+    "student_name": "小李",
+    "grade": 8,
+    "parent_id": "b7b0d074-4b07-467a-b309-6869ca2a2b0f",
+    "total": 77,
+    "created_at": "2026-06-08T13:28:41.321089+00:00"
+  }
+]

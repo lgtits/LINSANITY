@@ -61,10 +61,11 @@
     <q-table v-else :rows="filtered" :columns="columns" row-key="id"
       flat bordered :rows-per-page-options="[10, 20, 0]">
       <template #body-cell-line="props">
-        <q-td :props="props" class="text-center">
-          <q-icon v-if="props.row.lineUserId" name="check_circle" color="positive" size="18px">
-            <q-tooltip>{{ props.row.lineUserId }}</q-tooltip>
-          </q-icon>
+        <q-td :props="props">
+          <span v-if="props.row.lineUserId" class="row items-center no-wrap q-gutter-xs">
+            <q-icon name="check_circle" color="positive" size="16px" />
+            <span class="text-body2 text-grey-8" style="font-size:12px">{{ props.row.lineUserId }}</span>
+          </span>
           <span v-else class="text-grey-4">—</span>
         </q-td>
       </template>
@@ -170,7 +171,7 @@
         </q-card-section>
         <q-separator />
         <div class="q-px-md q-pt-md text-subtitle2 text-grey-8">消費記錄</div>
-        <q-scroll-area class="col" style="min-height: 200px">
+        <div style="max-height: 50vh; overflow-y: auto">
           <q-list separator>
             <q-item v-for="tx in detailTransactions" :key="tx.id" dense>
               <q-item-section avatar>
@@ -191,7 +192,7 @@
               <q-item-section class="text-grey text-center q-pa-md">尚無消費記錄</q-item-section>
             </q-item>
           </q-list>
-        </q-scroll-area>
+        </div>
       </q-card>
     </q-dialog>
   </q-page>
@@ -216,7 +217,7 @@ const search = ref('')
 const columns = [
   { name: 'name',     label: '家長',     field: 'name',  align: 'left', sortable: true },
   { name: 'phone',    label: '電話',     field: 'phone', align: 'left' },
-  { name: 'line',     label: 'LINE',     field: 'lineUserId', align: 'center' },
+  { name: 'line',     label: 'LINE',     field: 'lineUserId', align: 'left' },
   { name: 'students', label: '名下學生', field: 'students', align: 'left' },
   { name: 'balance',  label: '家庭餘額', field: 'balance', align: 'left', sortable: true },
   { name: 'actions',  label: '操作',     field: 'actions', align: 'center' },

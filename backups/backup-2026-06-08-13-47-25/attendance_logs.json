@@ -1,0 +1,43 @@
+[
+  {
+    "month_key": "2026-06",
+    "student_id": "63da9101-fcf1-412c-b409-bedf6de9043b",
+    "total_days": 13,
+    "absent_days": 9,
+    "calendar": {
+      "1": "present",
+      "2": "present",
+      "3": "present",
+      "4": "present",
+      "11": "absent",
+      "12": "absent",
+      "13": "absent",
+      "18": "absent",
+      "19": "absent",
+      "20": "absent",
+      "25": "absent",
+      "26": "absent",
+      "27": "absent"
+    }
+  },
+  {
+    "month_key": "2026-06",
+    "student_id": "efa01539-6e94-406c-af38-f040320ed662",
+    "total_days": 12,
+    "absent_days": 0,
+    "calendar": {
+      "1": "present",
+      "2": "present",
+      "3": "present",
+      "4": "present",
+      "5": "present",
+      "6": "present",
+      "12": "present",
+      "13": "present",
+      "19": "present",
+      "20": "present",
+      "26": "present",
+      "27": "present"
+    }
+  }
+]

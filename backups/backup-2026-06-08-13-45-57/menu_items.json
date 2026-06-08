@@ -1,0 +1,22 @@
+[
+  {
+    "id": "7677a30c-bdc2-4bce-8760-0974cfbadfbd",
+    "restaurant_id": "0c0826c0-c855-44fd-a908-cf9d5713e437",
+    "name": "招牌鍋貼",
+    "price": 7,
+    "category": null,
+    "available": true,
+    "default_qty": 10,
+    "created_at": "2026-06-08T13:25:07.52318+00:00"
+  },
+  {
+    "id": "e370d844-e876-4c80-bfc3-1e86072e088e",
+    "restaurant_id": "0c0826c0-c855-44fd-a908-cf9d5713e437",
+    "name": "韭菜鍋貼",
+    "price": 7,
+    "category": null,
+    "available": true,
+    "default_qty": 10,
+    "created_at": "2026-06-08T13:25:24.297317+00:00"
+  }
+]

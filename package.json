@@ -12,6 +12,8 @@
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
     "build": "quasar build",
+    "backup": "node scripts/backup-supabase.mjs",
+    "restore": "node scripts/restore-supabase.mjs",
     "postinstall": "quasar prepare"
   },
   "dependencies": {
