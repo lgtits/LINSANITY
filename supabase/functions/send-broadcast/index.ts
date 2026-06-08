@@ -19,6 +19,11 @@ const cors = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+// 台灣本地時間 "YYYY-MM-DD HH:mm"（與 app 其他時間一致，避免記錄差 8 小時、晚間發送被歸錯日）
+function nowTaipei() {
+  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 16).replace('T', ' ')
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -75,7 +80,7 @@ Deno.serve(async (req) => {
       .from('broadcast_logs')
       .insert({
         type,
-        sent_at: new Date().toISOString(),
+        sent_at: nowTaipei(),
         recipient_count: results.length,
         success_count: successCount,
         fail_count: failCount,

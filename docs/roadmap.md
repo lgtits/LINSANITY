@@ -92,3 +92,9 @@ npx supabase functions deploy line-webhook --no-verify-jwt
 - **正常 UI 流程是 1:1**:綁定選單只列「未綁定 + 目前家長已綁的」聯絡人,無法用選單把同一聯絡人指給第二個家長;綁定時也會清掉該家長原本綁的其他聯絡人。
 - **但非資料庫強制**:`parents.line_user_id` 沒有唯一限制。手動把同一串 `Uxxx` 貼到多個家長是擋不住的,且改綁聯絡人到新家長時,舊家長的 `line_user_id` 不會自動清除 → 可能殘留重複。
 - **決定(2026-06)**:**暫不做 1:1 強制,也不做發送去重**,只留此紀錄。日後若真的遇到重複造成困擾,再評估:`line_user_id` 加唯一限制 + 改綁清舊 + 手動貼重複時擋下。
+
+### 時區
+- 前端「今天」判斷 → **已修**(`src/lib/datetime.js` 本地時間)。
+- `send-broadcast` 的 `sent_at` → **已修**(改寫台灣本地時間,需重部署 send-broadcast)。
+- ⏳ `line-webhook` 的 `line_contacts.updated_at` 仍是 UTC,但**目前畫面沒顯示**,等之後要顯示聯絡人時間時再一起改+重部署。
+- 1 筆測試期間的訂單 `datetime` 與 `date` 對不齊(舊碼遺留),切換客戶清空就消失,不特別處理。
