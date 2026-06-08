@@ -1,1 +1,0 @@
-import{on as e}from"./index-DbOzWL-y.js";function t(){return e(`_q_`)}export{t};
