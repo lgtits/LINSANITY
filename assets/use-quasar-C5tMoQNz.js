@@ -1,1 +1,0 @@
-import{on as e}from"./index-C3x7Vo8-.js";function t(){return e(`_q_`)}export{t};
