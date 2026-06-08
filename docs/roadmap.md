@@ -1,0 +1,85 @@
+# 交接清單 & 功能 Backlog
+
+## A. 從「我的測試 LINE」切換成「客戶的 LINE」
+
+### 客戶必須提供
+| 項目 | 哪裡拿 | 用途 |
+|---|---|---|
+| **LINE 官方帳號**(Messaging API channel) | 客戶自己在 LINE Developers / OA Manager 申請 | 整個發送/接收的基礎 |
+| **Channel access token**(長,~170字) | channel → Messaging API 分頁 → Issue | 發送訊息、抓 profile |
+| **Channel secret**(短,~32字) | channel → Basic settings 分頁 | webhook 驗章 |
+
+> 其他(`SUPABASE_URL`、`SERVICE_ROLE_KEY`)是 Supabase 自動注入,**不用**客戶提供。
+
+### 切換步驟
+```bash
+npx supabase secrets set LINE_CHANNEL_ACCESS_TOKEN=客戶的token
+npx supabase secrets set LINE_CHANNEL_SECRET=客戶的secret
+npx supabase functions deploy send-broadcast
+npx supabase functions deploy line-webhook --no-verify-jwt
+```
+- 在**客戶的** LINE channel → Messaging API → Webhook 設 URL：
+  `https://<專案>.supabase.co/functions/v1/line-webhook`,開 Use webhook、Verify、關自動回應。
+
+### ⚠️ 最重要的陷阱:userId 不能沿用
+- **userId 是「綁定在某個官方帳號」的**。我測試時用我的 OA 收集到的 userId,在客戶的 OA **完全無效**。
+- 切換後必須:
+  1. 清空 `line_contacts`（`delete from line_contacts;`）
+  2. 清空所有 `parents.line_user_id`（`update parents set line_user_id='';`）
+  3. 請客戶的家長**重新加客戶的 OA 好友** → 重新蒐集 → 重新綁定
+- 換句話說:LINE 這塊在客戶端等於**重新收集一次**,程式不用改,資料要重來。
+
+### 還要決定
+- **Supabase 專案歸誰**：客戶自己開一個(建議,帳單/資料都歸客戶),還是你代管。前端 `.env.local` 的 URL/anon key 要指到正式專案。
+- 客戶 OA 的**免費訊息額度**(超過要升級,屬 LINE 方案)。
+
+---
+
+## B. 上線前「必做」(安全)
+- [ ] **加登入**(Supabase Auth)— 目前完全沒有登入
+- [ ] **收緊 RLS**：拿掉 `demo_all`,改成依登入身分;`broadcast_logs` 只允許 service role 寫
+- [ ] 定期備份排程(目前是手動 `npm run backup`)
+
+## C. 功能 Backlog（可挑著做）
+
+### 家長 / 學生
+- [ ] **家長封存 / 刪除**(你提的，設計見下)
+- [ ] 重複家長合併(同一家長被建兩筆時合併)
+- [ ] 學生「畢業」批次處理
+
+### LINE / 通知
+- [ ] 綁定後自動發「綁定成功」確認訊息
+- [ ] 匯出加好友 QR / 連結,方便發給家長
+- [ ] 失敗訊息**一鍵重送**(只重送 status=failed 的)
+- [ ] **排程自動發送**(例：每天放學自動發當日餐費通知)— 需 pg_cron 或排程 function
+- [ ] 低餘額自動提醒(餘額 < 門檻自動發 LINE)
+- [ ] Flex Message(漂亮的餐費卡片,取代純文字)
+- [ ] 家長回覆收件匣(webhook 已存 last_message,可做簡單檢視)
+
+### 餐費 / 訂餐
+- [ ] 月結帳單匯出 / 對帳
+- [ ] 訂餐截止時間鎖定
+
+### 學費 / 簽到
+- [ ] 簽到完發 LINE(今日已到 / 缺席通知)
+- [ ] 月底退費自動算 + 通知
+
+### 維運
+- [ ] 操作稽核紀錄
+- [ ] 多帳號 / 角色權限
+
+---
+
+## D. 家長封存 / 刪除 — 設計建議
+
+學生已有 `archived` / `deleted`(軟刪),家長照同模式,但**多一層守門**,因為家長被很多東西參照(學生、交易、LINE)：
+
+- **封存(archived)**：從主列表隱藏、可復原。
+  - 守門:若名下還有**在籍學生**,跳提示(這些學生會沒有家長顯示),建議先處理學生再封存。
+- **刪除**：
+  - 不能直接硬刪——`students` / `meal_transactions` 都有 FK 指向 parents,硬刪會被擋。
+  - 作法 A(建議)：**軟刪**(`deleted` 旗標),保留歷史與餘額紀錄。
+  - 作法 B：只有「完全沒有學生、沒有交易、沒綁 LINE」的孤兒家長才允許硬刪。
+- 對應要做：schema 加 `archived`/`deleted` 欄 + 遷移、`parentService` 加 archive/delete/restore、家長管理頁加按鈕與「封存家長」清單(比照學生的封存/刪除頁)。
+
+> 建議先做「封存 + 軟刪 + 守門提示」,跟學生一致,最安全。
