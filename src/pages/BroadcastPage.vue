@@ -196,6 +196,7 @@ import { parentService } from '../services/parentService'
 import { mealService } from '../services/mealService'
 import { orderService } from '../services/orderService'
 import { broadcastService } from '../services/broadcastService'
+import { localDate } from '../lib/datetime'
 
 const $q = useQuasar()
 
@@ -213,7 +214,7 @@ const gradeFilter = ref(null)
 const selectedIds = ref([])           // 選定的 parentId
 const selectedTemplateId = ref(null)
 const customMessage = ref('')
-const expenseDate = new Date().toISOString().slice(0, 10)
+const expenseDate = localDate()
 
 onMounted(async () => {
   try {

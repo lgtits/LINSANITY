@@ -1,10 +1,9 @@
 import { api } from '../lib/api'
 import { supabase, isDemoMode } from '../lib/supabase'
+import { localDateTime } from '../lib/datetime'
 
 function now() {
-  const d = new Date()
-  const pad = n => String(n).padStart(2, '0')
-  return `${d.toISOString().slice(0, 10)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return localDateTime()
 }
 
 // ISO timestamptz → "YYYY-MM-DD HH:mm"

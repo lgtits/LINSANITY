@@ -369,6 +369,7 @@ import * as XLSX from 'xlsx'
 import { studentService } from '../services/studentService'
 import { mealService } from '../services/mealService'
 import { parentService } from '../services/parentService'
+import { localDate } from '../lib/datetime'
 
 const $q = useQuasar()
 
@@ -634,6 +635,6 @@ function writeExcel(data, colWidths, sheetName, fileName) {
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10)
+  return localDate()
 }
 </script>

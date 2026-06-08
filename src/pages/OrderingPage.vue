@@ -221,11 +221,12 @@ import { studentService } from '../services/studentService'
 import { restaurantService } from '../services/restaurantService'
 import { orderService } from '../services/orderService'
 import { mealService } from '../services/mealService'
+import { localDate, localDateTime } from '../lib/datetime'
 
 const $q = useQuasar()
 const loading = ref(true)
 
-const today = new Date().toISOString().slice(0, 10)
+const today = localDate()
 const orderDate = ref(today)
 const selectedRestaurantId = ref(null)
 const studentOrders = ref([])
@@ -309,9 +310,7 @@ function getSubtotal(order) {
 }
 
 function currentDatetime() {
-  const now = new Date()
-  const pad = n => String(n).padStart(2, '0')
-  return `${now.toISOString().slice(0, 10)} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+  return localDateTime()
 }
 
 function batchUid() {

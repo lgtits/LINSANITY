@@ -199,6 +199,7 @@ import * as XLSX from 'xlsx'
 import { mealService } from '../services/mealService'
 import { orderService } from '../services/orderService'
 import { studentService } from '../services/studentService'
+import { localDate } from '../lib/datetime'
 
 const $q = useQuasar()
 const loading = ref(true)
@@ -209,7 +210,7 @@ const gradeFilterOptions = [
 ]
 
 const weekdayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六']
-const todayStr = new Date().toISOString().slice(0, 10)
+const todayStr = localDate()
 const todayWeekday = weekdayNames[new Date().getDay()]
 
 function getWeekdayText(dateStr) {
@@ -475,5 +476,5 @@ function writeExcel(data, colWidths, sheetName, fileName) {
   XLSX.writeFile(wb, fileName)
 }
 
-function today() { return new Date().toISOString().slice(0, 10) }
+function today() { return localDate() }
 </script>
