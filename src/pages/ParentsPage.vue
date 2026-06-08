@@ -35,8 +35,9 @@
                 <q-icon name="phone" size="14px" />{{ p.phone || '—' }}
               </span>
               <q-badge v-if="p.lineUserId" color="green-1" text-color="positive" class="q-ml-sm" style="font-size:12px">
-                <q-icon name="link" size="12px" class="q-mr-xs" />LINE
+                <q-icon name="link" size="12px" class="q-mr-xs" />已綁 LINE
               </q-badge>
+              <q-badge v-else color="grey-3" text-color="grey-8" class="q-ml-sm" style="font-size:12px">未綁 LINE</q-badge>
             </div>
             <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEdit(p)" />
           </div>
@@ -67,12 +68,9 @@
     <q-table v-else :rows="filtered" :columns="columns" row-key="id"
       flat bordered :rows-per-page-options="[10, 20, 0]">
       <template #body-cell-line="props">
-        <q-td :props="props">
-          <span v-if="props.row.lineUserId" class="row items-center no-wrap q-gutter-xs">
-            <q-icon name="check_circle" color="positive" size="16px" />
-            <span class="text-body2 text-grey-8" style="font-size:12px">{{ props.row.lineUserId }}</span>
-          </span>
-          <span v-else class="text-grey-4">—</span>
+        <q-td :props="props" class="text-center">
+          <q-badge v-if="props.row.lineUserId" color="positive" label="已綁" />
+          <q-badge v-else color="grey-4" text-color="grey-8" label="未綁" />
         </q-td>
       </template>
       <template #body-cell-students="props">
@@ -233,7 +231,7 @@ const search = ref('')
 const columns = [
   { name: 'name',     label: '家長',     field: 'name',  align: 'left', sortable: true },
   { name: 'phone',    label: '電話',     field: 'phone', align: 'left' },
-  { name: 'line',     label: 'LINE',     field: 'lineUserId', align: 'left' },
+  { name: 'line',     label: 'LINE',     field: 'lineUserId', align: 'center' },
   { name: 'students', label: '名下學生', field: 'students', align: 'left' },
   { name: 'balance',  label: '家庭餘額', field: 'balance', align: 'left', sortable: true },
   { name: 'actions',  label: '操作',     field: 'actions', align: 'center' },

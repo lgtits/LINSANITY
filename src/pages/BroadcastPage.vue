@@ -52,27 +52,27 @@
               <q-item
                 v-for="p in filteredParents"
                 :key="p.id"
-                :clickable="!!p.lineUserId"
-                :disable="!p.lineUserId"
-                @click="p.lineUserId && toggleParent(p.id)"
+                clickable
+                @click="toggleParent(p.id)"
               >
                 <q-item-section avatar>
                   <q-checkbox
                     :model-value="selectedIds.includes(p.id)"
-                    :disable="!p.lineUserId"
                     color="primary"
-                    @update:model-value="p.lineUserId && toggleParent(p.id)"
+                    @update:model-value="toggleParent(p.id)"
                   />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>{{ p.name }}</q-item-label>
+                  <q-item-label>
+                    {{ p.name }}
+                    <q-badge v-if="!p.lineUserId" color="negative" class="q-ml-xs">未填 LINE ID</q-badge>
+                  </q-item-label>
                   <q-item-label style="font-size: 12px" class="text-grey-6">
                     {{ p.children.map(c => c.name).join('、') || '無在籍學生' }}
-                    <span v-if="!p.lineUserId" class="text-negative q-ml-xs">未填 LINE ID</span>
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-badge v-if="broadcastType === 'expense' && p.lineUserId" :color="balanceColor(balances[p.id])" outline>
+                  <q-badge v-if="broadcastType === 'expense'" :color="balanceColor(balances[p.id])" outline>
                     ${{ balances[p.id] ?? 0 }}
                   </q-badge>
                 </q-item-section>
@@ -85,9 +85,9 @@
 
           <q-separator />
           <q-card-section class="q-py-sm">
-            <span class="text-body2 text-grey-7">已選 {{ selectedIds.length }} / {{ linkedParents.length }} 位家長</span>
-            <span v-if="noLineIdCount > 0" class="text-body2 text-grey-5 q-ml-sm">
-              （{{ noLineIdCount }} 位未填 LINE ID）
+            <span class="text-body2 text-grey-7">已選 {{ selectedIds.length }} 位家長</span>
+            <span v-if="selectedNoLineCount > 0" class="text-body2 text-negative q-ml-sm">
+              （{{ selectedNoLineCount }} 位未填 LINE，無法送出）
             </span>
           </q-card-section>
         </q-card>
@@ -123,6 +123,7 @@
           <q-card-actions class="q-px-md q-pb-md row items-center">
             <div class="text-body2 text-grey-6">
               所有收件家長將收到相同訊息
+              <span v-if="selectedNoLineCount" class="text-negative">（{{ selectedNoLineCount }} 位未填 LINE ID 不會送出）</span>
             </div>
             <q-space />
             <q-btn
@@ -153,7 +154,12 @@
             <q-list v-else separator>
               <q-item v-for="p in selectedParents" :key="p.id" class="q-py-sm">
                 <q-item-section>
-                  <q-item-label class="text-weight-medium">{{ p.name }}</q-item-label>
+                  <q-item-label class="text-weight-medium">
+                    {{ p.name }}
+                    <q-badge v-if="!p.lineUserId" color="negative" class="q-ml-xs">
+                      <q-icon name="warning" size="12px" class="q-mr-xs" />未填 LINE ID，無法送出
+                    </q-badge>
+                  </q-item-label>
                   <q-item-label caption style="white-space: pre-line; line-height: 1.6">
                     {{ buildExpenseMessage(p) }}
                   </q-item-label>
@@ -188,6 +194,7 @@ import { useQuasar } from 'quasar'
 import { studentService } from '../services/studentService'
 import { parentService } from '../services/parentService'
 import { mealService } from '../services/mealService'
+import { orderService } from '../services/orderService'
 import { broadcastService } from '../services/broadcastService'
 
 const $q = useQuasar()
@@ -197,7 +204,7 @@ const sending = ref(false)
 const parents = ref([])
 const students = ref([])
 const balances = ref({})
-const allTransactions = ref([])
+const todayOrders = ref([])
 const templates = ref([])
 
 const broadcastType = ref('general')
@@ -210,11 +217,11 @@ const expenseDate = new Date().toISOString().slice(0, 10)
 
 onMounted(async () => {
   try {
-    [parents.value, students.value, balances.value, allTransactions.value, templates.value] = await Promise.all([
+    [parents.value, students.value, balances.value, todayOrders.value, templates.value] = await Promise.all([
       parentService.getAll(),
       studentService.getAll(),
       mealService.getAllBalances(),
-      mealService.getAllTransactions(),
+      orderService.getToday(),
       broadcastService.getTemplates()
     ])
   } finally {
@@ -251,8 +258,8 @@ const filteredParents = computed(() => {
 
 const selectedParents = computed(() => parentRows.value.filter(p => selectedIds.value.includes(p.id)))
 
-const linkedParents = computed(() => parents.value.filter(p => p.lineUserId))
-const noLineIdCount = computed(() => parents.value.length - linkedParents.value.length)
+// 已選但沒填 LINE ID 的數量（這些無法實際送出，只供預覽）
+const selectedNoLineCount = computed(() => selectedParents.value.filter(p => !p.lineUserId).length)
 
 const templateOptions = computed(() => templates.value.map(t => ({ label: t.name, value: t.id })))
 
@@ -278,15 +285,14 @@ function notifyResult(res) {
 }
 
 function toggleParent(id) {
-  const parent = parents.value.find(p => p.id === id)
-  if (!parent?.lineUserId) return
   const idx = selectedIds.value.indexOf(id)
   if (idx === -1) selectedIds.value.push(id)
   else selectedIds.value.splice(idx, 1)
 }
 
 function selectAll() {
-  selectedIds.value = filteredParents.value.filter(p => p.lineUserId).map(p => p.id)
+  // 全選目前篩選出的家長（含未填 LINE，可預覽；送出時系統會標未填者失敗）
+  selectedIds.value = filteredParents.value.map(p => p.id)
 }
 
 function clearAll() {
@@ -299,30 +305,38 @@ function applyTemplate(id) {
   if (tpl) customMessage.value = tpl.content
 }
 
-// 某學生當日餐費（deduct 加總）
-function todayFeeOf(studentId) {
-  return allTransactions.value
-    .filter(t => t.studentId === studentId && t.type === 'deduct' && t.date === expenseDate)
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+// 某學生今日的訂單
+function ordersOf(studentId) {
+  return todayOrders.value.filter(o => o.studentId === studentId)
 }
 
-// 家長層級的餐費通知：合併名下孩子當日費用 + 家庭餘額
+// 家長層級的餐費通知：合併名下孩子當日「餐點明細 + 金額」+ 家庭餘額
 function buildExpenseMessage(parent) {
   const kids = childrenByParent.value[parent.id] || []
   const balance = balances.value[parent.id] ?? 0
   const lines = [`您好，${parent.name} 家長：`]
 
-  const eaten = []
   let familyTotal = 0
+  let eatenKids = 0
   for (const kid of kids) {
-    const fee = todayFeeOf(kid.id)
-    if (fee > 0) { eaten.push(`${kid.name} 今日餐費 $${fee}`); familyTotal += fee }
+    const kidOrders = ordersOf(kid.id)
+    if (!kidOrders.length) continue
+    eatenKids++
+    const kidTotal = kidOrders.reduce((s, o) => s + o.total, 0)
+    familyTotal += kidTotal
+    lines.push(`${kid.name} 今日餐費 $${kidTotal}`)
+    for (const o of kidOrders) {
+      const items = o.items
+        .map(i => (i.qty > 1 ? `${i.menuItemName}×${i.qty}` : i.menuItemName))
+        .join('、')
+      lines.push(`  • ${o.restaurantName}：${items}`)
+    }
   }
-  if (eaten.length) {
-    lines.push(...eaten)
-    if (eaten.length > 1) lines.push(`本日共 $${familyTotal}`)
-  } else {
+
+  if (eatenKids === 0) {
     lines.push('今日無用餐記錄')
+  } else if (eatenKids > 1) {
+    lines.push(`本日共 $${familyTotal}`)
   }
   lines.push(`目前帳戶餘額 $${balance}。`)
   if (balance < 100) lines.push('⚠️ 餘額偏低，請盡快儲值！')
