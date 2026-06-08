@@ -1,1 +1,0 @@
-import{on as e}from"./index-CPcHa5B_.js";function t(){return e(`_q_`)}export{t};

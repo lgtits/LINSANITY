@@ -1,0 +1,11 @@
+{
+  "2026-06": {
+    "s1": { "totalDays": 22, "absentDays": 3 },
+    "s2": { "totalDays": 22, "absentDays": 11 },
+    "s3": { "totalDays": 22, "absentDays": 9 },
+    "s4": { "totalDays": 22, "absentDays": 12 },
+    "s5": { "totalDays": 22, "absentDays": 8 },
+    "s6": { "totalDays": 22, "absentDays": 10 }
+  },
+  "2026-07": {}
+}
