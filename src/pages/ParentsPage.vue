@@ -116,11 +116,12 @@
             <q-input v-model="form.phone" label="聯絡電話" outlined dense
               hint="作為防止重複的依據，建議填寫" />
             <q-select
-              v-if="contactOptions.length"
               :model-value="null"
               :options="contactOptions"
-              label="從 LINE 聯絡人帶入（已加好友者）"
+              label="從 LINE 聯絡人帶入"
               outlined dense emit-value map-options
+              :disable="!contacts.length"
+              :hint="contacts.length ? '' : '尚無 LINE 好友（需先有人加好友才能選）'"
               @update:model-value="onPickContact"
             />
             <q-input v-model="form.lineUserId" label="LINE userId" outlined dense clearable
@@ -280,12 +281,16 @@ async function loadAll() {
 
 const unlinkedContacts = computed(() => contacts.value.filter(c => !c.linkedParentId))
 
-// 編輯時可選的 LINE 聯絡人：未綁定的 + 目前這位家長已綁的
-const contactOptions = computed(() =>
-  contacts.value
-    .filter(c => !c.linkedParentId || c.linkedParentId === form.value.id)
-    .map(c => ({ label: `${c.displayName || '(未命名)'} ・ ${c.userId.slice(0, 12)}…`, value: c.userId })),
-)
+// 編輯時可選的 LINE 聯絡人：全部列出，已綁其他家長的標注
+const contactOptions = computed(() => {
+  const parentMap = Object.fromEntries(parents.value.map(p => [p.id, p.name]))
+  return contacts.value.map(c => {
+    const isSelf = c.linkedParentId === form.value.id
+    const otherName = !isSelf && c.linkedParentId ? parentMap[c.linkedParentId] : null
+    const suffix = otherName ? ` (已綁：${otherName})` : ''
+    return { label: `${c.displayName || '(未命名)'}${suffix} ・ ${c.userId.slice(0, 12)}…`, value: c.userId }
+  })
+})
 function onPickContact(userId) {
   if (userId) form.value.lineUserId = userId
 }
@@ -348,12 +353,9 @@ async function save() {
     $q.notify({ message: '家長新增成功', color: 'positive', icon: 'check' })
   }
 
-  // 同步 LINE 聯絡人綁定
+  // 同步 LINE 聯絡人綁定（允許多個家長共用同一 userId，只更新 linked_parent_id 到此家長）
   if (form.value.lineUserId && contacts.value.some(c => c.userId === form.value.lineUserId)) {
     await lineContactService.link(form.value.lineUserId, pid)
-  } else if (!form.value.lineUserId) {
-    const prev = contacts.value.find(c => c.linkedParentId === pid)
-    if (prev) await lineContactService.unlink(prev.userId)
   }
 
   showDialog.value = false

@@ -8,6 +8,7 @@ const toApp = row => ({
   id: row.id,
   name: row.name,
   grade: row.grade,
+  school: row.school || '',
   parentId: row.parent_id ?? row.parentId ?? '',
   parentName: row.parents?.name ?? '',
   phone: row.parents?.phone ?? '',
@@ -20,6 +21,7 @@ const toApp = row => ({
 const toDb = data => ({
   name: data.name,
   grade: data.grade,
+  school: data.school ?? '',
   parent_id: data.parentId,
   schedule_days: data.scheduleDays,
   notes: data.notes,
@@ -143,6 +145,7 @@ function toCleanDemo(data) {
   return {
     name: data.name,
     grade: data.grade,
+    school: data.school ?? '',
     parentId: data.parentId,
     scheduleDays: data.scheduleDays,
     notes: data.notes ?? '',

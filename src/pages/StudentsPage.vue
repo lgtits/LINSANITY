@@ -56,6 +56,9 @@
           <div class="text-body2 text-grey-7 q-mb-xs">
             <q-icon name="person" size="14px" class="q-mr-xs" />{{ s.parentName }}
             <q-icon name="phone" size="14px" class="q-ml-sm q-mr-xs" />{{ s.phone }}
+            <template v-if="s.school">
+              <q-icon name="school" size="14px" class="q-ml-sm q-mr-xs" />{{ s.school }}
+            </template>
           </div>
 
           <div class="row items-center q-gutter-xs q-mb-xs">
@@ -196,6 +199,12 @@
               emit-value
               map-options
               :rules="[(v) => !!v || '請選擇年級']"
+            />
+            <q-input
+              v-model="form.school"
+              label="就讀學校"
+              outlined
+              dense
             />
             <q-select
               v-model="form.parentId"
@@ -407,6 +416,7 @@ const columns = [
     sort: (a, b) => a - b,
   },
   { name: 'name', label: '姓名', field: 'name', align: 'left', sortable: true },
+  { name: 'school', label: '學校', field: 'school', align: 'left' },
   { name: 'parentName', label: '家長', field: 'parentName', align: 'left' },
   { name: 'phone', label: '電話', field: 'phone', align: 'left' },
   { name: 'scheduleDays', label: '上課日', field: 'scheduleDays', align: 'left' },
@@ -482,6 +492,7 @@ const isEdit = ref(false)
 const emptyForm = () => ({
   name: '',
   grade: null,
+  school: '',
   parentId: null,
   scheduleDays: [],
   notes: '',
@@ -540,6 +551,7 @@ async function saveStudent() {
     id: form.value.id,
     name: form.value.name,
     grade: form.value.grade,
+    school: form.value.school ?? '',
     parentId: form.value.parentId,
     scheduleDays: form.value.scheduleDays,
     notes: form.value.notes ?? '',
@@ -617,13 +629,14 @@ function exportStudents() {
   const data = filtered.value.map((s) => ({
     姓名: s.name,
     年級: gradeText(s.grade),
+    學校: s.school || '',
     家長: s.parentName,
     電話: s.phone,
     上課日: s.scheduleDays.map((d) => dayLabel[d]).join('、'),
     剩餘餐費: balances.value[s.parentId] ?? 0,
     備註: s.notes,
   }))
-  writeExcel(data, [8, 7, 8, 13, 16, 10, 14], '學生列表', `學生列表_${today()}.xlsx`)
+  writeExcel(data, [8, 7, 14, 8, 13, 16, 10, 14], '學生列表', `學生列表_${today()}.xlsx`)
 }
 
 function writeExcel(data, colWidths, sheetName, fileName) {
