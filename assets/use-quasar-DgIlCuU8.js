@@ -1,0 +1,1 @@
+import{on as e}from"./index-CPG48Un0.js";function t(){return e(`_q_`)}export{t};
