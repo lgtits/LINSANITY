@@ -200,11 +200,14 @@
               map-options
               :rules="[(v) => !!v || '請選擇年級']"
             />
-            <q-input
+            <q-select
               v-model="form.school"
+              :options="schoolOptions"
               label="就讀學校"
-              outlined
-              dense
+              outlined dense clearable
+              use-input input-debounce="0"
+              new-value-mode="add-unique"
+              hint="可直接輸入其他學校名稱"
             />
             <q-select
               v-model="form.parentId"
@@ -392,6 +395,7 @@ const selectedGrade = ref(null)
 
 const dayLabel = { 1: '週一', 2: '週二', 3: '週三', 4: '週四', 5: '週五' }
 const gradeOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ label: `${n}年級`, value: n }))
+const schoolOptions = ['光華國小', '潮州國小', '光春國小', '潮昇國小', '潮和國小']
 const gradeFilterOptions = [
   { label: '全部年級', value: null },
   ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ label: `${n}年級`, value: n })),

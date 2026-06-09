@@ -34,8 +34,15 @@ async function getProfile(userId: string) {
     const r = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
       headers: { Authorization: `Bearer ${TOKEN}` },
     })
-    return r.ok ? await r.json() : null
-  } catch { return null }
+    if (!r.ok) {
+      console.error(`getProfile failed: ${r.status}`, await r.text())
+      return null
+    }
+    return await r.json()
+  } catch (e) {
+    console.error('getProfile error:', e)
+    return null
+  }
 }
 
 async function replyText(replyToken: string, text: string) {
@@ -60,26 +67,35 @@ Deno.serve(async (req) => {
   let events: any[] = []
   try { events = JSON.parse(rawBody).events ?? [] } catch { /* ignore */ }
 
-  const sb = createClient(SUPABASE_URL, SERVICE_KEY)
+  // 先回 200 給 LINE，再背景處理（避免 LINE 等太久關閉連線）
+  const process = async () => {
+    const sb = createClient(SUPABASE_URL, SERVICE_KEY)
+    for (const ev of events) {
+      const userId = ev?.source?.userId
+      if (!userId) continue
+      if (ev.type !== 'follow' && ev.type !== 'message') continue
 
-  for (const ev of events) {
-    const userId = ev?.source?.userId
-    if (!userId) continue
-    if (ev.type !== 'follow' && ev.type !== 'message') continue
+      const profile = await getProfile(userId)
+      await sb.from('line_contacts').upsert({
+        user_id: userId,
+        display_name: profile?.displayName ?? '',
+        picture_url: profile?.pictureUrl ?? '',
+        last_message: ev.type === 'message' && ev.message?.type === 'text' ? ev.message.text : null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
 
-    const profile = await getProfile(userId)
-    // 只帶會變動的欄位；linked_parent_id 不在內，沿用既有綁定不被覆蓋
-    await sb.from('line_contacts').upsert({
-      user_id: userId,
-      display_name: profile?.displayName ?? '',
-      picture_url: profile?.pictureUrl ?? '',
-      last_message: ev.type === 'message' && ev.message?.type === 'text' ? ev.message.text : null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
-
-    if (ev.type === 'follow' && ev.replyToken) {
-      await replyText(ev.replyToken, '感謝加入！補習班人員會盡快為您綁定，之後就會在此收到孩子的餐費與課務通知 🙌')
+      if (ev.type === 'follow' && ev.replyToken) {
+        await replyText(ev.replyToken, '感謝加入！補習班人員會盡快為您綁定，之後就會在此收到孩子的餐費與課務通知 🙌')
+      }
     }
+  }
+
+  // EdgeRuntime.waitUntil 讓背景任務在回應後繼續執行
+  // @ts-ignore
+  if (typeof EdgeRuntime !== 'undefined') {
+    EdgeRuntime.waitUntil(process())
+  } else {
+    await process()
   }
 
   return new Response('ok')
