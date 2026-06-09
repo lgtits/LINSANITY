@@ -1,0 +1,1 @@
+import{Zt as e,an as t,ct as n,zt as r}from"./index-G-mdJjvE.js";var i=r({name:`QTr`,props:{props:Object,noHover:Boolean},setup(r,{slots:i}){let a=e(()=>`q-tr`+(r.props===void 0||r.props.header===!0?``:` `+r.props.__trClass)+(r.noHover===!0?` q-tr--no-hover`:``));return()=>t(`tr`,{style:r.props?.__trStyle,class:a.value},n(i.default))}});export{i as t};
