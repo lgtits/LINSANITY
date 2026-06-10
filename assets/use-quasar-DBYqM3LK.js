@@ -1,0 +1,1 @@
+import{sn as e}from"./index-uPLM3Ma7.js";function t(){return e(`_q_`)}export{t};
