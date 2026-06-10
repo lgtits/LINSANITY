@@ -86,7 +86,9 @@
                 {{ row.currentFee !== null ? `$${fmtNum(row.currentFee)}` : 'N/A' }}
               </div>
               <div v-if="row.prepaidFee !== null && row.currentFee !== null && row.currentFee < row.prepaidFee"
-                class="text-caption text-positive text-weight-bold">退 ${{ fmtNum(row.prepaidFee - row.currentFee) }}</div>
+                class="text-caption text-negative text-weight-bold">退 ${{ fmtNum(row.prepaidFee - row.currentFee) }}</div>
+              <div v-if="row.prepaidFee !== null && row.currentFee !== null && row.currentFee > row.prepaidFee"
+                class="text-caption text-positive text-weight-bold">補 ${{ fmtNum(row.currentFee - row.prepaidFee) }}</div>
             </q-item-section>
           </template>
 
@@ -172,7 +174,9 @@
                   {{ props.row.currentFee !== null ? `$${fmtNum(props.row.currentFee)}` : 'N/A' }}
                 </span>
                 <q-badge v-if="props.row.prepaidFee !== null && props.row.currentFee !== null && props.row.currentFee < props.row.prepaidFee"
-                  color="positive" class="q-ml-xs" :label="`退 $${fmtNum(props.row.prepaidFee - props.row.currentFee)}`" />
+                  color="negative" class="q-ml-xs" :label="`退 $${fmtNum(props.row.prepaidFee - props.row.currentFee)}`" />
+                <q-badge v-if="props.row.prepaidFee !== null && props.row.currentFee !== null && props.row.currentFee > props.row.prepaidFee"
+                  color="positive" class="q-ml-xs" :label="`補 $${fmtNum(props.row.currentFee - props.row.prepaidFee)}`" />
               </template>
               <span v-else class="text-grey-5">—</span>
             </q-td>
@@ -243,9 +247,12 @@
             </div>
           </div>
           <div class="col-4">
-            <div class="text-caption text-grey-5">預計退費</div>
-            <div class="text-h6 text-weight-bold" :class="totalRefund ? 'text-positive' : 'text-grey-5'">
-              {{ totalRefund !== null ? `$${fmtNum(totalRefund)}` : 'N/A' }}
+            <div class="text-caption text-grey-5">
+              {{ totalRefund === null ? '結算差額' : totalRefund > 0 ? '預計退費' : totalRefund < 0 ? '需補收' : '結算差額' }}
+            </div>
+            <div class="text-h6 text-weight-bold"
+              :class="totalRefund === null ? 'text-grey-5' : totalRefund > 0 ? 'text-negative' : totalRefund < 0 ? 'text-positive' : 'text-grey-5'">
+              {{ totalRefund !== null ? `$${fmtNum(Math.abs(totalRefund))}` : 'N/A' }}
             </div>
           </div>
         </div>
