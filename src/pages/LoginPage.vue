@@ -53,7 +53,7 @@ async function login() {
     )
     const { ok } = await res.json()
     if (ok) {
-      sessionStorage.setItem('app_auth', '1')
+      localStorage.setItem('app_auth', '1')
       router.push('/')
     } else {
       error.value = true

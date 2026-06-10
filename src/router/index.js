@@ -36,7 +36,7 @@ export default defineRouter((/* { store, ssrContext } */) => {
 
   Router.beforeEach((to) => {
     if (!config.needPassword) return
-    const authed = sessionStorage.getItem('app_auth') === '1'
+    const authed = localStorage.getItem('app_auth') === '1'
     if (to.path !== '/login' && !authed) return '/login'
     if (to.path === '/login' && authed) return '/'
   })

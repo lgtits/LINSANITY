@@ -27,6 +27,7 @@ const TABLES = [
   ['attendance_logs', 'month_key,student_id'],
   ['broadcast_templates', 'id'],
   ['broadcast_logs', 'id'],
+  ['line_contacts', 'user_id'],
 ]
 
 let total = 0

@@ -1,12 +1,9 @@
 import { api } from '../lib/api'
 import { supabase, isDemoMode } from '../lib/supabase'
-import { localDate } from '../lib/datetime'
+import { localDate, fmtDT } from '../lib/datetime'
 
 function itemTotal(item) { return item.price * (item.qty || 1) }
 function today() { return localDate() }
-
-// ISO timestamptz → "YYYY-MM-DD HH:mm"
-const fmtDT = v => (v ? String(v).replace('T', ' ').slice(0, 16) : null)
 
 const toApp = o => ({
   id: o.id,

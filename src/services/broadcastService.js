@@ -1,13 +1,10 @@
 import { api } from '../lib/api'
 import { supabase, isDemoMode } from '../lib/supabase'
-import { localDateTime } from '../lib/datetime'
+import { localDateTime, fmtDT } from '../lib/datetime'
 
 function nowStr() {
   return localDateTime()
 }
-
-// ISO timestamptz → "YYYY-MM-DD HH:mm"
-const fmtDT = v => (v ? String(v).replace('T', ' ').slice(0, 16) : '')
 
 const logToApp = r => ({
   id: r.id,
