@@ -1,6 +1,15 @@
 <template>
   <q-page padding>
     <q-inner-loading :showing="loading" label="載入中..." />
+
+    <!-- 標題列 -->
+    <div class="row items-center q-mb-md">
+      <div class="text-h6 text-weight-bold">學生管理</div>
+      <q-space />
+      <q-btn outline icon="person_add" color="primary" label="新增學生"
+        style="font-size:12px" @click="openAdd" />
+    </div>
+
     <!-- 篩選列 -->
     <div class="row q-col-gutter-sm q-mb-md">
       <div class="col-12 col-sm-5">
@@ -168,10 +177,6 @@
       </template>
     </q-table>
 
-    <!-- 新增按鈕 -->
-    <q-page-sticky position="bottom-right" :offset="[18, 18]">
-      <q-btn fab icon="add" color="primary" @click="openAdd" />
-    </q-page-sticky>
 
     <!-- ══════════ 新增/編輯 Dialog ══════════ -->
     <q-dialog v-model="showFormDialog" persistent>

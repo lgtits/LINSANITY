@@ -265,11 +265,14 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { studentService } from '../services/studentService'
 import { tuitionService } from '../services/tuitionService'
 import { attendanceService } from '../services/attendanceService'
+import { localDate } from '../lib/datetime'
 
 const $router = useRouter()
+const $q = useQuasar()
 const loading = ref(true)
 const loadingMonth = ref(false)
 
@@ -399,11 +402,28 @@ function recalcTotals(studentId) {
   attendanceService.updateLog(mk, studentId, 'absentDays', log.absentDays)
 }
 
-function toggleDay(studentId, dayNum) {
+function applyToggle(studentId, dayNum) {
   const cal = getCalendar(studentId)
   const cur = cal[dayNum] || 'none'
   cal[dayNum] = cur === 'present' ? 'absent' : cur === 'absent' ? 'none' : 'present'
   recalcTotals(studentId)
+}
+
+function toggleDay(studentId, dayNum) {
+  const mm = String(selectedMonth.value).padStart(2, '0')
+  const dd = String(dayNum).padStart(2, '0')
+  const cellDate = `${selectedYear.value}-${mm}-${dd}`
+  if (cellDate < localDate()) {
+    $q.dialog({
+      title: '修改過去記錄',
+      message: `確認要修改 ${selectedYear.value}/${mm}/${dd} 的簽到記錄？`,
+      cancel: { flat: true, label: '取消' },
+      ok: { color: 'warning', label: '確認修改' },
+      persistent: true
+    }).onOk(() => applyToggle(studentId, dayNum))
+  } else {
+    applyToggle(studentId, dayNum)
+  }
 }
 
 function getDayClass(studentId, cell) {
