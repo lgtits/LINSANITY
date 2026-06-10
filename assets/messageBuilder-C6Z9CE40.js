@@ -1,0 +1,2 @@
+var e=[`日`,`一`,`二`,`三`,`四`,`五`,`六`];function t(t){let n=new Date(t+`T00:00:00`);return`${t.replace(/-/g,`/`)} (${e[n.getDay()]})`}function n({parentName:e,date:n,kids:r,balance:i}){let a=[`您好，${e} 家長：`,t(n)];if(!r.length)a.push(`今日無用餐記錄`);else{let e=0;for(let t of r){e+=t.total,a.push(`${t.name} 今日餐費 $${t.total}`);for(let e of t.orders){let t=e.items.map(e=>e.qty>1?`${e.menuItemName}×${e.qty}`:e.menuItemName).join(`、`);a.push(`  • ${e.restaurantName}：${t}`)}}r.length>1&&a.push(`本日共 $${e}`)}return a.push(`目前帳戶餘額 $${i}。`),a.join(`
+`)}export{n as t};
