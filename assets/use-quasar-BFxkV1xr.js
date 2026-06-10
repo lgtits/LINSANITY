@@ -1,0 +1,1 @@
+import{sn as e}from"./index-CGvT2nTQ.js";function t(){return e(`_q_`)}export{t};
