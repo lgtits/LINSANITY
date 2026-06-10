@@ -199,7 +199,9 @@ import * as XLSX from 'xlsx'
 import { mealService } from '../services/mealService'
 import { orderService } from '../services/orderService'
 import { studentService } from '../services/studentService'
+import { parentService } from '../services/parentService'
 import { localDate } from '../lib/datetime'
+import { buildExpenseMessage } from '../lib/messageBuilder'
 
 const $q = useQuasar()
 const loading = ref(true)
@@ -213,22 +215,26 @@ const weekdayNames = ['週日', '週一', '週二', '週三', '週四', '週五'
 const todayStr = localDate()
 const todayWeekday = weekdayNames[new Date().getDay()]
 
-function getWeekdayText(dateStr) {
-  return weekdayNames[new Date(dateStr + 'T00:00:00').getDay()]
-}
-
 // ── 點餐記錄 ──
 const todayOrders   = ref([])
 const historyOrders = ref([])
 const historyLoaded = ref(false)
 const balances      = ref({})   // { parentId: balance }
 const allStudents   = ref([])
+const allParents    = ref([])
 const recordTab     = ref('today')
 
 // studentId → parentId 對照表
 const studentParentMap = computed(() => {
   const map = {}
   for (const s of allStudents.value) map[s.id] = s.parentId
+  return map
+})
+
+// parentId → parentName 對照表
+const parentNameMap = computed(() => {
+  const map = {}
+  for (const p of allParents.value) map[p.id] = p.name
   return map
 })
 
@@ -310,10 +316,11 @@ watch(recordTab, tab => { if (tab === 'history') loadHistory() })
 
 onMounted(async () => {
   try {
-    ;[todayOrders.value, balances.value, allStudents.value] = await Promise.all([
+    ;[todayOrders.value, balances.value, allStudents.value, allParents.value] = await Promise.all([
       orderService.getToday(),
       mealService.getAllBalances(),
-      studentService.getAll()
+      studentService.getAll(),
+      parentService.getAll()
     ])
   } finally {
     loading.value = false
@@ -367,27 +374,13 @@ function confirmDeleteItem(order, item) {
 function buildParentDayNotification(record) {
   const parentId = parentIdOf(record.studentId)
   const familyRecords = todayRecords.value.filter(r => parentIdOf(r.studentId) === parentId)
-  const parentBalance = balances.value[parentId] ?? 0
-  const warning = parentBalance < 100 ? '\n⚠️ 餘額不足，請盡快儲值' : ''
-  const wt = getWeekdayText(record.date)
-  const isMultiChild = familyRecords.length > 1
-  const lines = [`📢 點餐通知 ${record.date}（${wt}）`]
-
-  for (const rec of familyRecords) {
-    if (isMultiChild) lines.push(`👤 ${rec.studentName}`)
-    for (const order of rec.orders) {
-      const itemsText = order.items.map(i =>
-        i.qty > 1 ? `${i.menuItemName}×${i.qty} $${i.price * i.qty}` : `${i.menuItemName} $${i.price}`
-      ).join('、')
-      lines.push(`🍱 ${order.restaurantName}：${itemsText}`)
-    }
-    if (isMultiChild) lines.push(`  小計 $${rec.totalAmount}`)
-  }
-
-  const familyTotal = familyRecords.reduce((s, r) => s + r.totalAmount, 0)
-  const balanceLabel = isMultiChild ? '家長餘額' : '餘額'
-  lines.push(`共 $${familyTotal}｜${balanceLabel} $${parentBalance}${warning}`)
-  return lines.join('\n')
+  const kids = familyRecords.map(rec => ({ name: rec.studentName, total: rec.totalAmount, orders: rec.orders }))
+  return buildExpenseMessage({
+    parentName: parentNameMap.value[parentId] ?? '',
+    date: record.date,
+    kids,
+    balance: balances.value[parentId] ?? 0
+  })
 }
 
 async function copyOneStudentNotification(record) {

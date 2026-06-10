@@ -161,7 +161,7 @@
                     </q-badge>
                   </q-item-label>
                   <q-item-label caption style="white-space: pre-line; line-height: 1.6">
-                    {{ buildExpenseMessage(p) }}
+                    {{ buildExpenseMsg(p) }}
                   </q-item-label>
                 </q-item-section>
               </q-item>
@@ -197,6 +197,7 @@ import { mealService } from '../services/mealService'
 import { orderService } from '../services/orderService'
 import { broadcastService } from '../services/broadcastService'
 import { localDate } from '../lib/datetime'
+import { buildExpenseMessage } from '../lib/messageBuilder'
 
 const $q = useQuasar()
 
@@ -312,36 +313,15 @@ function ordersOf(studentId) {
 }
 
 // 家長層級的餐費通知：合併名下孩子當日「餐點明細 + 金額」+ 家庭餘額
-function buildExpenseMessage(parent) {
-  const kids = childrenByParent.value[parent.id] || []
-  const balance = balances.value[parent.id] ?? 0
-  const lines = [`您好，${parent.name} 家長：`]
-
-  let familyTotal = 0
-  let eatenKids = 0
-  for (const kid of kids) {
-    const kidOrders = ordersOf(kid.id)
-    if (!kidOrders.length) continue
-    eatenKids++
-    const kidTotal = kidOrders.reduce((s, o) => s + o.total, 0)
-    familyTotal += kidTotal
-    lines.push(`${kid.name} 今日餐費 $${kidTotal}`)
-    for (const o of kidOrders) {
-      const items = o.items
-        .map(i => (i.qty > 1 ? `${i.menuItemName}×${i.qty}` : i.menuItemName))
-        .join('、')
-      lines.push(`  • ${o.restaurantName}：${items}`)
-    }
-  }
-
-  if (eatenKids === 0) {
-    lines.push('今日無用餐記錄')
-  } else if (eatenKids > 1) {
-    lines.push(`本日共 $${familyTotal}`)
-  }
-  lines.push(`目前帳戶餘額 $${balance}。`)
-  if (balance < 100) lines.push('⚠️ 餘額偏低，請盡快儲值！')
-  return lines.join('\n')
+function buildExpenseMsg(parent) {
+  const kids = (childrenByParent.value[parent.id] || [])
+    .map(kid => {
+      const kidOrders = ordersOf(kid.id)
+      if (!kidOrders.length) return null
+      return { name: kid.name, total: kidOrders.reduce((s, o) => s + o.total, 0), orders: kidOrders }
+    })
+    .filter(Boolean)
+  return buildExpenseMessage({ parentName: parent.name, date: expenseDate, kids, balance: balances.value[parent.id] ?? 0 })
 }
 
 async function sendGeneral() {
@@ -372,7 +352,7 @@ async function sendExpense() {
       parentId: p.id,
       parentName: p.name,
       lineUserId: p.lineUserId,
-      message: buildExpenseMessage(p)
+      message: buildExpenseMsg(p)
     }))
     const res = await broadcastService.send({ type: 'expense', records })
     notifyResult(res)
