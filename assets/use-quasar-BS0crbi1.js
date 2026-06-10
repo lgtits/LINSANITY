@@ -1,0 +1,1 @@
+import{sn as e}from"./index-DKGazE9i.js";function t(){return e(`_q_`)}export{t};
