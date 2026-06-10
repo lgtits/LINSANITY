@@ -3,16 +3,22 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 
-const env = {}
-for (const line of readFileSync(new URL('../.env.local', import.meta.url), 'utf8').replace(/^﻿/, '').split(/\r?\n/)) {
-  const m = line.match(/^([A-Z_]+)=(.*)$/); if (m) env[m[1]] = m[2].trim()
+let supabaseUrl = process.env.VITE_SUPABASE_URL
+let supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
+if (!supabaseUrl) {
+  const env = {}
+  for (const line of readFileSync(new URL('../.env.local', import.meta.url), 'utf8').replace(/^﻿/, '').split(/\r?\n/)) {
+    const m = line.match(/^([A-Z_]+)=(.*)$/); if (m) env[m[1]] = m[2].trim()
+  }
+  supabaseUrl = env.VITE_SUPABASE_URL
+  supabaseKey = env.VITE_SUPABASE_ANON_KEY
 }
-const sb = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY)
+const sb = createClient(supabaseUrl, supabaseKey)
 
 const TABLES = [
   'parents', 'students', 'restaurants', 'menu_items', 'orders', 'order_items',
   'meal_transactions', 'tuition_rates', 'tuition_enrollments', 'tuition_attendance',
-  'attendance_logs', 'broadcast_templates', 'broadcast_logs',
+  'attendance_logs', 'broadcast_templates', 'broadcast_logs', 'line_contacts',
 ]
 
 // 分頁抓全部（PostgREST 單次上限 1000）

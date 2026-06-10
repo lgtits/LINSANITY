@@ -1,3 +1,4 @@
 {
-  "demoMode": false
+  "demoMode": false,
+  "needPassword": false
 }

@@ -1,0 +1,38 @@
+name: Backup Supabase
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run backup
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: node scripts/backup-supabase.mjs
+
+      - name: Push to backup repo
+        env:
+          BACKUP_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+          BACKUP_REPO: ${{ secrets.BACKUP_REPO }}
+        run: |
+          git clone https://x-access-token:${BACKUP_TOKEN}@github.com/${BACKUP_REPO}.git _backup_repo
+          cp -r backups/. _backup_repo/
+          cd _backup_repo
+          git config user.email "github-actions@github.com"
+          git config user.name "GitHub Actions"
+          git add .
+          git diff --cached --quiet || git commit -m "backup $(date -u +%Y-%m-%dT%H:%M:%SZ) @ ${{ github.sha }}"
+          git push

@@ -1,4 +1,5 @@
 import { defineRouter } from '#q-app/wrappers'
+import config from '../../config.json'
 import {
   createRouter,
   createMemoryHistory,
@@ -31,6 +32,13 @@ export default defineRouter((/* { store, ssrContext } */) => {
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE),
+  })
+
+  Router.beforeEach((to) => {
+    if (!config.needPassword) return
+    const authed = sessionStorage.getItem('app_auth') === '1'
+    if (to.path !== '/login' && !authed) return '/login'
+    if (to.path === '/login' && authed) return '/'
   })
 
   return Router

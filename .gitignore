@@ -31,3 +31,6 @@ yarn-error.log*
 
 # local .env files
 .env.local*
+
+# 備份資料（含真實客戶資料，不進 git）
+/backups
