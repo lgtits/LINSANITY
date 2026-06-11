@@ -772,7 +772,7 @@ async function loadStudentsForMonth() {
   const mk = monthKey.value
   const defaultEnrollment = {}
   allStudents.value.forEach(s => {
-    defaultEnrollment[s.id] = { classType: 'full', withMeal: false }
+    defaultEnrollment[s.id] = { classType: 'none', withMeal: false }
   })
   await tuitionService.createEnrollment(mk, defaultEnrollment)
   enrollment.value = { ...defaultEnrollment }
