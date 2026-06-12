@@ -34,9 +34,12 @@
               <span class="text-body2 text-grey-6 q-ml-sm">
                 <q-icon name="phone" size="14px" />{{ p.phone || '—' }}
               </span>
-              <q-badge v-if="p.lineUserId" color="green-1" text-color="positive" class="q-ml-sm" style="font-size:12px">
-                <q-icon name="link" size="12px" class="q-mr-xs" />已綁 LINE
-              </q-badge>
+              <template v-if="p.lineUserId">
+                <q-badge color="green-1" text-color="positive" class="q-ml-sm" style="font-size:12px">
+                  <q-icon name="link" size="12px" class="q-mr-xs" />已綁 LINE
+                </q-badge>
+                <span v-if="contactMap[p.lineUserId]" class="q-ml-xs text-caption text-grey-8">{{ contactMap[p.lineUserId] }}</span>
+              </template>
               <q-badge v-else color="grey-3" text-color="grey-8" class="q-ml-sm" style="font-size:12px">未綁 LINE</q-badge>
             </div>
             <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEdit(p)" />
@@ -71,6 +74,14 @@
         <q-td :props="props" class="text-center">
           <q-badge v-if="props.row.lineUserId" color="positive" label="已綁" />
           <q-badge v-else color="grey-4" text-color="grey-8" label="未綁" />
+        </q-td>
+      </template>
+      <template #body-cell-lineName="props">
+        <q-td :props="props">
+          <span v-if="contactMap[props.row.lineUserId]" class="text-grey-8">
+            {{ contactMap[props.row.lineUserId] }}
+          </span>
+          <span v-else class="text-grey-4">—</span>
         </q-td>
       </template>
       <template #body-cell-students="props">
@@ -126,6 +137,10 @@
             />
             <q-input v-model="form.lineUserId" label="LINE userId" outlined dense clearable
               hint="從上面選好友帶入，或貼上 U 開頭的 userId（共用此帳號）" />
+            <div v-if="linkedContactName" class="row items-center q-gutter-xs bg-green-1 rounded-borders q-pa-sm">
+              <q-icon name="check_circle" color="positive" size="18px" />
+              <span class="text-positive text-weight-medium">已綁 LINE：{{ linkedContactName }}</span>
+            </div>
             <div v-if="isEdit && editingStudents.length"
               class="text-caption text-orange-9 bg-orange-1 rounded-borders q-pa-sm">
               <q-icon name="info" size="14px" class="q-mr-xs" />
@@ -233,6 +248,7 @@ const columns = [
   { name: 'name',     label: '家長',     field: 'name',  align: 'left', sortable: true },
   { name: 'phone',    label: '電話',     field: 'phone', align: 'left' },
   { name: 'line',     label: 'LINE',     field: 'lineUserId', align: 'center' },
+  { name: 'lineName', label: 'LINE 名稱', field: 'lineUserId', align: 'left' },
   { name: 'students', label: '名下學生', field: 'students', align: 'left' },
   { name: 'balance',  label: '家庭餘額', field: 'balance', align: 'left', sortable: true },
   { name: 'actions',  label: '操作',     field: 'actions', align: 'center' },
@@ -291,6 +307,15 @@ const contactOptions = computed(() => {
     return { label: `${c.displayName || '(未命名)'}${suffix} ・ ${c.userId.slice(0, 12)}…`, value: c.userId }
   })
 })
+const contactMap = computed(() =>
+  Object.fromEntries(contacts.value.map(c => [c.userId, c.displayName || '']))
+)
+
+const linkedContactName = computed(() => {
+  if (!form.value.lineUserId) return null
+  return contactMap.value[form.value.lineUserId] || null
+})
+
 function onPickContact(userId) {
   if (userId) form.value.lineUserId = userId
 }
