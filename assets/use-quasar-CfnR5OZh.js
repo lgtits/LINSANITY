@@ -1,1 +1,0 @@
-import{sn as e}from"./index-CyjnPJ5N.js";function t(){return e(`_q_`)}export{t};
