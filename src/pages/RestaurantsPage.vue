@@ -10,6 +10,11 @@
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="restaurants" class="q-pa-none">
 
+        <div class="row items-center justify-between q-mb-md">
+          <div class="text-subtitle1 text-weight-bold">餐廳列表</div>
+          <q-btn color="primary" icon="add" label="新增餐廳" @click="openAddRestaurant" />
+        </div>
+
         <!-- 手機：卡片 -->
         <template v-if="$q.screen.lt.md">
           <q-card
@@ -33,6 +38,9 @@
                 <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEditRestaurant(r)" />
                 <q-btn flat round dense :icon="r.active ? 'toggle_on' : 'toggle_off'" :color="r.active ? 'positive' : 'grey'" size="sm" @click="toggleRestaurant(r)" />
                 <q-btn flat round dense icon="delete" color="negative" size="sm" @click="confirmDeleteRestaurant(r)" />
+                <q-btn flat round dense icon="restaurant_menu" color="secondary" size="sm" @click="openAddMenuForRestaurant(r)">
+                  <q-tooltip>增加餐點</q-tooltip>
+                </q-btn>
               </div>
             </q-card-section>
           </q-card>
@@ -59,6 +67,9 @@
               <q-btn flat dense round icon="edit" color="primary" size="sm" @click="openEditRestaurant(props.row)" />
               <q-btn flat dense round :icon="props.row.active ? 'toggle_on' : 'toggle_off'" :color="props.row.active ? 'positive' : 'grey'" size="sm" @click="toggleRestaurant(props.row)" />
               <q-btn flat dense round icon="delete" color="negative" size="sm" @click="confirmDeleteRestaurant(props.row)" />
+              <q-btn flat dense round icon="restaurant_menu" color="secondary" size="sm" @click="openAddMenuForRestaurant(props.row)">
+                <q-tooltip>增加餐點</q-tooltip>
+              </q-btn>
             </q-td>
           </template>
         </q-table>
@@ -70,6 +81,12 @@
 
       <!-- ===== 餐點 tab ===== -->
       <q-tab-panel name="menu" class="q-pa-none">
+
+        <div class="row items-center justify-between q-mb-md">
+          <div class="text-subtitle1 text-weight-bold">餐點列表</div>
+          <q-btn color="primary" icon="add" label="新增餐點" @click="openAddMenu" />
+        </div>
+
         <!-- 餐廳篩選 -->
         <q-select
           v-model="filterRestaurant"
@@ -148,11 +165,6 @@
         </div>
       </q-tab-panel>
     </q-tab-panels>
-
-    <!-- FAB -->
-    <q-page-sticky position="bottom-right" :offset="[18, 18]">
-      <q-btn fab :icon="tab === 'restaurants' ? 'add' : 'add'" color="primary" @click="openAdd" />
-    </q-page-sticky>
 
     <!-- 餐廳 Dialog -->
     <q-dialog v-model="showRestaurantDialog" persistent>
@@ -271,15 +283,22 @@ onMounted(async () => {
   }
 })
 
-function openAdd() {
+function openAddRestaurant() {
   isEdit.value = false
-  if (tab.value === 'restaurants') {
-    rForm.value = emptyR()
-    showRestaurantDialog.value = true
-  } else {
-    mForm.value = emptyM()
-    showMenuDialog.value = true
-  }
+  rForm.value = emptyR()
+  showRestaurantDialog.value = true
+}
+
+function openAddMenu() {
+  isEdit.value = false
+  mForm.value = emptyM()
+  showMenuDialog.value = true
+}
+
+function openAddMenuForRestaurant(r) {
+  isEdit.value = false
+  mForm.value = { ...emptyM(), restaurantId: r.id }
+  showMenuDialog.value = true
 }
 
 function openEditRestaurant(r) {
