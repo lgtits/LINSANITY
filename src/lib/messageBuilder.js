@@ -11,8 +11,9 @@ function formatDate(dateStr) {
  * @param {string} opts.date        - YYYY-MM-DD
  * @param {{ name: string, total: number, orders: { restaurantName: string, items: { menuItemName: string, qty: number }[] }[] }[]} opts.kids
  * @param {number} opts.balance
+ * @param {{ amount: number, note: string }[]} [opts.topups]
  */
-export function buildExpenseMessage({ parentName, date, kids, balance }) {
+export function buildExpenseMessage({ parentName, date, kids, balance, topups = [] }) {
   const lines = [`您好，${parentName} 家長：`, formatDate(date)]
 
   if (!kids.length) {
@@ -30,6 +31,11 @@ export function buildExpenseMessage({ parentName, date, kids, balance }) {
       }
     }
     if (kids.length > 1) lines.push(`本日共 $${familyTotal}`)
+  }
+
+  for (const t of topups) {
+    const note = t.note ? `（${t.note}）` : ''
+    lines.push(`今日儲值 +$${t.amount}${note}`)
   }
 
   lines.push(`目前帳戶餘額 $${balance}。`)

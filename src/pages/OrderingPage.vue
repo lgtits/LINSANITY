@@ -9,14 +9,18 @@
             <q-input v-model="orderDate" type="date" label="點餐日期" outlined dense
               @update:model-value="onDateChange" />
           </div>
-          <div class="col-12 col-sm-5">
+          <div class="col-12 col-sm-4">
             <q-select v-model="selectedRestaurantId" :options="restaurantOptions"
               label="選擇餐廳" outlined dense emit-value map-options
               @update:model-value="onRestaurantChange" />
           </div>
-          <div class="col-12 col-sm-3">
-            <q-btn color="primary" label="載入學生" icon="group" class="full-width"
-              :disable="!selectedRestaurantId" @click="loadStudents" />
+          <div class="col-12 col-sm-4">
+            <div class="row q-gutter-xs no-wrap">
+              <q-btn class="col" color="primary" label="載入學生" icon="group"
+                :disable="!selectedRestaurantId" @click="loadStudents" />
+              <q-btn class="col" outline icon="add" label="新增餐點" color="secondary"
+                :disable="!selectedRestaurantId" @click="openAddMenuItem" />
+            </div>
           </div>
         </div>
         <div v-if="orderDate" class="text-caption text-grey-6 q-mt-xs">
@@ -210,6 +214,36 @@
       </q-card>
     </template>
 
+    <!-- ══════ 快速新增餐點 Dialog ══════ -->
+    <q-dialog v-model="showAddMenuItem" persistent>
+      <q-card style="width: min(95vw, 420px)">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">新增餐點</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <q-card-section>
+          <q-form @submit.prevent="saveNewMenuItem" class="q-gutter-sm">
+            <q-input
+              :model-value="selectedRestaurantName"
+              label="所屬餐廳" outlined dense readonly
+              bg-color="grey-2"
+            />
+            <q-input v-model="newMenuItem.name" label="餐點名稱 *" outlined dense autofocus
+              :rules="[v => !!v || '必填']" />
+            <q-input v-model.number="newMenuItem.price" label="價格 *" outlined dense type="number" prefix="$"
+              :rules="[v => v > 0 || '請輸入正確價格']" />
+            <q-input v-model.number="newMenuItem.defaultQty" label="預設數量" outlined dense type="number" min="1"
+              :rules="[v => v >= 1 || '至少為 1']" />
+            <div class="row justify-end q-mt-md q-gutter-sm">
+              <q-btn flat label="取消" v-close-popup />
+              <q-btn type="submit" color="primary" label="新增" icon="add" />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
   </q-page>
 </template>
 
@@ -382,6 +416,30 @@ function addExtraStudent(studentId) {
 }
 
 function removeStudent(idx) { studentOrders.value.splice(idx, 1) }
+
+// ── 快速新增餐點 ──
+const showAddMenuItem = ref(false)
+const newMenuItem = ref({ name: '', price: 0, defaultQty: 1 })
+
+const selectedRestaurantName = computed(() =>
+  restaurants.value.find(r => r.id === selectedRestaurantId.value)?.name || ''
+)
+
+function openAddMenuItem() {
+  newMenuItem.value = { name: '', price: 0, defaultQty: 1 }
+  showAddMenuItem.value = true
+}
+
+async function saveNewMenuItem() {
+  const created = await restaurantService.createMenuItem({
+    ...newMenuItem.value,
+    restaurantId: selectedRestaurantId.value,
+    available: true,
+  })
+  menuItems.value.push(created)
+  showAddMenuItem.value = false
+  $q.notify({ message: `「${created.name}」已新增，可立即選用`, color: 'positive', icon: 'check' })
+}
 
 async function confirmOrder() {
   const toOrder = orderedStudents.value

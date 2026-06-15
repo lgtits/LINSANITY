@@ -216,13 +216,14 @@ const todayStr = localDate()
 const todayWeekday = weekdayNames[new Date().getDay()]
 
 // ── 點餐記錄 ──
-const todayOrders   = ref([])
-const historyOrders = ref([])
-const historyLoaded = ref(false)
-const balances      = ref({})   // { parentId: balance }
-const allStudents   = ref([])
-const allParents    = ref([])
-const recordTab     = ref('today')
+const todayOrders      = ref([])
+const historyOrders    = ref([])
+const historyLoaded    = ref(false)
+const balances         = ref({})   // { parentId: balance }
+const allStudents      = ref([])
+const allParents       = ref([])
+const allTransactions  = ref([])
+const recordTab        = ref('today')
 
 // studentId → parentId 對照表
 const studentParentMap = computed(() => {
@@ -316,11 +317,12 @@ watch(recordTab, tab => { if (tab === 'history') loadHistory() })
 
 onMounted(async () => {
   try {
-    ;[todayOrders.value, balances.value, allStudents.value, allParents.value] = await Promise.all([
+    ;[todayOrders.value, balances.value, allStudents.value, allParents.value, allTransactions.value] = await Promise.all([
       orderService.getToday(),
       mealService.getAllBalances(),
       studentService.getAll(),
-      parentService.getAll()
+      parentService.getAll(),
+      mealService.getAllTransactions()
     ])
   } finally {
     loading.value = false
@@ -328,9 +330,10 @@ onMounted(async () => {
 })
 
 async function refreshOrders() {
-  ;[todayOrders.value, balances.value] = await Promise.all([
+  ;[todayOrders.value, balances.value, allTransactions.value] = await Promise.all([
     orderService.getToday(),
-    mealService.getAllBalances()
+    mealService.getAllBalances(),
+    mealService.getAllTransactions()
   ])
   if (historyLoaded.value) {
     const all = await orderService.getAll()
@@ -370,16 +373,31 @@ function confirmDeleteItem(order, item) {
   })
 }
 
-// ── 通知文字（以家長為單位，含當日所有孩子訂單）──
+// 今日儲值，依 parentId 分組
+const todayTopupsByParent = computed(() => {
+  const map = {}
+  for (const tx of allTransactions.value) {
+    if (tx.type !== 'topup') continue
+    const txDate = (tx.datetime || tx.date || '').slice(0, 10)
+    if (txDate !== todayStr) continue
+    if (!map[tx.parentId]) map[tx.parentId] = []
+    map[tx.parentId].push({ amount: tx.amount, note: tx.note || '' })
+  }
+  return map
+})
+
+// ── 通知文字（以家長為單位，含當日所有孩子訂單 + 今日儲值）──
 function buildParentDayNotification(record) {
   const parentId = parentIdOf(record.studentId)
   const familyRecords = todayRecords.value.filter(r => parentIdOf(r.studentId) === parentId)
   const kids = familyRecords.map(rec => ({ name: rec.studentName, total: rec.totalAmount, orders: rec.orders }))
+  const topups = todayTopupsByParent.value[parentId] || []
   return buildExpenseMessage({
     parentName: parentNameMap.value[parentId] ?? '',
     date: record.date,
     kids,
-    balance: balances.value[parentId] ?? 0
+    balance: balances.value[parentId] ?? 0,
+    topups
   })
 }
 

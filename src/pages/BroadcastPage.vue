@@ -30,12 +30,12 @@
               <q-btn flat dense label="清除" color="grey-7" @click="clearAll" />
             </div>
             <div class="row q-col-gutter-xs">
-              <div class="col-7">
+              <div class="col-12">
                 <q-input v-model="parentSearch" placeholder="搜尋家長或學生..." outlined dense clearable>
                   <template #prepend><q-icon name="search" /></template>
                 </q-input>
               </div>
-              <div class="col-5">
+              <div class="col-6">
                 <q-select
                   v-model="gradeFilter"
                   :options="gradeFilterOptions"
@@ -43,6 +43,13 @@
                   outlined dense clearable
                   emit-value map-options
                 />
+              </div>
+              <div class="col-6">
+                <div class="row items-center justify-between q-px-sm rounded-borders"
+                  style="border: 1px solid rgba(0,0,0,0.24); height: 40px">
+                  <span class="text-caption text-grey-8">今日有異動</span>
+                  <q-toggle v-model="onlyTodayActivity" color="primary" dense />
+                </div>
               </div>
             </div>
           </q-card-section>
@@ -207,11 +214,13 @@ const parents = ref([])
 const students = ref([])
 const balances = ref({})
 const todayOrders = ref([])
+const allTransactions = ref([])
 const templates = ref([])
 
 const broadcastType = ref('general')
 const parentSearch = ref('')
 const gradeFilter = ref(null)
+const onlyTodayActivity = ref(true)
 const selectedIds = ref([])           // 選定的 parentId
 const selectedTemplateId = ref(null)
 const customMessage = ref('')
@@ -219,11 +228,12 @@ const expenseDate = localDate()
 
 onMounted(async () => {
   try {
-    [parents.value, students.value, balances.value, todayOrders.value, templates.value] = await Promise.all([
+    ;[parents.value, students.value, balances.value, todayOrders.value, allTransactions.value, templates.value] = await Promise.all([
       parentService.getAll(),
       studentService.getAll(),
       mealService.getAllBalances(),
       orderService.getToday(),
+      mealService.getAllTransactions(),
       broadcastService.getTemplates()
     ])
   } finally {
@@ -248,8 +258,25 @@ const parentRows = computed(() =>
   parents.value.map(p => ({ ...p, children: childrenByParent.value[p.id] || [] }))
 )
 
+// 今日有點餐消費或儲值的家長 id 集合
+const parentsWithTodayActivity = computed(() => {
+  const ids = new Set()
+  for (const o of todayOrders.value) {
+    const pid = childrenByParent.value  // studentId → parentId via students
+      ? students.value.find(s => s.id === o.studentId)?.parentId
+      : null
+    if (pid) ids.add(pid)
+  }
+  for (const tx of allTransactions.value) {
+    const txDate = (tx.datetime || tx.date || '').slice(0, 10)
+    if (txDate === expenseDate) ids.add(tx.parentId)
+  }
+  return ids
+})
+
 const filteredParents = computed(() => {
   let list = parentRows.value
+  if (onlyTodayActivity.value) list = list.filter(p => parentsWithTodayActivity.value.has(p.id))
   if (gradeFilter.value !== null) list = list.filter(p => p.children.some(c => c.grade === gradeFilter.value))
   const q = parentSearch.value.trim().toLowerCase()
   if (q) list = list.filter(p =>
@@ -312,7 +339,20 @@ function ordersOf(studentId) {
   return todayOrders.value.filter(o => o.studentId === studentId)
 }
 
-// 家長層級的餐費通知：合併名下孩子當日「餐點明細 + 金額」+ 家庭餘額
+// 今日儲值，依 parentId 分組
+const todayTopupsByParent = computed(() => {
+  const map = {}
+  for (const tx of allTransactions.value) {
+    if (tx.type !== 'topup') continue
+    const txDate = (tx.datetime || tx.date || '').slice(0, 10)
+    if (txDate !== expenseDate) continue
+    if (!map[tx.parentId]) map[tx.parentId] = []
+    map[tx.parentId].push({ amount: tx.amount, note: tx.note || '' })
+  }
+  return map
+})
+
+// 家長層級的餐費通知：合併名下孩子當日「餐點明細 + 金額」+ 今日儲值 + 家庭餘額
 function buildExpenseMsg(parent) {
   const kids = (childrenByParent.value[parent.id] || [])
     .map(kid => {
@@ -321,7 +361,8 @@ function buildExpenseMsg(parent) {
       return { name: kid.name, total: kidOrders.reduce((s, o) => s + o.total, 0), orders: kidOrders }
     })
     .filter(Boolean)
-  return buildExpenseMessage({ parentName: parent.name, date: expenseDate, kids, balance: balances.value[parent.id] ?? 0 })
+  const topups = todayTopupsByParent.value[parent.id] || []
+  return buildExpenseMessage({ parentName: parent.name, date: expenseDate, kids, balance: balances.value[parent.id] ?? 0, topups })
 }
 
 async function sendGeneral() {
