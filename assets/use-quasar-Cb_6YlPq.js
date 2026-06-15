@@ -1,1 +1,0 @@
-import{sn as e}from"./index-DVC7ubIG.js";function t(){return e(`_q_`)}export{t};
