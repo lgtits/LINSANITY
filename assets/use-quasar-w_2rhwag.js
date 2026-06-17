@@ -1,1 +1,0 @@
-import{sn as e}from"./index-D0hTc3AN.js";function t(){return e(`_q_`)}export{t};
