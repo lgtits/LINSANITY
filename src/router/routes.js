@@ -8,6 +8,7 @@ const routes = [
       { path: 'students/parents',  component: () => import('pages/ParentsPage.vue') },
       { path: 'students/archived', component: () => import('pages/ArchivedStudentsPage.vue') },
       { path: 'students/deleted',  component: () => import('pages/DeletedStudentsPage.vue') },
+      { path: 'students/ledger',   component: () => import('pages/LedgerPage.vue') },
       { path: 'restaurants', component: () => import('pages/RestaurantsPage.vue') },
       { path: 'ordering', component: () => import('pages/OrderingPage.vue') },
       { path: 'meals', component: () => import('pages/MealFeePage.vue') },

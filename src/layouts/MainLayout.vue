@@ -129,6 +129,7 @@ const drawerOpen = ref(true)
 const studentNavItems = [
   { to: '/students', icon: 'format_list_bulleted', label: '學生列表' },
   { to: '/students/parents', icon: 'family_restroom', label: '家長管理' },
+  { to: '/students/ledger', icon: 'receipt_long', label: '帳務明細' },
   { to: '/students/archived', icon: 'archive', label: '封存學生' },
   { to: '/students/deleted', icon: 'delete_sweep', label: '刪除記錄' },
 ]
@@ -154,6 +155,7 @@ const broadcastNavItems = [
 const allTitles = {
   '/students': '學生列表',
   '/students/parents': '家長管理',
+  '/students/ledger': '帳務明細',
   '/students/archived': '封存學生',
   '/students/deleted': '刪除記錄',
   '/ordering': '點餐',

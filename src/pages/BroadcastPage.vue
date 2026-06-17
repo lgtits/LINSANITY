@@ -7,8 +7,8 @@
       <q-btn-toggle
         v-model="broadcastType"
         :options="[
-          { label: '一般訊息', value: 'general', icon: 'campaign' },
-          { label: '餐費通知', value: 'expense', icon: 'receipt_long' }
+          { label: '帳務通知', value: 'expense', icon: 'receipt_long' },
+          { label: '一般訊息', value: 'general', icon: 'campaign' }
         ]"
         color="grey-6"
         toggle-color="primary"
@@ -144,11 +144,11 @@
           </q-card-actions>
         </q-card>
 
-        <!-- 餐費通知 -->
+        <!-- 帳務通知 -->
         <q-card v-else flat bordered>
           <q-card-section>
             <div class="row items-center q-mb-md">
-              <div class="text-subtitle2">餐費通知預覽</div>
+              <div class="text-subtitle2">帳務通知預覽</div>
               <q-space />
               <span class="text-body2 text-grey-6">{{ expenseDate }}</span>
             </div>
@@ -217,7 +217,7 @@ const todayOrders = ref([])
 const allTransactions = ref([])
 const templates = ref([])
 
-const broadcastType = ref('general')
+const broadcastType = ref('expense')
 const parentSearch = ref('')
 const gradeFilter = ref(null)
 const onlyTodayActivity = ref(true)
