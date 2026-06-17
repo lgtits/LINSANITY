@@ -19,9 +19,9 @@ const cors = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-// 台灣本地時間 "YYYY-MM-DD HH:mm"（與 app 其他時間一致，避免記錄差 8 小時、晚間發送被歸錯日）
+// 台灣本地時間帶時區 "YYYY-MM-DD HH:mm+08:00"，PostgreSQL 才能正確轉 UTC 存入
 function nowTaipei() {
-  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 16).replace('T', ' ')
+  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 16).replace('T', ' ') + '+08:00'
 }
 
 function json(body: unknown, status = 200) {
