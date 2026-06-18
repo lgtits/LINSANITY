@@ -54,6 +54,7 @@
           row-key="id"
           flat
           bordered
+          :rows-per-page-options="[20, 50, 0]" rows-per-page-label="每頁筆數"
         >
           <template #body-cell-active="props">
             <q-td :props="props">
@@ -137,6 +138,7 @@
           row-key="id"
           flat
           bordered
+          :rows-per-page-options="[20, 50, 0]" rows-per-page-label="每頁筆數"
         >
           <template #body-cell-restaurantId="props">
             <q-td :props="props">{{ restaurantName(props.row.restaurantId) }}</q-td>

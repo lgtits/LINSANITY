@@ -135,7 +135,7 @@
               :hint="contacts.length ? '' : '尚無 LINE 好友（需先有人加好友才能選）'"
               @update:model-value="onPickContact"
             />
-            <q-input v-model="form.lineUserId" label="LINE userId" outlined dense clearable
+            <q-input v-model="form.lineUserId" label="LINE 用戶 ID" outlined dense clearable
               hint="從上面選好友帶入，或貼上 U 開頭的 userId（共用此帳號）" />
             <div v-if="linkedContactName" class="row items-center q-gutter-xs bg-green-1 rounded-borders q-pa-sm">
               <q-icon name="check_circle" color="positive" size="18px" />
