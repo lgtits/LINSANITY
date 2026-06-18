@@ -60,7 +60,7 @@
               </q-item-section>
             </template>
 
-            <div class="bg-grey-1">
+            <div class="bg-subtle">
               <div v-for="order in record.orders" :key="order.id" class="q-pa-sm q-mb-xs">
                 <div class="row items-center q-mb-xs">
                   <q-icon name="restaurant" color="primary" size="sm" class="q-mr-xs" />
@@ -151,7 +151,7 @@
               </q-item-section>
             </template>
 
-            <div class="bg-grey-1">
+            <div class="bg-subtle">
               <div v-for="order in record.orders" :key="order.id" class="q-pa-sm q-mb-xs">
                 <div class="row items-center q-mb-xs">
                   <q-icon name="restaurant" color="primary" size="sm" class="q-mr-xs" />

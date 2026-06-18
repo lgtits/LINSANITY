@@ -5,8 +5,9 @@ $primary   : #5C7A3E;   // 深抹茶綠
 $secondary : #8FAF6A;   // 中抹茶綠
 $accent    : #C4DBA8;   // 淺抹茶
 
-$dark      : #2D3A25;
-$dark-page : #1E2A18;
+// 暗黑模式：純中性灰，不帶色調（參考 Facebook / YouTube）
+$dark      : #242526;   // 表面 surface
+$dark-page : #18191a;   // 底層 base
 
 $positive  : #3D8B37;   // 正向綠（稍深，與 primary 有區別）
 $negative  : #C62828;   // 紅

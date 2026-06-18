@@ -29,7 +29,7 @@
     </div>
 
     <!-- 尚未設定費率的警告 -->
-    <q-banner v-if="!loading && !rates" class="bg-orange-1 text-orange-9 q-mb-md rounded-borders">
+    <q-banner v-if="!loading && !rates" class="bg-warning-hint q-mb-md rounded-borders">
       <template #avatar><q-icon name="warning" color="orange-7" /></template>
       <div class="text-body2">
         <span class="text-weight-bold">{{ selectedYear }}年{{ String(selectedMonth).padStart(2,'0') }}月 尚未設定費率</span>，
@@ -43,7 +43,7 @@
 
     <!-- 尚未建立名單 -->
     <q-card v-if="!loading && enrollment === null && !loadingMonth"
-      flat bordered class="q-mb-md bg-blue-1">
+      flat bordered class="q-mb-md bg-info-hint">
       <q-card-section class="row items-center">
         <div class="col">
           <div class="text-subtitle2 text-weight-bold text-primary">
@@ -92,7 +92,7 @@
             </q-item-section>
           </template>
 
-          <div v-if="row.settings.classType !== 'none'" class="q-pa-md bg-grey-1">
+          <div v-if="row.settings.classType !== 'none'" class="q-pa-md bg-subtle">
             <div class="text-caption text-grey-6 text-center q-mb-sm">
               點擊日期切換：出席(綠) ➔ 請假(紅) ➔ 未到(灰)
             </div>
@@ -187,7 +187,7 @@
 
           <!-- 展開：日曆 -->
           <q-tr v-show="props.expand" :props="props">
-            <q-td colspan="100%" class="bg-grey-1 q-pa-md">
+            <q-td colspan="100%" class="bg-subtle q-pa-md">
               <template v-if="props.row.settings.classType !== 'none'">
                 <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                   <q-icon name="calendar_month" size="14px" class="q-mr-xs" />簽到日曆
@@ -558,4 +558,12 @@ onMounted(async () => {
 .cell-none    { background-color: #fafafa; border-color: #e0e0e0; color: #9e9e9e; }
 .day-number { font-size: 12px; font-weight: bold; }
 .day-status-icon { margin-top: 2px; height: 12px; }
+</style>
+
+<style>
+body.body--dark .calendar-header-cell { color: #b0b3b8; }
+body.body--dark .calendar-day-cell { border-color: #3a3b3c; }
+body.body--dark .cell-present { background-color: #2d3b2d; border-color: #4a7a4a; color: #8bc48b; }
+body.body--dark .cell-absent  { background-color: #3b2626; border-color: #7a3b3b; color: #e08080; }
+body.body--dark .cell-none    { background-color: #303132; border-color: #3a3b3c; color: #6b6d70; }
 </style>

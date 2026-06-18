@@ -121,7 +121,7 @@
     />
 
     <!-- 點餐總覽 -->
-    <q-card v-if="studentOrders.length" class="bg-grey-1" flat bordered>
+    <q-card v-if="studentOrders.length" class="bg-subtle" flat bordered>
       <q-card-section>
         <div class="text-subtitle1 text-weight-bold q-mb-md">
           <q-icon name="receipt_long" class="q-mr-xs" />點餐總覽
@@ -193,8 +193,8 @@
 
           <!-- 品項彙總（方便叫餐） -->
           <q-separator class="q-my-sm" />
-          <div class="bg-blue-1 rounded-borders q-pa-sm">
-            <div class="text-caption text-weight-bold text-blue-9 q-mb-xs">
+          <div class="bg-info-hint rounded-borders q-pa-sm">
+            <div class="text-caption text-weight-bold text-primary q-mb-xs">
               <q-icon name="receipt" size="14px" class="q-mr-xs" />品項彙總
             </div>
             <div v-for="s in batch.itemSummary" :key="s.name + '_' + s.qty"

@@ -1,1 +1,208 @@
-// app global css
+// ============================================
+// Dark mode — 純中性灰層次，參考 Facebook / YouTube
+// 層級：#18191a (base) → #242526 (surface) → #3a3b3c (elevated)
+// 文字：#e4e6eb (primary) / #b0b3b8 (secondary)
+// 顏色只用在小面積互動元素，不用在大面底色
+// 所有 Quasar 色彩變數在暗黑模式下自動降飽和、提亮
+// ============================================
+
+// ---------- 暗黑模式全局色彩覆寫 ----------
+body.body--dark {
+  // 各主題暗黑色（依 data-theme 切換）
+  --q-positive: #6abf69;
+  --q-negative: #e57373;
+  --q-info: #7eb8d0;
+  --q-warning: #f0a830;
+}
+html[data-theme="matcha"] body.body--dark  { --q-primary: #90b06e; --q-secondary: #a8c88a; }
+html[data-theme="ocean"]  body.body--dark  { --q-primary: #64B5F6; --q-secondary: #90CAF9; }
+html[data-theme="indigo"] body.body--dark  { --q-primary: #B39DDB; --q-secondary: #D1C4E9; }
+html[data-theme="coral"]  body.body--dark  { --q-primary: #FF8A65; --q-secondary: #FFAB91; }
+html[data-theme="rose"]   body.body--dark  { --q-primary: #F48FB1; --q-secondary: #F8BBD0; }
+
+body.body--dark {
+
+  color: #e4e6eb;
+
+  // ====== 灰階文字：反轉明度，確保全部可讀 ======
+  // 亮色下 grey-9(#212121) 是最深 → 暗色下改為最亮
+  .text-grey-9 { color: #e4e6eb !important; }
+  .text-grey-8 { color: #d0d2d6 !important; }
+  .text-grey-7 { color: #b0b3b8 !important; }
+  .text-grey-6 { color: #9a9da1 !important; }
+  .text-grey-5 { color: #8a8d91 !important; }
+  .text-grey-4 { color: #6b6d70 !important; }
+  .text-grey-3 { color: #555759 !important; }
+  .text-grey   { color: #8a8d91 !important; }
+
+  // 灰階 icon 和按鈕
+  .text-orange-7 { color: #f0a830 !important; }
+
+  // ====== 灰階背景 Badge：暗色下改為深灰底 + 淺文字 ======
+  .bg-grey-3 { background-color: #3a3b3c !important; }
+  .bg-grey-4 { background-color: #3a3b3c !important; }
+  .bg-grey-6 { background-color: #4a4b4d !important; }
+  .bg-grey   { background-color: #4a4b4d !important; }
+  // 上述 badge 原本搭配深色文字，暗色下文字需要淺色
+  .bg-grey-3 .text-grey-8,
+  .bg-grey-4 .text-grey-8 {
+    color: #e4e6eb !important;
+  }
+
+  // blue-grey badge
+  .bg-blue-grey-6 { background-color: #4a5259 !important; }
+
+  // 輸入框淺灰背景
+  .bg-grey-2 { background-color: #303132 !important; }
+
+  // orange-7 badge 背景
+  .bg-orange-7 { background-color: #b87a20 !important; }
+
+  // 深紫 / teal badge
+  .bg-deep-purple { background-color: #6a52b5 !important; }
+  .bg-teal { background-color: #3d9e8f !important; }
+}
+
+// ---------- 暗黑下內容文字（替代 inline color: #555 等） ----------
+.text-secondary-content {
+  color: #555;
+}
+body.body--dark .text-secondary-content {
+  color: #b0b3b8;
+}
+
+// ---------- Sidebar active item ----------
+body.body--light .nav-active {
+  background-color: color-mix(in srgb, var(--q-primary) 12%, white);
+  color: var(--q-primary);
+}
+body.body--dark .nav-active {
+  background-color: #3a3b3c;
+  color: #e4e6eb;
+}
+
+// ---------- Subtle background (expanded rows, cards, lists) ----------
+body.body--light .bg-subtle {
+  background-color: #f5f5f5;
+}
+body.body--dark .bg-subtle {
+  background-color: #303132;
+}
+
+// ---------- Success hint (LINE binding) ----------
+body.body--light .bg-success-hint {
+  background-color: #e8f5e9;
+}
+body.body--dark .bg-success-hint {
+  background-color: #2d3b2d;
+}
+
+// ---------- Warning hint (orange banners) ----------
+body.body--light .bg-warning-hint {
+  background-color: #fff3e0;
+}
+body.body--dark .bg-warning-hint {
+  background-color: #3b3124;
+}
+
+// ---------- Info hint (blue banners) ----------
+body.body--light .bg-info-hint {
+  background-color: #e3f2fd;
+}
+body.body--dark .bg-info-hint {
+  background-color: #263240;
+}
+
+// ---------- Login page ----------
+body.body--light .login-bg {
+  background-color: #f5f5f5;
+}
+body.body--dark .login-bg {
+  background-color: #18191a;
+}
+
+// ---------- Dark mode 元件覆寫 ----------
+body.body--dark {
+  // Header & Drawer
+  .q-header {
+    background-color: #242526;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  .q-drawer {
+    background-color: #242526;
+    border-color: #3a3b3c !important;
+  }
+  .q-separator {
+    background-color: #3a3b3c;
+  }
+  // 表格
+  .q-table {
+    color: #e4e6eb;
+  }
+  .q-table thead th {
+    color: #b0b3b8;
+  }
+  .q-table--bordered {
+    border-color: #3a3b3c;
+  }
+  .q-table tbody tr:hover {
+    background-color: #303132;
+  }
+  // 卡片
+  .q-card {
+    background-color: #242526;
+    color: #e4e6eb;
+  }
+  // 輸入框
+  .q-field__control {
+    color: #e4e6eb;
+  }
+  .q-field--outlined .q-field__control:before {
+    border-color: #3a3b3c;
+  }
+  // Badge
+  .q-badge--outline {
+    border-color: currentColor;
+  }
+  .q-badge {
+    color: #fff;
+  }
+  // Tabs
+  .q-tab__label {
+    color: #b0b3b8;
+  }
+  .q-tab--active .q-tab__label {
+    color: #e4e6eb;
+  }
+  // Banner
+  .q-banner {
+    color: #e4e6eb;
+  }
+  // Chip
+  .q-chip {
+    color: #e4e6eb;
+  }
+  // Pagination
+  .q-pagination .q-btn {
+    color: #b0b3b8;
+  }
+  // List / expansion
+  .q-item__label {
+    color: #e4e6eb;
+  }
+  .q-expansion-item .q-item {
+    color: #e4e6eb;
+  }
+  // Dialog
+  .q-dialog .q-card {
+    background-color: #303132;
+  }
+  // Toggle
+  .q-toggle__label {
+    color: #e4e6eb;
+  }
+  // Inner loading
+  .q-inner-loading {
+    color: #b0b3b8;
+  }
+}

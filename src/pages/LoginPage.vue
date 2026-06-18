@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-center bg-grey-1" style="min-height: 100vh">
+  <div class="flex flex-center login-bg" style="min-height: 100vh">
     <q-card style="width: min(90vw, 360px)" flat bordered>
       <q-card-section class="text-center q-pt-lg q-pb-sm">
         <q-icon name="school" size="48px" color="primary" />

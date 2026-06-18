@@ -77,14 +77,14 @@
         </template>
 
         <!-- 展開：每個收件人的訊息 -->
-        <q-list separator class="bg-grey-1">
+        <q-list separator class="bg-subtle">
           <q-item v-for="rec in log.records" :key="rec.parentId ?? rec.studentId" class="q-py-sm">
             <q-item-section>
               <div class="row items-center q-gutter-xs q-mb-xs">
                 <span class="text-weight-bold text-body2">{{ rec.parentName ?? rec.studentName }}</span>
                 <q-badge v-if="rec.status" :color="statusColor(rec.status)" :label="statusLabel(rec.status)" />
               </div>
-              <div style="font-size: 13px; white-space: pre-line; line-height: 1.7; color: #555">
+              <div class="text-secondary-content" style="font-size: 13px; white-space: pre-line; line-height: 1.7">
                 {{ rec.message }}
               </div>
               <div v-if="rec.error" class="text-negative q-mt-xs" style="font-size: 12px">

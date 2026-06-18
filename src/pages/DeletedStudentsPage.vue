@@ -2,7 +2,7 @@
   <q-page padding>
     <q-inner-loading :showing="loading" label="載入中..." />
 
-    <q-banner class="bg-orange-1 text-orange-9 q-mb-md rounded-borders">
+    <q-banner class="bg-warning-hint q-mb-md rounded-borders">
       <template #avatar><q-icon name="info" color="orange-7" /></template>
       刪除記錄中的學生歷史資料（點餐、餐費）仍會保留。可選擇恢復或永久刪除。
     </q-banner>

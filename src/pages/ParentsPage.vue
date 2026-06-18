@@ -14,7 +14,7 @@
     </div>
 
     <!-- 未綁定的 LINE 好友提示 -->
-    <q-banner v-if="unlinkedContacts.length" class="bg-blue-1 text-blue-9 q-mb-md rounded-borders">
+    <q-banner v-if="unlinkedContacts.length" class="bg-info-hint q-mb-md rounded-borders">
       <template #avatar><q-icon name="link" color="primary" /></template>
       有 <b>{{ unlinkedContacts.length }}</b> 位已加 LINE 好友但尚未綁定家長。編輯家長時，可在「LINE 聯絡人」選單把對方帶入。
     </q-banner>
@@ -35,7 +35,7 @@
                 <q-icon name="phone" size="14px" />{{ p.phone || '—' }}
               </span>
               <template v-if="p.lineUserId">
-                <q-badge color="green-1" text-color="positive" class="q-ml-sm" style="font-size:12px">
+                <q-badge color="positive" class="q-ml-sm" style="font-size:12px">
                   <q-icon name="link" size="12px" class="q-mr-xs" />已綁 LINE
                 </q-badge>
                 <span v-if="contactMap[p.lineUserId]" class="q-ml-xs text-caption text-grey-8">{{ contactMap[p.lineUserId] }}</span>
@@ -137,12 +137,12 @@
             />
             <q-input v-model="form.lineUserId" label="LINE 用戶 ID" outlined dense clearable
               hint="從上面選好友帶入，或貼上 U 開頭的 userId（共用此帳號）" />
-            <div v-if="linkedContactName" class="row items-center q-gutter-xs bg-green-1 rounded-borders q-pa-sm">
+            <div v-if="linkedContactName" class="row items-center q-gutter-xs bg-success-hint rounded-borders q-pa-sm">
               <q-icon name="check_circle" color="positive" size="18px" />
               <span class="text-positive text-weight-medium">已綁 LINE：{{ linkedContactName }}</span>
             </div>
             <div v-if="isEdit && editingStudents.length"
-              class="text-caption text-orange-9 bg-orange-1 rounded-borders q-pa-sm">
+              class="text-caption bg-warning-hint rounded-borders q-pa-sm">
               <q-icon name="info" size="14px" class="q-mr-xs" />
               修改後會同步更新名下 {{ editingStudents.length }} 位學生的家長資料：{{ editingStudents.map(s => s.name).join('、') }}
             </div>

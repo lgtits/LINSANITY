@@ -113,7 +113,7 @@
     </q-dialog>
 
     <!-- 尚未設定費率的警告 -->
-    <q-banner v-if="!loading && !hasRates" class="bg-orange-1 text-orange-9 q-mb-md rounded-borders">
+    <q-banner v-if="!loading && !hasRates" class="bg-warning-hint q-mb-md rounded-borders">
       <template #avatar><q-icon name="warning" color="orange-7" /></template>
       <div class="text-body2">
         <span class="text-weight-bold">{{ selectedYear }}年{{ String(selectedMonth).padStart(2,'0') }}月 尚未設定費率</span>，
@@ -127,7 +127,7 @@
 
     <!-- 尚未建立名單時的提示 -->
     <q-card v-if="!loading && enrollment === null && !loadingMonth"
-      flat bordered class="q-mb-md bg-blue-1">
+      flat bordered class="q-mb-md bg-info-hint">
       <q-card-section class="row items-center">
         <div class="col">
           <div class="text-subtitle2 text-weight-bold text-primary">
@@ -185,7 +185,7 @@
           </template>
 
           <!-- 展開：編輯與日曆 -->
-          <div class="q-pa-md bg-grey-1">
+          <div class="q-pa-md bg-subtle">
             <div class="row q-col-gutter-sm q-mb-md">
               <div class="col-6">
                 <q-select
@@ -252,7 +252,7 @@
                   </q-item-section>
                 </q-item>
                 <q-separator class="q-my-xs" />
-                <q-item class="bg-blue-50">
+                <q-item class="bg-info-hint">
                   <q-item-section class="text-weight-bold">應收學費</q-item-section>
                   <q-item-section side>
                     <span :class="row.fee !== null ? 'text-h6 text-primary text-weight-bold' : 'text-body2 text-grey-5'">
@@ -330,7 +330,7 @@
 
           <!-- 展開內容 -->
           <q-tr v-show="props.expand" :props="props">
-            <q-td colspan="100%" class="bg-grey-1 q-pa-md">
+            <q-td colspan="100%" class="bg-subtle q-pa-md">
               <div class="row q-col-gutter-md">
                 <!-- 左：設定與明細 -->
                 <div class="col-12 col-md-6">
@@ -396,7 +396,7 @@
                         </q-item-section>
                       </q-item>
                       <q-separator />
-                      <q-item class="bg-blue-50">
+                      <q-item class="bg-info-hint">
                         <q-item-section class="text-subtitle2 text-weight-bold">應收學費</q-item-section>
                         <q-item-section side>
                           <span :class="props.row.fee !== null ? 'text-h5 text-primary text-weight-bold' : 'text-body2 text-grey-5'">
@@ -855,21 +855,9 @@ function exportExcel() {
   cursor: default;
   background: transparent;
 }
-.cell-present {
-  background-color: #e8f5e9;
-  border-color: #81c784;
-  color: #2e7d32;
-}
-.cell-absent {
-  background-color: #ffebee;
-  border-color: #e57373;
-  color: #c62828;
-}
-.cell-none {
-  background-color: #fafafa;
-  border-color: #e0e0e0;
-  color: #9e9e9e;
-}
+.cell-present { background-color: #e8f5e9; border-color: #81c784; color: #2e7d32; }
+.cell-absent  { background-color: #ffebee; border-color: #e57373; color: #c62828; }
+.cell-none    { background-color: #fafafa; border-color: #e0e0e0; color: #9e9e9e; }
 .day-number {
   font-size: 12px;
   font-weight: bold;
@@ -881,4 +869,13 @@ function exportExcel() {
 .border-grey {
   border: 1px solid #e0e0e0;
 }
+</style>
+
+<style>
+body.body--dark .calendar-header-cell { color: #b0b3b8; }
+body.body--dark .calendar-day-cell { border-color: #3a3b3c; }
+body.body--dark .cell-present { background-color: #2d3b2d; border-color: #4a7a4a; color: #8bc48b; }
+body.body--dark .cell-absent  { background-color: #3b2626; border-color: #7a3b3b; color: #e08080; }
+body.body--dark .cell-none    { background-color: #303132; border-color: #3a3b3c; color: #6b6d70; }
+body.body--dark .border-grey  { border-color: #3a3b3c; }
 </style>
