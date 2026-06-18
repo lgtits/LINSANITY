@@ -1,1 +1,0 @@
-import{Ut as e,ln as t}from"./index-BSx5f5s5.js";var n=e({name:`QSpace`,setup(){let e=t(`div`,{class:`q-space`});return()=>e}});export{n as t};
