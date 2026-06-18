@@ -51,7 +51,7 @@
     <!-- 記錄列表 -->
     <q-list v-else bordered separator class="rounded-borders overflow-hidden">
       <q-expansion-item
-        v-for="log in filtered"
+        v-for="log in paged"
         :key="log.id"
         expand-separator
       >
@@ -95,11 +95,27 @@
         </q-list>
       </q-expansion-item>
     </q-list>
+
+    <div class="row items-center justify-end q-gutter-sm q-mt-md">
+      <q-pagination
+        v-if="pageSize !== 0 && filtered.length > pageSize"
+        v-model="page"
+        :max="maxPage"
+        boundary-numbers color="primary"
+      />
+      <q-select
+        v-model="pageSize"
+        :options="pageSizeOptions"
+        outlined dense emit-value map-options
+        label="每頁筆數"
+        style="width: 120px"
+      />
+    </div>
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { broadcastService } from '../services/broadcastService'
 
 const loading = ref(true)
@@ -140,6 +156,17 @@ onMounted(async () => {
   }
 })
 
+const page = ref(1)
+const pageSize = ref(20)
+const pageSizeOptions = [
+  { label: '20 筆/頁', value: 20 },
+  { label: '50 筆/頁', value: 50 },
+  { label: '100 筆/頁', value: 100 },
+  { label: '全部', value: 0 },
+]
+
+watch([nameSearch, typeFilter, dateFrom, dateTo, sortOrder, pageSize], () => { page.value = 1 })
+
 const filtered = computed(() => {
   let list = logs.value
   if (typeFilter.value) list = list.filter(l => l.type === typeFilter.value)
@@ -155,5 +182,12 @@ const filtered = computed(() => {
     count_desc: (a, b) => b.recipientCount - a.recipientCount
   }
   return [...list].sort(sorters[sortOrder.value])
+})
+
+const maxPage = computed(() => pageSize.value === 0 ? 1 : Math.ceil(filtered.value.length / pageSize.value))
+const paged = computed(() => {
+  if (pageSize.value === 0) return filtered.value
+  const start = (page.value - 1) * pageSize.value
+  return filtered.value.slice(start, start + pageSize.value)
 })
 </script>

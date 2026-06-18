@@ -133,7 +133,7 @@
         :columns="columns"
         row-key="studentId"
         flat bordered
-        :rows-per-page-options="[10, 20, 0]"
+        :rows-per-page-options="[20, 50, 0]" rows-per-page-label="每頁筆數"
         class="q-mb-md"
       >
         <template #body="props">

@@ -69,7 +69,7 @@
 
     <!-- 桌機：表格 -->
     <q-table v-else :rows="filtered" :columns="columns" row-key="id"
-      flat bordered :rows-per-page-options="[10, 20, 0]">
+      flat bordered :rows-per-page-options="[20, 50, 0]" rows-per-page-label="每頁筆數">
       <template #body-cell-line="props">
         <q-td :props="props" class="text-center">
           <q-badge v-if="props.row.lineUserId" color="positive" label="已綁" />

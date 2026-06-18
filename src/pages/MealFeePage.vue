@@ -132,7 +132,7 @@
 
         <q-list v-if="historyRecords.length" bordered separator class="rounded-borders overflow-hidden">
           <q-expansion-item
-            v-for="record in historyRecords"
+            v-for="record in pagedHistoryRecords"
             :key="record.key"
             expand-separator
           >
@@ -181,7 +181,23 @@
           </q-expansion-item>
         </q-list>
 
-        <div v-else class="text-center text-grey q-pa-xl">
+        <div class="row items-center justify-end q-gutter-sm q-mt-md">
+          <q-pagination
+            v-if="historyPageSize !== 0 && historyRecords.length > historyPageSize"
+            v-model="historyPage"
+            :max="historyMaxPage"
+            boundary-numbers color="primary"
+          />
+          <q-select
+            v-model="historyPageSize"
+            :options="pageSizeOptions"
+            outlined dense emit-value map-options
+            label="每頁筆數"
+            style="width: 120px"
+          />
+        </div>
+
+        <div v-if="!historyRecords.length" class="text-center text-grey q-pa-xl">
           <q-icon name="event_note" size="48px" /><br>
           {{ historyLoaded ? '無符合篩選的記錄' : '尚無點餐記錄' }}
         </div>
@@ -281,6 +297,15 @@ const orderDateFrom = ref('')
 const orderDateTo   = ref('')
 const orderSort     = ref('date_desc')
 
+const historyPage     = ref(1)
+const historyPageSize = ref(20)
+const pageSizeOptions = [
+  { label: '20 筆/頁', value: 20 },
+  { label: '50 筆/頁', value: 50 },
+  { label: '100 筆/頁', value: 100 },
+  { label: '全部', value: 0 },
+]
+
 const sortOptions = [
   { label: '日期（新→舊）', value: 'date_desc' },
   { label: '日期（舊→新）', value: 'date_asc' },
@@ -306,6 +331,13 @@ const historyRecords = computed(() => {
   return [...recs].sort(sorters[orderSort.value])
 })
 
+const historyMaxPage = computed(() => historyPageSize.value === 0 ? 1 : Math.ceil(historyRecords.value.length / historyPageSize.value))
+const pagedHistoryRecords = computed(() => {
+  if (historyPageSize.value === 0) return historyRecords.value
+  const start = (historyPage.value - 1) * historyPageSize.value
+  return historyRecords.value.slice(start, start + historyPageSize.value)
+})
+
 async function loadHistory() {
   if (historyLoaded.value) return
   const all = await orderService.getAll()
@@ -314,6 +346,7 @@ async function loadHistory() {
 }
 
 watch(recordTab, tab => { if (tab === 'history') loadHistory() })
+watch([orderSearch, orderGrade, orderDateFrom, orderDateTo, orderSort, historyPageSize], () => { historyPage.value = 1 })
 
 onMounted(async () => {
   try {

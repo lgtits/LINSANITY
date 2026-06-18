@@ -84,7 +84,7 @@
 
     <!-- 桌機：表格 -->
     <q-table v-else :rows="tableRows" :columns="columns" row-key="monthKey"
-      flat bordered :rows-per-page-options="[0]" hide-pagination>
+      flat bordered :rows-per-page-options="[20, 50, 0]" rows-per-page-label="每頁筆數">
       <template #body-cell-actions="props">
         <q-td :props="props" class="text-center">
           <q-btn flat dense round icon="content_copy" color="grey-6" size="sm"
