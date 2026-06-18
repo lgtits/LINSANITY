@@ -19,6 +19,7 @@
           label="學生管理"
           :default-opened="route.path.startsWith('/students')"
           expand-separator
+          group="sidebar-nav"
         >
           <q-item
             v-for="item in studentNavItems"
@@ -63,6 +64,7 @@
           label="寒暑假學費"
           :default-opened="route.path.startsWith('/tuition')"
           expand-separator
+          group="sidebar-nav"
         >
           <q-item
             v-for="item in tuitionNavItems"
@@ -89,6 +91,7 @@
           label="訊息系統"
           :default-opened="route.path.startsWith('/broadcast')"
           expand-separator
+          group="sidebar-nav"
         >
           <q-item
             v-for="item in broadcastNavItems"
@@ -133,7 +136,7 @@
           <!-- 暗黑模式 -->
           <q-item tag="label">
             <q-item-section>
-              <q-item-label>暗黑模式</q-item-label>
+              <q-item-label>深色模式</q-item-label>
             </q-item-section>
             <q-item-section side>
               <q-toggle v-model="darkMode" @update:model-value="onToggleDark" />
@@ -204,7 +207,7 @@ const $q = useQuasar()
 const drawerOpen = ref(true)
 const showSettings = ref(false)
 
-// ---- 暗黑模式 ----
+// ---- 深色模式 ----
 const darkMode = ref($q.dark.isActive)
 const savedDark = localStorage.getItem('darkMode')
 if (savedDark !== null) {
@@ -218,10 +221,11 @@ function onToggleDark(val) {
 }
 
 // ---- 字體大小 ----
-const zoomMap = { small: '0.9', medium: '1', large: '1.12' }
+const fontSizeMap = { small: '14px', medium: '16px', large: '18px' }
 const fontSize = ref(localStorage.getItem('fontSize') || 'medium')
 function applyFontSize(size) {
-  document.body.style.zoom = zoomMap[size]
+  document.body.style.zoom = ''
+  document.documentElement.style.fontSize = fontSizeMap[size]
 }
 function onFontSize(size) {
   applyFontSize(size)

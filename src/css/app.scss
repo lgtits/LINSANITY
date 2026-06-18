@@ -71,6 +71,15 @@ body.body--dark .text-secondary-content {
   color: #b0b3b8;
 }
 
+// ---------- Drawer backdrop 全螢幕修正 ----------
+.q-drawer__backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
 // ---------- Sidebar active item ----------
 body.body--light .nav-active {
   background-color: color-mix(in srgb, var(--q-primary) 12%, white);
