@@ -66,6 +66,27 @@ export const mealService = {
     return map
   },
 
+  // 截至指定日期的餘額 { parentId: balance }
+  async getBalancesAsOfDate(date) {
+    if (isDemoMode) {
+      const txs = await api.get('mealTransactions')
+      const map = {}
+      for (const t of txs) {
+        if ((t.date || t.datetime?.slice(0, 10)) <= date) {
+          map[t.parentId] = (map[t.parentId] || 0) + t.amount
+        }
+      }
+      return map
+    }
+    const { data, error } = await supabase.from('meal_transactions')
+      .select('parent_id, amount')
+      .lte('date', date)
+    if (error) throw error
+    const map = {}
+    for (const r of data) map[r.parent_id] = (map[r.parent_id] || 0) + Number(r.amount)
+    return map
+  },
+
   async topup(parentId, amount, note) {
     const dt = now()
     if (isDemoMode) {

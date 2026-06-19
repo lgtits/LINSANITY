@@ -47,7 +47,7 @@
               <div class="col-6">
                 <div class="row items-center justify-between q-px-sm rounded-borders"
                   style="border: 1px solid rgba(0,0,0,0.24); height: 40px">
-                  <span class="text-caption text-grey-8">今日有異動</span>
+                  <span class="text-caption text-grey-8">當日有異動</span>
                   <q-toggle v-model="onlyTodayActivity" color="primary" dense />
                 </div>
               </div>
@@ -150,7 +150,14 @@
             <div class="row items-center q-mb-md">
               <div class="text-subtitle2">帳務通知預覽</div>
               <q-space />
-              <span class="text-body2 text-grey-6">{{ expenseDate }}</span>
+              <q-input
+                v-model="expenseDate"
+                type="date"
+                outlined dense
+                :max="today"
+                style="max-width: 180px"
+                @update:model-value="onDateChange"
+              />
             </div>
 
             <div v-if="!selectedIds.length" class="text-center text-grey q-pa-xl">
@@ -158,27 +165,36 @@
               請先從左側選擇收件家長
             </div>
 
-            <q-list v-else separator>
-              <q-item v-for="p in selectedParents" :key="p.id" class="q-py-sm">
-                <q-item-section>
-                  <q-item-label class="text-weight-medium">
-                    {{ p.name }}
-                    <q-badge v-if="!p.lineUserId" color="negative" class="q-ml-xs">
-                      <q-icon name="warning" size="12px" class="q-mr-xs" />未填 LINE ID，無法送出
-                    </q-badge>
-                  </q-item-label>
-                  <q-item-label caption style="white-space: pre-line; line-height: 1.6">
-                    {{ buildExpenseMsg(p) }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-            </q-list>
+            <div v-else class="q-gutter-sm">
+              <div v-for="p in selectedParents" :key="p.id">
+                <div class="text-weight-medium q-mb-xs">
+                  {{ p.name }}
+                  <q-badge v-if="!p.lineUserId" color="negative" class="q-ml-xs">
+                    <q-icon name="warning" size="12px" class="q-mr-xs" />未填 LINE ID，無法送出
+                  </q-badge>
+                </div>
+                <q-input
+                  v-model="expenseMsgs[p.id]"
+                  type="textarea"
+                  outlined dense autogrow
+                />
+                <q-separator class="q-mt-sm" />
+              </div>
+            </div>
           </q-card-section>
           <q-card-actions class="q-px-md q-pb-md row items-center">
             <div class="text-body2 text-grey-6">
-              每位家長收到名下孩子合併的費用明細
+              每位家長收到名下孩子合併的費用明細，可逐筆編輯
             </div>
             <q-space />
+            <q-btn
+              flat no-caps
+              color="grey-7"
+              icon="refresh"
+              label="重新產生"
+              :disable="!selectedIds.length"
+              @click="refreshExpenseMsgs"
+            />
             <q-btn
               color="teal"
               icon="send"
@@ -196,7 +212,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { studentService } from '../services/studentService'
 import { parentService } from '../services/parentService'
@@ -213,7 +229,7 @@ const sending = ref(false)
 const parents = ref([])
 const students = ref([])
 const balances = ref({})
-const todayOrders = ref([])
+const dateOrders = ref([])
 const allTransactions = ref([])
 const templates = ref([])
 
@@ -224,18 +240,36 @@ const onlyTodayActivity = ref(true)
 const selectedIds = ref([])           // 選定的 parentId
 const selectedTemplateId = ref(null)
 const customMessage = ref('')
-const expenseDate = localDate()
+const today = localDate()
+const expenseDate = ref(today)
+const expenseMsgs = ref({})
+
+async function fetchDateData(date) {
+  ;[balances.value, dateOrders.value, allTransactions.value] = await Promise.all([
+    mealService.getBalancesAsOfDate(date),
+    orderService.getByDate(date),
+    mealService.getAllTransactions()
+  ])
+}
+
+async function onDateChange() {
+  loading.value = true
+  try {
+    await fetchDateData(expenseDate.value)
+    refreshExpenseMsgs()
+  } finally {
+    loading.value = false
+  }
+}
 
 onMounted(async () => {
   try {
-    ;[parents.value, students.value, balances.value, todayOrders.value, allTransactions.value, templates.value] = await Promise.all([
+    ;[parents.value, students.value, templates.value] = await Promise.all([
       parentService.getAll(),
       studentService.getAll(),
-      mealService.getAllBalances(),
-      orderService.getToday(),
-      mealService.getAllTransactions(),
       broadcastService.getTemplates()
     ])
+    await fetchDateData(expenseDate.value)
   } finally {
     loading.value = false
   }
@@ -258,25 +292,23 @@ const parentRows = computed(() =>
   parents.value.map(p => ({ ...p, children: childrenByParent.value[p.id] || [] }))
 )
 
-// 今日有點餐消費或儲值的家長 id 集合
-const parentsWithTodayActivity = computed(() => {
+// 選定日期有點餐消費或儲值的家長 id 集合
+const parentsWithDateActivity = computed(() => {
   const ids = new Set()
-  for (const o of todayOrders.value) {
-    const pid = childrenByParent.value  // studentId → parentId via students
-      ? students.value.find(s => s.id === o.studentId)?.parentId
-      : null
+  for (const o of dateOrders.value) {
+    const pid = students.value.find(s => s.id === o.studentId)?.parentId
     if (pid) ids.add(pid)
   }
   for (const tx of allTransactions.value) {
     const txDate = (tx.datetime || tx.date || '').slice(0, 10)
-    if (txDate === expenseDate) ids.add(tx.parentId)
+    if (txDate === expenseDate.value) ids.add(tx.parentId)
   }
   return ids
 })
 
 const filteredParents = computed(() => {
   let list = parentRows.value
-  if (onlyTodayActivity.value) list = list.filter(p => parentsWithTodayActivity.value.has(p.id))
+  if (onlyTodayActivity.value) list = list.filter(p => parentsWithDateActivity.value.has(p.id))
   if (gradeFilter.value !== null) list = list.filter(p => p.children.some(c => c.grade === gradeFilter.value))
   const q = parentSearch.value.trim().toLowerCase()
   if (q) list = list.filter(p =>
@@ -334,25 +366,25 @@ function applyTemplate(id) {
   if (tpl) customMessage.value = tpl.content
 }
 
-// 某學生今日的訂單
+// 選定日期的訂單
 function ordersOf(studentId) {
-  return todayOrders.value.filter(o => o.studentId === studentId)
+  return dateOrders.value.filter(o => o.studentId === studentId)
 }
 
-// 今日儲值，依 parentId 分組
-const todayTopupsByParent = computed(() => {
+// 選定日期儲值，依 parentId 分組
+const dateTopupsByParent = computed(() => {
   const map = {}
   for (const tx of allTransactions.value) {
     if (tx.type !== 'topup') continue
     const txDate = (tx.datetime || tx.date || '').slice(0, 10)
-    if (txDate !== expenseDate) continue
+    if (txDate !== expenseDate.value) continue
     if (!map[tx.parentId]) map[tx.parentId] = []
     map[tx.parentId].push({ amount: tx.amount, note: tx.note || '' })
   }
   return map
 })
 
-// 家長層級的餐費通知：合併名下孩子當日「餐點明細 + 金額」+ 今日儲值 + 家庭餘額
+// 家長層級的餐費通知：合併名下孩子當日「餐點明細 + 金額」+ 儲值 + 餘額
 function buildExpenseMsg(parent) {
   const kids = (childrenByParent.value[parent.id] || [])
     .map(kid => {
@@ -361,9 +393,29 @@ function buildExpenseMsg(parent) {
       return { name: kid.name, total: kidOrders.reduce((s, o) => s + o.total, 0), orders: kidOrders }
     })
     .filter(Boolean)
-  const topups = todayTopupsByParent.value[parent.id] || []
-  return buildExpenseMessage({ parentName: parent.name, date: expenseDate, kids, balance: balances.value[parent.id] ?? 0, topups })
+  const topups = dateTopupsByParent.value[parent.id] || []
+  return buildExpenseMessage({
+    parentName: parent.name, date: expenseDate.value, kids,
+    balance: balances.value[parent.id] ?? 0, topups,
+    isToday: expenseDate.value === today
+  })
 }
+
+function refreshExpenseMsgs() {
+  const msgs = {}
+  for (const p of selectedParents.value) {
+    msgs[p.id] = buildExpenseMsg(p)
+  }
+  expenseMsgs.value = msgs
+}
+
+watch(selectedIds, () => {
+  const updated = {}
+  for (const p of selectedParents.value) {
+    updated[p.id] = expenseMsgs.value[p.id] ?? buildExpenseMsg(p)
+  }
+  expenseMsgs.value = updated
+}, { deep: true })
 
 async function sendGeneral() {
   if (!selectedIds.value.length || !customMessage.value.trim()) return
@@ -393,11 +445,12 @@ async function sendExpense() {
       parentId: p.id,
       parentName: p.name,
       lineUserId: p.lineUserId,
-      message: buildExpenseMsg(p)
+      message: expenseMsgs.value[p.id] || buildExpenseMsg(p)
     }))
     const res = await broadcastService.send({ type: 'expense', records })
     notifyResult(res)
     selectedIds.value = []
+    expenseMsgs.value = {}
   } finally {
     sending.value = false
   }
