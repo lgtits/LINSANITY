@@ -376,6 +376,10 @@ function openCopy(mk) {
 }
 
 async function doCopy() {
+  if (!/^\d{4}-\d{2}$/.test(copyTargetKey.value)) {
+    $q.notify({ message: '請填寫正確的月份格式（YYYY-MM）', color: 'negative', icon: 'error' })
+    return
+  }
   if (allRates.value[copyTargetKey.value]) {
     $q.notify({ message: `${copyTargetKey.value} 費率已存在，無法覆蓋`, color: 'warning', icon: 'warning' })
     return
