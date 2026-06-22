@@ -41,6 +41,7 @@
 
     <div class="row items-center q-mb-sm">
       <span class="text-body2 text-grey-6">{{ filtered.length }} 筆</span>
+      <span class="text-body2 text-grey-5 q-ml-sm">（本月已發送 {{ currentMonthCount }} 筆）</span>
     </div>
 
     <!-- 空狀態 -->
@@ -183,6 +184,11 @@ const filtered = computed(() => {
   }
   return [...list].sort(sorters[sortOrder.value])
 })
+
+const currentMonthPrefix = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+const currentMonthCount = computed(() =>
+  logs.value.filter(l => l.sentAt.startsWith(currentMonthPrefix)).length
+)
 
 const maxPage = computed(() => pageSize.value === 0 ? 1 : Math.ceil(filtered.value.length / pageSize.value))
 const paged = computed(() => {
