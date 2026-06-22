@@ -187,7 +187,9 @@ const filtered = computed(() => {
 
 const currentMonthPrefix = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
 const currentMonthCount = computed(() =>
-  logs.value.filter(l => l.sentAt.startsWith(currentMonthPrefix)).length
+  logs.value
+    .filter(l => l.sentAt.startsWith(currentMonthPrefix))
+    .reduce((sum, l) => sum + (l.successCount || 0), 0)
 )
 
 const maxPage = computed(() => pageSize.value === 0 ? 1 : Math.ceil(filtered.value.length / pageSize.value))
