@@ -80,11 +80,12 @@
                 </template>
               </div>
             </q-item-section>
-            <q-item-section side v-if="row.settings.classType !== 'none'" class="text-right">
+            <q-item-section side v-if="row.settings.classType !== 'none' || row.currentFee" class="text-right">
               <div class="text-caption text-grey-5">預收 {{ row.prepaidFee !== null ? `$${fmtNum(row.prepaidFee)}` : 'N/A' }}</div>
               <div class="text-subtitle1 text-weight-bold" :class="row.currentFee !== null ? 'text-primary' : 'text-grey-5'">
                 {{ row.currentFee !== null ? `$${fmtNum(row.currentFee)}` : 'N/A' }}
               </div>
+              <div v-if="row.settings.classType === 'none' && row.currentFee" class="text-caption text-amber-9">僅活動費</div>
               <div v-if="row.prepaidFee !== null && row.currentFee !== null && row.currentFee < row.prepaidFee"
                 class="text-caption text-negative text-weight-bold">退 ${{ fmtNum(row.prepaidFee - row.currentFee) }}</div>
               <div v-if="row.prepaidFee !== null && row.currentFee !== null && row.currentFee > row.prepaidFee"
@@ -92,33 +93,35 @@
             </q-item-section>
           </template>
 
-          <div v-if="row.settings.classType !== 'none'" class="q-pa-md bg-subtle">
-            <div class="text-caption text-grey-6 text-center q-mb-sm">
-              點擊日期切換：出席(綠) ➔ 請假(紅) ➔ 未到(灰)
-            </div>
-            <div class="calendar-grid">
-              <div v-for="h in ['日','一','二','三','四','五','六']" :key="h" class="calendar-header-cell">{{ h }}</div>
-              <div
-                v-for="(cell, idx) in monthDays"
-                :key="idx"
-                class="calendar-day-cell"
-                :class="getDayClass(row.studentId, cell)"
-                @click="!cell.empty && toggleDay(row.studentId, cell.day)"
-              >
-                <div v-if="!cell.empty" class="day-number">{{ cell.day }}</div>
-                <div v-if="!cell.empty" class="day-status-icon">
-                  <q-icon :name="getDayIcon(row.studentId, cell.day)" size="12px" />
+          <div v-if="row.settings.classType !== 'none' || row.enrolledActivities.length" class="q-pa-md bg-subtle">
+            <template v-if="row.settings.classType !== 'none'">
+              <div class="text-caption text-grey-6 text-center q-mb-sm">
+                點擊日期切換：出席(綠) ➔ 請假(紅) ➔ 未到(灰)
+              </div>
+              <div class="calendar-grid">
+                <div v-for="h in ['日','一','二','三','四','五','六']" :key="h" class="calendar-header-cell">{{ h }}</div>
+                <div
+                  v-for="(cell, idx) in monthDays"
+                  :key="idx"
+                  class="calendar-day-cell"
+                  :class="getDayClass(row.studentId, cell)"
+                  @click="!cell.empty && toggleDay(row.studentId, cell.day)"
+                >
+                  <div v-if="!cell.empty" class="day-number">{{ cell.day }}</div>
+                  <div v-if="!cell.empty" class="day-status-icon">
+                    <q-icon :name="getDayIcon(row.studentId, cell.day)" size="12px" />
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="row q-gutter-md justify-center q-mt-md text-caption text-grey-7">
-              <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
-              <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
-              <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>未到</span>
-            </div>
+              <div class="row q-gutter-md justify-center q-mt-md text-caption text-grey-7">
+                <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
+                <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
+                <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>未到</span>
+              </div>
+            </template>
 
             <!-- 附加活動出席（手機版） -->
-            <div v-if="row.enrolledActivities.length" class="q-mt-md">
+            <div v-if="row.enrolledActivities.length" :class="row.settings.classType !== 'none' ? 'q-mt-md' : ''">
               <div class="text-body2 text-grey-7 text-weight-bold q-mb-xs">
                 <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動出席
               </div>
@@ -191,13 +194,13 @@
               <span v-else class="text-grey-5">—</span>
             </q-td>
             <q-td key="prepaidFee" :props="props" class="text-right text-grey-7">
-              <span v-if="props.row.settings.classType !== 'none'">
+              <span v-if="props.row.settings.classType !== 'none' || props.row.prepaidFee">
                 {{ props.row.prepaidFee !== null ? `$${fmtNum(props.row.prepaidFee)}` : 'N/A' }}
               </span>
               <span v-else class="text-grey-5">—</span>
             </q-td>
             <q-td key="currentFee" :props="props" class="text-right text-weight-bold">
-              <template v-if="props.row.settings.classType !== 'none'">
+              <template v-if="props.row.settings.classType !== 'none' || props.row.currentFee">
                 <span :class="props.row.currentFee !== null ? 'text-primary' : 'text-grey-5'">
                   {{ props.row.currentFee !== null ? `$${fmtNum(props.row.currentFee)}` : 'N/A' }}
                 </span>
@@ -216,9 +219,10 @@
           <!-- 展開：日曆 + 附加活動 -->
           <q-tr v-show="props.expand" :props="props">
             <q-td colspan="100%" class="bg-subtle q-pa-md">
-              <template v-if="props.row.settings.classType !== 'none'">
+              <template v-if="props.row.settings.classType !== 'none' || props.row.enrolledActivities.length">
                 <div class="row q-col-gutter-md">
-                  <div :class="props.row.enrolledActivities.length ? 'col-12 col-md-8' : 'col-12'">
+                  <div v-if="props.row.settings.classType !== 'none'"
+                    :class="props.row.enrolledActivities.length ? 'col-12 col-md-8' : 'col-12'">
                     <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                       <q-icon name="calendar_month" size="14px" class="q-mr-xs" />簽到日曆
                     </div>
@@ -252,7 +256,8 @@
                   </div>
 
                   <!-- 附加活動出席 -->
-                  <div v-if="props.row.enrolledActivities.length" class="col-12 col-md-4">
+                  <div v-if="props.row.enrolledActivities.length"
+                    :class="props.row.settings.classType !== 'none' ? 'col-12 col-md-4' : 'col-12'">
                     <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                       <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動出席
                     </div>
