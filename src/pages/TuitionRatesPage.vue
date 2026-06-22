@@ -385,8 +385,9 @@ async function doCopy() {
     return
   }
   const source = allRates.value[copySourceKey.value]
-  allRates.value = { ...allRates.value, [copyTargetKey.value]: { ...source } }
-  await tuitionService.updateRates(copyTargetKey.value, source)
+  const copied = { ...source, extraActivities: (source.extraActivities || []).map(ea => ({ ...ea })) }
+  allRates.value = { ...allRates.value, [copyTargetKey.value]: copied }
+  await tuitionService.updateRates(copyTargetKey.value, copied)
 
   showCopyDialog.value = false
   $q.notify({ message: `已複製到 ${copyTargetKey.value}`, color: 'positive', icon: 'content_copy' })

@@ -265,23 +265,25 @@
             <!-- 費用統計明細 -->
             <q-card v-if="row.settings.classType !== 'none' || (row.settings.extraActivities || []).length" flat bordered class="q-pa-sm">
               <q-list dense separator>
-                <q-item>
-                  <q-item-section class="text-body2 text-grey-7">上課天數統計</q-item-section>
-                  <q-item-section side class="text-body2 text-weight-bold">
-                    共 {{ row.attendance.totalDays }} 天 / 出席 {{ row.attendance.attendDays }} 天 / 請假 {{ row.attendance.absentDays }} 天
-                  </q-item-section>
-                </q-item>
-                <q-item>
-                  <q-item-section class="text-body2 text-grey-7">計費方式</q-item-section>
-                  <q-item-section side class="text-body2">
-                    <span v-if="row.attendance.absentDays <= (rates?.absentThreshold ?? Infinity)">
-                      月費制 (請假 ≤ {{ rates?.absentThreshold }} 天)
-                    </span>
-                    <span v-else class="text-negative text-weight-bold">
-                      按日計費 (出席 {{ row.attendance.attendDays }} 天 × ${{ dailyRate(row) }} / 天)
-                    </span>
-                  </q-item-section>
-                </q-item>
+                <template v-if="row.settings.classType !== 'none'">
+                  <q-item>
+                    <q-item-section class="text-body2 text-grey-7">上課天數統計</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold">
+                      共 {{ row.attendance.totalDays }} 天 / 出席 {{ row.attendance.attendDays }} 天 / 請假 {{ row.attendance.absentDays }} 天
+                    </q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section class="text-body2 text-grey-7">計費方式</q-item-section>
+                    <q-item-section side class="text-body2">
+                      <span v-if="row.attendance.absentDays <= (rates?.absentThreshold ?? Infinity)">
+                        月費制 (請假 ≤ {{ rates?.absentThreshold }} 天)
+                      </span>
+                      <span v-else class="text-negative text-weight-bold">
+                        按日計費 (出席 {{ row.attendance.attendDays }} 天 × ${{ dailyRate(row) }} / 天)
+                      </span>
+                    </q-item-section>
+                  </q-item>
+                </template>
                 <!-- 附加活動明細（手機版） -->
                 <template v-if="(row.settings.extraActivities || []).length">
                   <q-item v-for="eaId in row.settings.extraActivities" :key="eaId">
@@ -295,7 +297,7 @@
                 </template>
                 <q-separator class="q-my-xs" />
                 <q-item class="bg-info-hint">
-                  <q-item-section class="text-weight-bold">應收學費</q-item-section>
+                  <q-item-section class="text-weight-bold">{{ row.settings.classType !== 'none' ? '應收學費' : '應收費用' }}</q-item-section>
                   <q-item-section side>
                     <span :class="row.fee !== null ? 'text-h6 text-primary text-weight-bold' : 'text-body2 text-grey-5'">
                       {{ row.fee !== null ? `$${fmtNum(row.fee)}` : 'N/A' }}
@@ -904,7 +906,7 @@ function exportExcel() {
     '年級':       `${r.student.grade}年級`,
     '家長':       r.student.parentName,
     '電話':       r.student.phone,
-    '班別':       r.settings.classType === 'full' ? '全天班' : '半天班',
+    '班別':       r.settings.classType === 'full' ? '全天班' : r.settings.classType === 'half' ? '半天班' : '不上課',
     '用餐':       r.settings.withMeal ? '含用餐' : '不含用餐',
     '上課總天數': r.attendance.totalDays,
     '請假天數':   r.attendance.absentDays,

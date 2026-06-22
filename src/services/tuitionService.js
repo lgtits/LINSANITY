@@ -95,7 +95,7 @@ export const tuitionService = {
     if (isDemoMode) {
       await api.mutate('tuitionEnrollments', data => {
         if (!data[monthKey]) data[monthKey] = {}
-        if (!data[monthKey][studentId]) data[monthKey][studentId] = { classType: 'full', withMeal: false }
+        if (!data[monthKey][studentId]) data[monthKey][studentId] = { classType: 'full', withMeal: false, extraActivities: [] }
         data[monthKey][studentId][key] = value
       })
       return
