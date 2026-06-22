@@ -80,12 +80,12 @@
                 </template>
               </div>
             </q-item-section>
-            <q-item-section side v-if="row.settings.classType !== 'none' || row.currentFee" class="text-right">
+            <q-item-section side v-if="row.settings.classType !== 'none' || row.enrolledActivities.length" class="text-right">
               <div class="text-caption text-grey-5">預收 {{ row.prepaidFee !== null ? `$${fmtNum(row.prepaidFee)}` : 'N/A' }}</div>
               <div class="text-subtitle1 text-weight-bold" :class="row.currentFee !== null ? 'text-primary' : 'text-grey-5'">
                 {{ row.currentFee !== null ? `$${fmtNum(row.currentFee)}` : 'N/A' }}
               </div>
-              <div v-if="row.settings.classType === 'none' && row.currentFee" class="text-caption text-amber-9">僅活動費</div>
+              <div v-if="row.settings.classType === 'none' && row.enrolledActivities.length" class="text-caption text-amber-9">僅活動費</div>
               <div v-if="row.prepaidFee !== null && row.currentFee !== null && row.currentFee < row.prepaidFee"
                 class="text-caption text-negative text-weight-bold">退 ${{ fmtNum(row.prepaidFee - row.currentFee) }}</div>
               <div v-if="row.prepaidFee !== null && row.currentFee !== null && row.currentFee > row.prepaidFee"
@@ -194,13 +194,13 @@
               <span v-else class="text-grey-5">—</span>
             </q-td>
             <q-td key="prepaidFee" :props="props" class="text-right text-grey-7">
-              <span v-if="props.row.settings.classType !== 'none' || props.row.prepaidFee">
+              <span v-if="props.row.settings.classType !== 'none' || props.row.enrolledActivities.length">
                 {{ props.row.prepaidFee !== null ? `$${fmtNum(props.row.prepaidFee)}` : 'N/A' }}
               </span>
               <span v-else class="text-grey-5">—</span>
             </q-td>
             <q-td key="currentFee" :props="props" class="text-right text-weight-bold">
-              <template v-if="props.row.settings.classType !== 'none' || props.row.currentFee">
+              <template v-if="props.row.settings.classType !== 'none' || props.row.enrolledActivities.length">
                 <span :class="props.row.currentFee !== null ? 'text-primary' : 'text-grey-5'">
                   {{ props.row.currentFee !== null ? `$${fmtNum(props.row.currentFee)}` : 'N/A' }}
                 </span>
