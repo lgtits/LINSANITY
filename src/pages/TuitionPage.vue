@@ -192,6 +192,10 @@
                   {{ row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? '按日計費' : '月費制' }}
                 </div>
               </template>
+              <template v-else-if="row.fee">
+                <div class="text-subtitle1 text-weight-bold text-primary">${{ fmtNum(row.fee) }}</div>
+                <div class="text-body2 text-amber-9">僅活動費</div>
+              </template>
               <div v-else class="text-body2 text-grey-5">不計費</div>
             </q-item-section>
           </template>
@@ -215,6 +219,21 @@
                   checked-icon="restaurant" unchecked-icon="block"
                 />
               </div>
+            </div>
+
+            <!-- 附加活動勾選（手機版） -->
+            <div v-if="rates?.extraActivities?.length" class="q-mb-md">
+              <div class="text-body2 text-grey-7 text-weight-bold q-mb-xs">
+                <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動
+              </div>
+              <q-card flat bordered class="q-pa-sm">
+                <q-option-group
+                  :model-value="row.settings.extraActivities || []"
+                  @update:model-value="v => updateSetting(row.student.id, 'extraActivities', v)"
+                  :options="rates.extraActivities.map(ea => ({ label: `${ea.name}（$${fmtNum(ea.amount)}）`, value: ea.id }))"
+                  type="checkbox" color="amber-9" dense
+                />
+              </q-card>
             </div>
 
             <!-- 日曆簽到（不上課時隱藏） -->
@@ -243,23 +262,8 @@
               </div>
             </q-card>
 
-            <!-- 附加活動勾選（手機版） -->
-            <div v-if="row.settings.classType !== 'none' && rates?.extraActivities?.length" class="q-mb-md">
-              <div class="text-body2 text-grey-7 text-weight-bold q-mb-xs">
-                <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動
-              </div>
-              <q-card flat bordered class="q-pa-sm">
-                <q-option-group
-                  :model-value="row.settings.extraActivities || []"
-                  @update:model-value="v => updateSetting(row.student.id, 'extraActivities', v)"
-                  :options="rates.extraActivities.map(ea => ({ label: `${ea.name}（$${fmtNum(ea.amount)}）`, value: ea.id }))"
-                  type="checkbox" color="amber-9" dense
-                />
-              </q-card>
-            </div>
-
-            <!-- 費用統計明細（不上課時隱藏） -->
-            <q-card v-if="row.settings.classType !== 'none'" flat bordered class="q-pa-sm">
+            <!-- 費用統計明細 -->
+            <q-card v-if="row.settings.classType !== 'none' || (row.settings.extraActivities || []).length" flat bordered class="q-pa-sm">
               <q-list dense separator>
                 <q-item>
                   <q-item-section class="text-body2 text-grey-7">上課天數統計</q-item-section>
@@ -358,8 +362,8 @@
               <span v-else class="text-grey-5">—</span>
             </q-td>
             <q-td key="fee" :props="props" class="text-right text-subtitle2 text-weight-bold"
-              :class="props.row.settings.classType !== 'none' ? 'text-primary' : 'text-grey-5'">
-              {{ props.row.settings.classType === 'none' ? '不計費' : props.row.fee !== null ? `$${fmtNum(props.row.fee)}` : 'N/A' }}
+              :class="props.row.fee ? 'text-primary' : 'text-grey-5'">
+              {{ props.row.settings.classType === 'none' && !props.row.fee ? '不計費' : props.row.fee !== null ? `$${fmtNum(props.row.fee)}` : 'N/A' }}
             </q-td>
             <q-td key="expandBtn" :props="props" class="text-center">
               <q-btn flat round dense :icon="props.expand ? 'keyboard_arrow_up' : 'keyboard_arrow_down'" size="sm" />
@@ -396,7 +400,6 @@
                     </div>
                   </q-card>
 
-                  <template v-if="props.row.settings.classType !== 'none'">
                   <!-- 附加活動勾選 -->
                   <div v-if="rates?.extraActivities?.length" class="q-mb-md">
                     <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
@@ -412,6 +415,7 @@
                     </q-card>
                   </div>
 
+                  <template v-if="props.row.settings.classType !== 'none'">
                   <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                     <q-icon name="receipt_long" size="14px" class="q-mr-xs" />出席統計與費用明細
                   </div>
@@ -470,6 +474,28 @@
                       </q-item>
                     </q-list>
                   </q-card>
+                  </template>
+
+                  <!-- 不上課但有附加活動時顯示費用 -->
+                  <template v-if="props.row.settings.classType === 'none' && (props.row.settings.extraActivities || []).length">
+                    <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
+                      <q-icon name="receipt_long" size="14px" class="q-mr-xs" />費用明細
+                    </div>
+                    <q-card flat bordered>
+                      <q-list dense separator>
+                        <q-item v-for="eaId in props.row.settings.extraActivities" :key="eaId">
+                          <q-item-section class="text-body2 text-amber-9">{{ getActivityName(eaId) }}</q-item-section>
+                          <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(getActivityAmount(eaId)) }}</q-item-section>
+                        </q-item>
+                        <q-separator />
+                        <q-item class="bg-info-hint">
+                          <q-item-section class="text-subtitle2 text-weight-bold">應收費用</q-item-section>
+                          <q-item-section side>
+                            <span class="text-h5 text-primary text-weight-bold">${{ fmtNum(props.row.fee) }}</span>
+                          </q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-card>
                   </template>
                 </div>
 
