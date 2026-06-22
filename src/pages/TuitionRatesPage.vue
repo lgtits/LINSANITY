@@ -345,6 +345,10 @@ async function save() {
     return
   }
   const mk = isEdit.value ? editingMonthKey.value : form.value.monthKey
+  if (!isEdit.value && allRates.value[mk]) {
+    $q.notify({ message: `${mk} 費率已存在，請使用編輯功能修改`, color: 'warning', icon: 'warning' })
+    return
+  }
   const rateData = {
     absentThreshold: form.value.absentThreshold,
     fullFlat: form.value.fullFlat,         fullFlatMeal: form.value.fullFlatMeal,
@@ -372,6 +376,10 @@ function openCopy(mk) {
 }
 
 async function doCopy() {
+  if (allRates.value[copyTargetKey.value]) {
+    $q.notify({ message: `${copyTargetKey.value} 費率已存在，無法覆蓋`, color: 'warning', icon: 'warning' })
+    return
+  }
   const source = allRates.value[copySourceKey.value]
   allRates.value = { ...allRates.value, [copyTargetKey.value]: { ...source } }
   await tuitionService.updateRates(copyTargetKey.value, source)
