@@ -7,7 +7,8 @@ const rateToApp = r => ({
   fullFlat: Number(r.full_flat),       fullFlatMeal: Number(r.full_flat_meal),
   fullDaily: Number(r.full_daily),     fullMealDaily: Number(r.full_meal_daily),
   halfFlat: Number(r.half_flat),       halfFlatMeal: Number(r.half_flat_meal),
-  halfDaily: Number(r.half_daily),     halfMealDaily: Number(r.half_meal_daily)
+  halfDaily: Number(r.half_daily),     halfMealDaily: Number(r.half_meal_daily),
+  extraActivities: r.extra_activities || []
 })
 
 const rateToDb = (monthKey, v) => ({
@@ -16,7 +17,8 @@ const rateToDb = (monthKey, v) => ({
   full_flat: v.fullFlat,   full_flat_meal: v.fullFlatMeal,
   full_daily: v.fullDaily, full_meal_daily: v.fullMealDaily,
   half_flat: v.halfFlat,   half_flat_meal: v.halfFlatMeal,
-  half_daily: v.halfDaily, half_meal_daily: v.halfMealDaily
+  half_daily: v.halfDaily, half_meal_daily: v.halfMealDaily,
+  extra_activities: v.extraActivities || []
 })
 
 // ── 出席（預計／實際共用）mapper ──
@@ -69,7 +71,7 @@ export const tuitionService = {
     if (error) throw error
     if (!data.length) return null   // null = 此月份尚未建立名單
     const map = {}
-    for (const r of data) map[r.student_id] = { classType: r.class_type, withMeal: r.with_meal }
+    for (const r of data) map[r.student_id] = { classType: r.class_type, withMeal: r.with_meal, extraActivities: r.extra_activities || [] }
     return map
   },
 
@@ -81,7 +83,7 @@ export const tuitionService = {
     }
     await supabase.from('tuition_enrollments').delete().eq('month_key', monthKey)
     const rows = Object.entries(students).map(([sid, s]) => ({
-      month_key: monthKey, student_id: sid, class_type: s.classType, with_meal: s.withMeal
+      month_key: monthKey, student_id: sid, class_type: s.classType, with_meal: s.withMeal, extra_activities: s.extraActivities || []
     }))
     if (rows.length) {
       const { error } = await supabase.from('tuition_enrollments').insert(rows)
@@ -98,12 +100,13 @@ export const tuitionService = {
       })
       return
     }
-    const col = key === 'classType' ? 'class_type' : 'with_meal'
+    const colMap = { classType: 'class_type', withMeal: 'with_meal', extraActivities: 'extra_activities' }
+    const col = colMap[key]
     const { data, error } = await supabase.from('tuition_enrollments')
       .update({ [col]: value }).eq('month_key', monthKey).eq('student_id', studentId).select()
     if (error) throw error
     if (!data.length) {
-      const base = { month_key: monthKey, student_id: studentId, class_type: 'full', with_meal: false, [col]: value }
+      const base = { month_key: monthKey, student_id: studentId, class_type: 'full', with_meal: false, extra_activities: [], [col]: value }
       const { error: insErr } = await supabase.from('tuition_enrollments').insert(base)
       if (insErr) throw insErr
     }
@@ -119,7 +122,8 @@ export const tuitionService = {
     }
     const { error } = await supabase.from('tuition_enrollments').upsert({
       month_key: monthKey, student_id: studentId,
-      class_type: settings.classType, with_meal: settings.withMeal
+      class_type: settings.classType, with_meal: settings.withMeal,
+      extra_activities: settings.extraActivities || []
     }, { onConflict: 'month_key,student_id' })
     if (error) throw error
   },

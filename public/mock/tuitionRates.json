@@ -8,7 +8,11 @@
     "halfFlat": 5000,
     "halfFlatMeal": 5500,
     "halfDaily": 200,
-    "halfMealDaily": 250
+    "halfMealDaily": 250,
+    "extraActivities": [
+      { "id": "ea1", "name": "游泳課", "amount": 800 },
+      { "id": "ea2", "name": "美術課", "amount": 600 }
+    ]
   },
   "2026-07": {
     "absentThreshold": 7,
@@ -19,7 +23,10 @@
     "halfFlat": 5000,
     "halfFlatMeal": 5500,
     "halfDaily": 200,
-    "halfMealDaily": 250
+    "halfMealDaily": 250,
+    "extraActivities": [
+      { "id": "ea1", "name": "游泳課", "amount": 800 }
+    ]
   },
   "2026-08": {
     "absentThreshold": 7,
@@ -30,6 +37,7 @@
     "halfFlat": 5000,
     "halfFlatMeal": 5500,
     "halfDaily": 200,
-    "halfMealDaily": 250
+    "halfMealDaily": 250,
+    "extraActivities": []
   }
 }

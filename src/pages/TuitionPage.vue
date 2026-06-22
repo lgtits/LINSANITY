@@ -102,6 +102,18 @@
             <div class="text-body2 text-grey-6 q-mt-sm">
               請假超過 {{ rates.absentThreshold }} 天時改為按日計費
             </div>
+            <!-- 附加活動說明 -->
+            <div v-if="rates.extraActivities?.length" class="q-mt-md">
+              <q-list dense bordered class="rounded-borders">
+                <q-item dense class="bg-amber-1">
+                  <q-item-section><span class="text-body2 text-weight-bold text-amber-9">附加活動（依學生勾選加收）</span></q-item-section>
+                </q-item>
+                <q-item v-for="ea in rates.extraActivities" :key="ea.id" dense>
+                  <q-item-section class="text-body2 text-grey-7">{{ ea.name }}</q-item-section>
+                  <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(ea.amount) }}</q-item-section>
+                </q-item>
+              </q-list>
+            </div>
           </template>
         </q-card-section>
 
@@ -231,6 +243,21 @@
               </div>
             </q-card>
 
+            <!-- 附加活動勾選（手機版） -->
+            <div v-if="row.settings.classType !== 'none' && rates?.extraActivities?.length" class="q-mb-md">
+              <div class="text-body2 text-grey-7 text-weight-bold q-mb-xs">
+                <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動
+              </div>
+              <q-card flat bordered class="q-pa-sm">
+                <q-option-group
+                  :model-value="row.settings.extraActivities || []"
+                  @update:model-value="v => updateSetting(row.student.id, 'extraActivities', v)"
+                  :options="rates.extraActivities.map(ea => ({ label: `${ea.name}（$${fmtNum(ea.amount)}）`, value: ea.id }))"
+                  type="checkbox" color="amber-9" dense
+                />
+              </q-card>
+            </div>
+
             <!-- 費用統計明細（不上課時隱藏） -->
             <q-card v-if="row.settings.classType !== 'none'" flat bordered class="q-pa-sm">
               <q-list dense separator>
@@ -251,6 +278,17 @@
                     </span>
                   </q-item-section>
                 </q-item>
+                <!-- 附加活動明細（手機版） -->
+                <template v-if="(row.settings.extraActivities || []).length">
+                  <q-item v-for="eaId in row.settings.extraActivities" :key="eaId">
+                    <q-item-section class="text-body2 text-amber-9">
+                      {{ getActivityName(eaId) }}
+                    </q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold">
+                      +${{ fmtNum(getActivityAmount(eaId)) }}
+                    </q-item-section>
+                  </q-item>
+                </template>
                 <q-separator class="q-my-xs" />
                 <q-item class="bg-info-hint">
                   <q-item-section class="text-weight-bold">應收學費</q-item-section>
@@ -359,6 +397,21 @@
                   </q-card>
 
                   <template v-if="props.row.settings.classType !== 'none'">
+                  <!-- 附加活動勾選 -->
+                  <div v-if="rates?.extraActivities?.length" class="q-mb-md">
+                    <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
+                      <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動
+                    </div>
+                    <q-card flat bordered class="q-pa-sm">
+                      <q-option-group
+                        :model-value="props.row.settings.extraActivities || []"
+                        @update:model-value="v => updateSetting(props.row.student.id, 'extraActivities', v)"
+                        :options="rates.extraActivities.map(ea => ({ label: `${ea.name}（$${fmtNum(ea.amount)}）`, value: ea.id }))"
+                        type="checkbox" color="amber-9" dense
+                      />
+                    </q-card>
+                  </div>
+
                   <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                     <q-icon name="receipt_long" size="14px" class="q-mr-xs" />出席統計與費用明細
                   </div>
@@ -395,6 +448,17 @@
                           </span>
                         </q-item-section>
                       </q-item>
+                      <!-- 附加活動明細 -->
+                      <template v-if="(props.row.settings.extraActivities || []).length">
+                        <q-item v-for="eaId in props.row.settings.extraActivities" :key="eaId">
+                          <q-item-section class="text-body2 text-amber-9">
+                            {{ getActivityName(eaId) }}
+                          </q-item-section>
+                          <q-item-section side class="text-body2 text-weight-bold">
+                            +${{ fmtNum(getActivityAmount(eaId)) }}
+                          </q-item-section>
+                        </q-item>
+                      </template>
                       <q-separator />
                       <q-item class="bg-info-hint">
                         <q-item-section class="text-subtitle2 text-weight-bold">應收學費</q-item-section>
@@ -706,7 +770,7 @@ onMounted(async () => {
 })
 
 // ── 計費 ──
-function calcFee(classType, withMeal, totalDays, absentDays) {
+function calcTuitionBase(classType, withMeal, totalDays, absentDays) {
   if (!rates.value) return null
   if (classType === 'none') return 0
   const attended = Math.max(0, totalDays - absentDays)
@@ -720,10 +784,31 @@ function calcFee(classType, withMeal, totalDays, absentDays) {
   }
 }
 
+function calcExtraFee(selectedIds) {
+  if (!rates.value?.extraActivities?.length || !selectedIds?.length) return 0
+  return rates.value.extraActivities
+    .filter(ea => selectedIds.includes(ea.id))
+    .reduce((sum, ea) => sum + ea.amount, 0)
+}
+
+function calcFee(classType, withMeal, totalDays, absentDays, selectedActivityIds) {
+  const base = calcTuitionBase(classType, withMeal, totalDays, absentDays)
+  if (base === null) return null
+  return base + calcExtraFee(selectedActivityIds)
+}
+
 function dailyRate(row) {
   if (!rates.value) return null
   if (row.settings.classType === 'full') return row.settings.withMeal ? rates.value.fullMealDaily : rates.value.fullDaily
   return row.settings.withMeal ? rates.value.halfMealDaily : rates.value.halfDaily
+}
+
+function getActivityName(id) {
+  return rates.value?.extraActivities?.find(ea => ea.id === id)?.name || id
+}
+
+function getActivityAmount(id) {
+  return rates.value?.extraActivities?.find(ea => ea.id === id)?.amount || 0
 }
 
 // ── 組合列表 ──
@@ -735,7 +820,7 @@ const rows = computed(() => {
       if (!student) return null
       const att = attendance.value[studentId] || { totalDays: 22, absentDays: 0 }
       const attendDays = Math.max(0, att.totalDays - att.absentDays)
-      return { id: studentId, student, settings: s, attendance: { ...att, attendDays }, fee: calcFee(s.classType, s.withMeal, att.totalDays, att.absentDays) }
+      return { id: studentId, student, settings: s, attendance: { ...att, attendDays }, fee: calcFee(s.classType, s.withMeal, att.totalDays, att.absentDays, s.extraActivities) }
     })
     .filter(Boolean)
     .sort((a, b) =>
@@ -772,7 +857,7 @@ async function loadStudentsForMonth() {
   const mk = monthKey.value
   const defaultEnrollment = {}
   allStudents.value.forEach(s => {
-    defaultEnrollment[s.id] = { classType: 'none', withMeal: false }
+    defaultEnrollment[s.id] = { classType: 'none', withMeal: false, extraActivities: [] }
   })
   await tuitionService.createEnrollment(mk, defaultEnrollment)
   enrollment.value = { ...defaultEnrollment }
@@ -799,16 +884,22 @@ function exportExcel() {
     '請假天數':   r.attendance.absentDays,
     '出席天數':   r.attendance.attendDays,
     '計費方式':   !rates.value ? 'N/A' : r.attendance.absentDays > rates.value.absentThreshold ? `按日計費（$${dailyRate(r)}/天）` : '月費制',
+    '附加活動':   (r.settings.extraActivities || []).map(id => {
+      const ea = rates.value?.extraActivities?.find(a => a.id === id)
+      return ea ? `${ea.name}($${ea.amount})` : ''
+    }).filter(Boolean).join('、') || '無',
+    '附加活動費': calcExtraFee(r.settings.extraActivities),
     '應收學費':   r.fee
   }))
   data.push({
     '月份': '', '姓名': `合計（${filteredRows.value.length} 位）`,
     '年級': '', '家長': '', '電話': '', '班別': '', '用餐': '',
     '上課總天數': '', '請假天數': '', '出席天數': '', '計費方式': '',
+    '附加活動': '', '附加活動費': '',
     '應收學費': totalFee.value
   })
   const ws = XLSX.utils.json_to_sheet(data)
-  ws['!cols'] = [10,8,7,8,13,8,10,12,10,10,18,10].map(w => ({ wch: w }))
+  ws['!cols'] = [10,8,7,8,13,8,10,12,10,10,18,14,12,10].map(w => ({ wch: w }))
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, `${selectedYear.value}年${String(selectedMonth.value).padStart(2,'0')}月學費`)
   XLSX.writeFile(wb, `寒暑假學費_${mk}.xlsx`)

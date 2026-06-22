@@ -1,18 +1,18 @@
 {
   "2026-06": {
-    "s1": { "classType": "none", "withMeal": false },
-    "s2": { "classType": "half", "withMeal": true },
-    "s3": { "classType": "full", "withMeal": true },
-    "s4": { "classType": "half", "withMeal": false },
-    "s5": { "classType": "full", "withMeal": false },
-    "s6": { "classType": "half", "withMeal": true }
+    "s1": { "classType": "none", "withMeal": false, "extraActivities": [] },
+    "s2": { "classType": "half", "withMeal": true, "extraActivities": ["ea1"] },
+    "s3": { "classType": "full", "withMeal": true, "extraActivities": ["ea1", "ea2"] },
+    "s4": { "classType": "half", "withMeal": false, "extraActivities": [] },
+    "s5": { "classType": "full", "withMeal": false, "extraActivities": ["ea2"] },
+    "s6": { "classType": "half", "withMeal": true, "extraActivities": ["ea1"] }
   },
   "2026-07": {
-    "s1": { "classType": "none", "withMeal": false },
-    "s2": { "classType": "half", "withMeal": true },
-    "s3": { "classType": "full", "withMeal": true },
-    "s4": { "classType": "half", "withMeal": false },
-    "s5": { "classType": "full", "withMeal": false },
-    "s6": { "classType": "half", "withMeal": true }
+    "s1": { "classType": "none", "withMeal": false, "extraActivities": [] },
+    "s2": { "classType": "half", "withMeal": true, "extraActivities": ["ea1"] },
+    "s3": { "classType": "full", "withMeal": true, "extraActivities": [] },
+    "s4": { "classType": "half", "withMeal": false, "extraActivities": [] },
+    "s5": { "classType": "full", "withMeal": false, "extraActivities": ["ea1"] },
+    "s6": { "classType": "half", "withMeal": true, "extraActivities": [] }
   }
 }

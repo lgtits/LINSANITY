@@ -144,14 +144,16 @@ create table tuition_rates (
   half_flat_meal   numeric(10,2),
   half_daily       numeric(10,2),
   half_meal_daily  numeric(10,2),
+  extra_activities jsonb not null default '[]', -- [{ "id", "name", "amount" }]
   created_at       timestamptz default now()
 );
 
 create table tuition_enrollments (
-  month_key  text not null,
-  student_id text not null references students(id),
-  class_type text not null check (class_type in ('full','half','none')),
-  with_meal  boolean not null default false,
+  month_key        text not null,
+  student_id       text not null references students(id),
+  class_type       text not null check (class_type in ('full','half','none')),
+  with_meal        boolean not null default false,
+  extra_activities jsonb not null default '[]', -- 報名的附加活動 ID 陣列 ["ea1","ea2"]
   primary key (month_key, student_id)
 );
 
@@ -167,11 +169,12 @@ create table tuition_attendance (
 
 -- 實際簽到記錄（月底結算用）。
 create table attendance_logs (
-  month_key   text not null,
-  student_id  text not null references students(id),
-  total_days  int not null default 0,
-  absent_days int not null default 0,
-  calendar    jsonb,
+  month_key        text not null,
+  student_id       text not null references students(id),
+  total_days       int not null default 0,
+  absent_days      int not null default 0,
+  calendar         jsonb,
+  extra_activities jsonb not null default '[]', -- 實際參加的附加活動 ID 陣列
   primary key (month_key, student_id)
 );
 

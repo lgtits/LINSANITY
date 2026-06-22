@@ -3,11 +3,11 @@ import { supabase, isDemoMode } from '../lib/supabase'
 
 // calendar 為 null 時不帶入，讓前端用 total/absent 還原
 const toApp = r => {
-  const o = { totalDays: r.total_days, absentDays: r.absent_days }
+  const o = { totalDays: r.total_days, absentDays: r.absent_days, extraActivities: r.extra_activities || [] }
   if (r.calendar) o.calendar = r.calendar
   return o
 }
-const keyToCol = { totalDays: 'total_days', absentDays: 'absent_days', calendar: 'calendar' }
+const keyToCol = { totalDays: 'total_days', absentDays: 'absent_days', calendar: 'calendar', extraActivities: 'extra_activities' }
 
 export const attendanceService = {
   async getLogs(monthKey) {
@@ -27,7 +27,7 @@ export const attendanceService = {
     if (isDemoMode) {
       await api.mutate('attendanceLogs', data => {
         if (!data[monthKey]) data[monthKey] = {}
-        if (!data[monthKey][studentId]) data[monthKey][studentId] = { totalDays: 0, absentDays: 0 }
+        if (!data[monthKey][studentId]) data[monthKey][studentId] = { totalDays: 0, absentDays: 0, extraActivities: [] }
         data[monthKey][studentId][key] = value
       })
       return
@@ -37,7 +37,7 @@ export const attendanceService = {
       .update({ [col]: value }).eq('month_key', monthKey).eq('student_id', studentId).select()
     if (error) throw error
     if (!data.length) {
-      const base = { month_key: monthKey, student_id: studentId, total_days: 0, absent_days: 0, [col]: value }
+      const base = { month_key: monthKey, student_id: studentId, total_days: 0, absent_days: 0, extra_activities: [], [col]: value }
       const { error: insErr } = await supabase.from('attendance_logs').insert(base)
       if (insErr) throw insErr
     }

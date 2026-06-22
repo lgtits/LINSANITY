@@ -116,6 +116,34 @@
               <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
               <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>未到</span>
             </div>
+
+            <!-- 附加活動出席（手機版） -->
+            <div v-if="row.enrolledActivities.length" class="q-mt-md">
+              <div class="text-body2 text-grey-7 text-weight-bold q-mb-xs">
+                <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動出席
+              </div>
+              <q-card flat bordered class="q-pa-sm">
+                <div class="text-caption text-grey-6 q-mb-xs">勾選實際有參加的活動</div>
+                <q-option-group
+                  :model-value="row.attendedActivities"
+                  @update:model-value="v => updateActivityAttendance(row.studentId, v)"
+                  :options="row.enrolledActivities.map(id => ({ label: `${getActivityName(id)}（$${fmtNum(getActivityAmount(id))}）`, value: id }))"
+                  type="checkbox" color="amber-9" dense
+                />
+                <q-separator class="q-my-xs" />
+                <div class="row items-center justify-between">
+                  <span class="text-caption text-grey-6">活動費小計</span>
+                  <span class="text-body2 text-weight-bold text-amber-9">${{ fmtNum(calcExtraFee(row.attendedActivities)) }}</span>
+                </div>
+                <div v-if="calcExtraFee(row.enrolledActivities) !== calcExtraFee(row.attendedActivities)"
+                  class="row items-center justify-between q-mt-xs">
+                  <span class="text-caption text-negative">未參加活動退費</span>
+                  <span class="text-body2 text-weight-bold text-negative">
+                    -${{ fmtNum(calcExtraFee(row.enrolledActivities) - calcExtraFee(row.attendedActivities)) }}
+                  </span>
+                </div>
+              </q-card>
+            </div>
           </div>
           <div v-else class="q-pa-md text-grey-6 text-body2 text-center">此月份不上課</div>
         </q-expansion-item>
@@ -185,40 +213,74 @@
             </q-td>
           </q-tr>
 
-          <!-- 展開：日曆 -->
+          <!-- 展開：日曆 + 附加活動 -->
           <q-tr v-show="props.expand" :props="props">
             <q-td colspan="100%" class="bg-subtle q-pa-md">
               <template v-if="props.row.settings.classType !== 'none'">
-                <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
-                  <q-icon name="calendar_month" size="14px" class="q-mr-xs" />簽到日曆
-                </div>
-                <q-card flat bordered class="q-pa-md">
-                  <div class="attendance-calendar-container full-width">
-                    <div class="text-caption text-grey-6 text-center q-mb-md">
-                      點擊日期切換狀態：出席 (綠) ➔ 請假 (紅) ➔ 未到 (灰)
+                <div class="row q-col-gutter-md">
+                  <div :class="props.row.enrolledActivities.length ? 'col-12 col-md-8' : 'col-12'">
+                    <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
+                      <q-icon name="calendar_month" size="14px" class="q-mr-xs" />簽到日曆
                     </div>
-                    <div class="calendar-grid">
-                      <div v-for="h in ['日','一','二','三','四','五','六']" :key="h" class="calendar-header-cell">{{ h }}</div>
-                      <div
-                        v-for="(cell, idx) in monthDays"
-                        :key="idx"
-                        class="calendar-day-cell"
-                        :class="getDayClass(props.row.studentId, cell)"
-                        @click="!cell.empty && toggleDay(props.row.studentId, cell.day)"
-                      >
-                        <div v-if="!cell.empty" class="day-number">{{ cell.day }}</div>
-                        <div v-if="!cell.empty" class="day-status-icon">
-                          <q-icon :name="getDayIcon(props.row.studentId, cell.day)" size="11px" />
+                    <q-card flat bordered class="q-pa-md">
+                      <div class="attendance-calendar-container full-width">
+                        <div class="text-caption text-grey-6 text-center q-mb-md">
+                          點擊日期切換狀態：出席 (綠) ➔ 請假 (紅) ➔ 未到 (灰)
+                        </div>
+                        <div class="calendar-grid">
+                          <div v-for="h in ['日','一','二','三','四','五','六']" :key="h" class="calendar-header-cell">{{ h }}</div>
+                          <div
+                            v-for="(cell, idx) in monthDays"
+                            :key="idx"
+                            class="calendar-day-cell"
+                            :class="getDayClass(props.row.studentId, cell)"
+                            @click="!cell.empty && toggleDay(props.row.studentId, cell.day)"
+                          >
+                            <div v-if="!cell.empty" class="day-number">{{ cell.day }}</div>
+                            <div v-if="!cell.empty" class="day-status-icon">
+                              <q-icon :name="getDayIcon(props.row.studentId, cell.day)" size="11px" />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row q-gutter-md justify-center q-mt-md text-caption text-grey-7">
+                          <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
+                          <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
+                          <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>未到</span>
                         </div>
                       </div>
-                    </div>
-                    <div class="row q-gutter-md justify-center q-mt-md text-caption text-grey-7">
-                      <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
-                      <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
-                      <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>未到</span>
-                    </div>
+                    </q-card>
                   </div>
-                </q-card>
+
+                  <!-- 附加活動出席 -->
+                  <div v-if="props.row.enrolledActivities.length" class="col-12 col-md-4">
+                    <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
+                      <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動出席
+                    </div>
+                    <q-card flat bordered class="q-pa-md">
+                      <div class="text-caption text-grey-6 q-mb-sm">勾選實際有參加的活動</div>
+                      <q-option-group
+                        :model-value="props.row.attendedActivities"
+                        @update:model-value="v => updateActivityAttendance(props.row.studentId, v)"
+                        :options="props.row.enrolledActivities.map(id => ({ label: `${getActivityName(id)}（$${fmtNum(getActivityAmount(id))}）`, value: id }))"
+                        type="checkbox" color="amber-9" dense
+                      />
+                      <q-separator class="q-my-sm" />
+                      <div class="row items-center justify-between">
+                        <span class="text-caption text-grey-6">活動費小計</span>
+                        <span class="text-body2 text-weight-bold text-amber-9">
+                          ${{ fmtNum(calcExtraFee(props.row.attendedActivities)) }}
+                        </span>
+                      </div>
+                      <div v-if="calcExtraFee(props.row.enrolledActivities) !== calcExtraFee(props.row.attendedActivities)"
+                        class="row items-center justify-between q-mt-xs">
+                        <span class="text-caption text-negative">未參加活動退費</span>
+                        <span class="text-body2 text-weight-bold text-negative">
+                          -${{ fmtNum(calcExtraFee(props.row.enrolledActivities) - calcExtraFee(props.row.attendedActivities)) }}
+                        </span>
+                      </div>
+                    </q-card>
+                  </div>
+                </div>
               </template>
               <div v-else class="text-grey-6 text-body2">此月份不上課</div>
             </q-td>
@@ -330,8 +392,7 @@ const hasRates = computed(() => rates.value !== null)
 
 function fmtNum(n) { return Number(n).toLocaleString('zh-TW') }
 
-// 計費：與費率計算頁相同邏輯（請假超過門檻改按日）
-function calcFee(classType, withMeal, totalDays, absentDays) {
+function calcTuitionBase(classType, withMeal, totalDays, absentDays) {
   if (!rates.value) return null
   if (classType === 'none') return 0
   const attended = Math.max(0, totalDays - absentDays)
@@ -343,6 +404,27 @@ function calcFee(classType, withMeal, totalDays, absentDays) {
     if (absentDays > threshold) return attended * (withMeal ? rates.value.halfMealDaily : rates.value.halfDaily)
     return withMeal ? rates.value.halfFlatMeal : rates.value.halfFlat
   }
+}
+
+function calcExtraFee(selectedIds) {
+  if (!rates.value?.extraActivities?.length || !selectedIds?.length) return 0
+  return rates.value.extraActivities
+    .filter(ea => selectedIds.includes(ea.id))
+    .reduce((sum, ea) => sum + ea.amount, 0)
+}
+
+function calcFee(classType, withMeal, totalDays, absentDays, activityIds) {
+  const base = calcTuitionBase(classType, withMeal, totalDays, absentDays)
+  if (base === null) return null
+  return base + calcExtraFee(activityIds)
+}
+
+function getActivityName(id) {
+  return rates.value?.extraActivities?.find(ea => ea.id === id)?.name || id
+}
+
+function getActivityAmount(id) {
+  return rates.value?.extraActivities?.find(ea => ea.id === id)?.amount || 0
 }
 
 // ── 月份日曆格 ──
@@ -384,6 +466,35 @@ function getCalendar(studentId) {
     log.calendar = cal
   }
   return log.calendar
+}
+
+function updateActivityAttendance(studentId, newIds) {
+  const log = logs.value[studentId] || { totalDays: 0, absentDays: 0 }
+  const oldIds = log.extraActivities !== undefined ? log.extraActivities : (enrollment.value?.[studentId]?.extraActivities || [])
+  const removed = oldIds.filter(id => !newIds.includes(id))
+
+  if (removed.length) {
+    const names = removed.map(id => getActivityName(id)).join('、')
+    $q.dialog({
+      title: '取消活動出席',
+      message: `確認「${names}」未參加？取消後該活動費用將不計入。`,
+      cancel: { flat: true, label: '返回' },
+      ok: { color: 'negative', label: '確認取消' },
+      persistent: true
+    }).onOk(() => {
+      applyActivityUpdate(studentId, newIds)
+    })
+  } else {
+    applyActivityUpdate(studentId, newIds)
+  }
+}
+
+function applyActivityUpdate(studentId, newIds) {
+  if (!logs.value[studentId]) {
+    logs.value[studentId] = { totalDays: 0, absentDays: 0 }
+  }
+  logs.value[studentId].extraActivities = newIds
+  attendanceService.updateLog(monthKey.value, studentId, 'extraActivities', newIds)
 }
 
 function recalcTotals(studentId) {
@@ -450,9 +561,11 @@ const rows = computed(() => {
       const log = logs.value[studentId] || { totalDays: 0, absentDays: 0 }
       const attendDays = Math.max(0, log.totalDays - log.absentDays)
       const planned = plannedAtt.value[studentId] || { totalDays: 0, absentDays: 0 }
-      const prepaidFee = calcFee(settings.classType, settings.withMeal, planned.totalDays, planned.absentDays)
-      const currentFee = calcFee(settings.classType, settings.withMeal, log.totalDays, log.absentDays)
-      return { studentId, student, settings, attendDays, absentDays: log.absentDays, prepaidFee, currentFee }
+      const enrolledActivities = settings.extraActivities || []
+      const attendedActivities = log.extraActivities !== undefined ? log.extraActivities : [...enrolledActivities]
+      const prepaidFee = calcFee(settings.classType, settings.withMeal, planned.totalDays, planned.absentDays, enrolledActivities)
+      const currentFee = calcFee(settings.classType, settings.withMeal, log.totalDays, log.absentDays, attendedActivities)
+      return { studentId, student, settings, attendDays, absentDays: log.absentDays, enrolledActivities, attendedActivities, prepaidFee, currentFee }
     })
     .filter(Boolean)
     .sort((a, b) =>

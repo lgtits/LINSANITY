@@ -78,6 +78,18 @@
               </q-list>
             </div>
           </div>
+          <!-- 附加活動 -->
+          <div v-if="rate.extraActivities?.length" class="q-mt-sm">
+            <q-list dense bordered class="rounded-borders">
+              <q-item dense class="bg-amber-1">
+                <q-item-section><span class="text-body2 text-weight-bold text-amber-9">附加活動</span></q-item-section>
+              </q-item>
+              <q-item v-for="ea in rate.extraActivities" :key="ea.id" dense>
+                <q-item-section class="text-body2 text-grey-7">{{ ea.name }}</q-item-section>
+                <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(ea.amount) }}</q-item-section>
+              </q-item>
+            </q-list>
+          </div>
         </q-card-section>
       </q-card>
     </template>
@@ -177,6 +189,30 @@
                   :rules="[v => v > 0 || '請輸入正確金額']" />
               </div>
             </div>
+
+            <q-separator class="q-mb-md" />
+
+            <div class="row items-center q-mb-sm">
+              <q-badge color="amber-9" label="附加活動" />
+              <q-space />
+              <q-btn flat dense size="sm" icon="add" color="amber-9" label="新增活動" @click="addActivity" />
+            </div>
+            <div v-if="!form.extraActivities.length" class="text-body2 text-grey-5 q-mb-md">
+              尚未新增附加活動
+            </div>
+            <div v-for="(ea, idx) in form.extraActivities" :key="idx" class="row q-col-gutter-sm q-mb-sm items-center">
+              <div class="col">
+                <q-input v-model="ea.name" label="活動名稱" outlined dense
+                  :rules="[v => !!v || '請輸入名稱']" />
+              </div>
+              <div class="col-4">
+                <q-input v-model.number="ea.amount" label="金額" type="number" prefix="$" outlined dense
+                  :rules="[v => v > 0 || '請輸入金額']" />
+              </div>
+              <div class="col-auto">
+                <q-btn flat round dense icon="delete" color="negative" size="sm" @click="removeActivity(idx)" />
+              </div>
+            </div>
         </q-card-section>
 
         <q-card-actions align="right" class="q-pa-md">
@@ -228,7 +264,8 @@ const defaultForm = () => ({
   fullFlat: 10000, fullFlatMeal: 10500,
   fullDaily: 400,  fullMealDaily: 450,
   halfFlat: 5000,  halfFlatMeal: 5500,
-  halfDaily: 200,  halfMealDaily: 250
+  halfDaily: 200,  halfMealDaily: 250,
+  extraActivities: []
 })
 
 const sortedRates = computed(() =>
@@ -244,7 +281,8 @@ const tableRows = computed(() =>
     fullFlat: r.fullFlat, fullFlatMeal: r.fullFlatMeal,
     fullDaily: r.fullDaily, fullMealDaily: r.fullMealDaily,
     halfFlat: r.halfFlat, halfFlatMeal: r.halfFlatMeal,
-    halfDaily: r.halfDaily, halfMealDaily: r.halfMealDaily
+    halfDaily: r.halfDaily, halfMealDaily: r.halfMealDaily,
+    extraActivities: r.extraActivities || []
   }))
 )
 
@@ -257,6 +295,7 @@ const columns = [
   { name: 'halfFlat',         label: '半天月費',           field: 'halfFlat',         align: 'right', format: v => `$${fmtNum(v)}` },
   { name: 'halfFlatMeal',     label: '半天月費(含餐)',      field: 'halfFlatMeal',     align: 'right', format: v => `$${fmtNum(v)}` },
   { name: 'halfDaily',        label: '半天按日',           field: 'halfDaily',        align: 'right', format: v => `$${v}` },
+  { name: 'extraActivities', label: '附加活動',           field: 'extraActivities',  align: 'left', format: v => v?.length ? v.map(a => `${a.name}($${a.amount})`).join('、') : '—' },
   { name: 'actions',          label: '操作',               field: 'actions',          align: 'center' }
 ]
 
@@ -285,18 +324,34 @@ function openAdd() {
 function openEdit(mk, rate) {
   isEdit.value = true
   editingMonthKey.value = mk
-  form.value = { monthKey: mk, ...rate }
+  form.value = {
+    monthKey: mk, ...rate,
+    extraActivities: (rate.extraActivities || []).map(ea => ({ ...ea }))
+  }
   showDialog.value = true
 }
 
+function addActivity() {
+  form.value.extraActivities.push({ id: `ea${Date.now()}`, name: '', amount: 0 })
+}
+
+function removeActivity(idx) {
+  form.value.extraActivities.splice(idx, 1)
+}
+
 async function save() {
+  if (!isEdit.value && !/^\d{4}-\d{2}$/.test(form.value.monthKey)) {
+    $q.notify({ message: '請填寫正確的月份格式（YYYY-MM）', color: 'negative', icon: 'error' })
+    return
+  }
   const mk = isEdit.value ? editingMonthKey.value : form.value.monthKey
   const rateData = {
     absentThreshold: form.value.absentThreshold,
     fullFlat: form.value.fullFlat,         fullFlatMeal: form.value.fullFlatMeal,
     fullDaily: form.value.fullDaily,       fullMealDaily: form.value.fullMealDaily,
     halfFlat: form.value.halfFlat,         halfFlatMeal: form.value.halfFlatMeal,
-    halfDaily: form.value.halfDaily,       halfMealDaily: form.value.halfMealDaily
+    halfDaily: form.value.halfDaily,       halfMealDaily: form.value.halfMealDaily,
+    extraActivities: form.value.extraActivities.filter(ea => ea.name && ea.amount > 0)
   }
   allRates.value = { ...allRates.value, [mk]: rateData }
   await tuitionService.updateRates(mk, rateData)
