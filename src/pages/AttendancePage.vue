@@ -127,22 +127,41 @@
               </div>
               <q-card flat bordered class="q-pa-sm">
                 <div class="text-caption text-grey-6 q-mb-xs">勾選實際有參加的活動</div>
-                <q-option-group
-                  :model-value="row.attendedActivities"
-                  @update:model-value="v => updateActivityAttendance(row.studentId, v)"
-                  :options="row.enrolledActivities.map(id => ({ label: `${getActivityName(id)}（$${fmtNum(getActivityAmount(id))}）`, value: id }))"
-                  type="checkbox" color="amber-9" dense
-                />
+                <div v-for="item in row.enrolledActivities" :key="item.id" class="q-py-xs">
+                  <div class="row items-center no-wrap">
+                    <q-checkbox
+                      :model-value="getSelectedIds(row.attendedActivities).includes(item.id)"
+                      @update:model-value="v => toggleAttendanceActivity(row.studentId, item.id, v)"
+                      color="amber-9" dense class="q-mr-xs"
+                    />
+                    <span class="text-body2">{{ getActivityName(item.id) }}</span>
+                    <span class="text-body2 text-grey-6 q-ml-xs">${{ fmtNum(getActivityAmount(item.id)) }}{{ isMultiPerson(item.id) ? '/人' : '' }}</span>
+                    <q-space />
+                    <q-input v-if="isMultiPerson(item.id) && getSelectedIds(row.attendedActivities).includes(item.id)"
+                      :model-value="(row.attendedActivities || []).find(i => i.id === item.id)?.qty || 1"
+                      @update:model-value="v => updateAttendanceActivityQty(row.studentId, item.id, Number(v))"
+                      type="number" dense outlined input-class="text-center" suffix="人"
+                      style="width: 80px; font-size: 13px" :min="1"
+                    />
+                  </div>
+                </div>
                 <q-separator class="q-my-xs" />
                 <div class="row items-center justify-between">
                   <span class="text-caption text-grey-6">活動費小計</span>
                   <span class="text-body2 text-weight-bold text-amber-9">${{ fmtNum(calcExtraFee(row.attendedActivities)) }}</span>
                 </div>
-                <div v-if="calcExtraFee(row.enrolledActivities) !== calcExtraFee(row.attendedActivities)"
+                <div v-if="calcExtraFee(row.enrolledActivities) > calcExtraFee(row.attendedActivities)"
                   class="row items-center justify-between q-mt-xs">
-                  <span class="text-caption text-negative">未參加活動退費</span>
+                  <span class="text-caption text-negative">活動退費</span>
                   <span class="text-body2 text-weight-bold text-negative">
                     -${{ fmtNum(calcExtraFee(row.enrolledActivities) - calcExtraFee(row.attendedActivities)) }}
+                  </span>
+                </div>
+                <div v-else-if="calcExtraFee(row.enrolledActivities) < calcExtraFee(row.attendedActivities)"
+                  class="row items-center justify-between q-mt-xs">
+                  <span class="text-caption text-positive">活動補收</span>
+                  <span class="text-body2 text-weight-bold text-positive">
+                    +${{ fmtNum(calcExtraFee(row.attendedActivities) - calcExtraFee(row.enrolledActivities)) }}
                   </span>
                 </div>
               </q-card>
@@ -263,12 +282,24 @@
                     </div>
                     <q-card flat bordered class="q-pa-md">
                       <div class="text-caption text-grey-6 q-mb-sm">勾選實際有參加的活動</div>
-                      <q-option-group
-                        :model-value="props.row.attendedActivities"
-                        @update:model-value="v => updateActivityAttendance(props.row.studentId, v)"
-                        :options="props.row.enrolledActivities.map(id => ({ label: `${getActivityName(id)}（$${fmtNum(getActivityAmount(id))}）`, value: id }))"
-                        type="checkbox" color="amber-9" dense
-                      />
+                      <div v-for="item in props.row.enrolledActivities" :key="item.id" class="q-py-xs">
+                        <div class="row items-center no-wrap">
+                          <q-checkbox
+                            :model-value="getSelectedIds(props.row.attendedActivities).includes(item.id)"
+                            @update:model-value="v => toggleAttendanceActivity(props.row.studentId, item.id, v)"
+                            color="amber-9" dense class="q-mr-xs"
+                          />
+                          <span class="text-body2">{{ getActivityName(item.id) }}</span>
+                          <span class="text-body2 text-grey-6 q-ml-xs">${{ fmtNum(getActivityAmount(item.id)) }}{{ isMultiPerson(item.id) ? '/人' : '' }}</span>
+                          <q-space />
+                          <q-input v-if="isMultiPerson(item.id) && getSelectedIds(props.row.attendedActivities).includes(item.id)"
+                            :model-value="(props.row.attendedActivities || []).find(i => i.id === item.id)?.qty || 1"
+                            @update:model-value="v => updateAttendanceActivityQty(props.row.studentId, item.id, Number(v))"
+                            type="number" dense outlined input-class="text-center" suffix="人"
+                            style="width: 80px; font-size: 13px" :min="1"
+                          />
+                        </div>
+                      </div>
                       <q-separator class="q-my-sm" />
                       <div class="row items-center justify-between">
                         <span class="text-caption text-grey-6">活動費小計</span>
@@ -276,11 +307,18 @@
                           ${{ fmtNum(calcExtraFee(props.row.attendedActivities)) }}
                         </span>
                       </div>
-                      <div v-if="calcExtraFee(props.row.enrolledActivities) !== calcExtraFee(props.row.attendedActivities)"
+                      <div v-if="calcExtraFee(props.row.enrolledActivities) > calcExtraFee(props.row.attendedActivities)"
                         class="row items-center justify-between q-mt-xs">
-                        <span class="text-caption text-negative">未參加活動退費</span>
+                        <span class="text-caption text-negative">活動退費</span>
                         <span class="text-body2 text-weight-bold text-negative">
                           -${{ fmtNum(calcExtraFee(props.row.enrolledActivities) - calcExtraFee(props.row.attendedActivities)) }}
+                        </span>
+                      </div>
+                      <div v-else-if="calcExtraFee(props.row.enrolledActivities) < calcExtraFee(props.row.attendedActivities)"
+                        class="row items-center justify-between q-mt-xs">
+                        <span class="text-caption text-positive">活動補收</span>
+                        <span class="text-body2 text-weight-bold text-positive">
+                          +${{ fmtNum(calcExtraFee(props.row.attendedActivities) - calcExtraFee(props.row.enrolledActivities)) }}
                         </span>
                       </div>
                     </q-card>
@@ -411,25 +449,50 @@ function calcTuitionBase(classType, withMeal, totalDays, absentDays) {
   }
 }
 
-function calcExtraFee(selectedIds) {
-  if (!rates.value?.extraActivities?.length || !selectedIds?.length) return 0
-  return rates.value.extraActivities
-    .filter(ea => selectedIds.includes(ea.id))
-    .reduce((sum, ea) => sum + ea.amount, 0)
+function calcExtraFee(selectedItems) {
+  if (!rates.value?.extraActivities?.length || !selectedItems?.length) return 0
+  return selectedItems.reduce((sum, item) => {
+    const def = rates.value.extraActivities.find(ea => ea.id === item.id)
+    if (!def) return sum
+    const qty = def.multiPerson ? (item.qty || 1) : 1
+    return sum + def.amount * qty
+  }, 0)
 }
 
-function calcFee(classType, withMeal, totalDays, absentDays, activityIds) {
+function calcFee(classType, withMeal, totalDays, absentDays, activityItems) {
   const base = calcTuitionBase(classType, withMeal, totalDays, absentDays)
   if (base === null) return null
-  return base + calcExtraFee(activityIds)
+  return base + calcExtraFee(activityItems)
+}
+
+function getActivityDef(id) {
+  return rates.value?.extraActivities?.find(ea => ea.id === id)
 }
 
 function getActivityName(id) {
-  return rates.value?.extraActivities?.find(ea => ea.id === id)?.name || id
+  return getActivityDef(id)?.name || id
 }
 
 function getActivityAmount(id) {
-  return rates.value?.extraActivities?.find(ea => ea.id === id)?.amount || 0
+  return getActivityDef(id)?.amount || 0
+}
+
+function isMultiPerson(id) {
+  return getActivityDef(id)?.multiPerson || false
+}
+
+function getSelectedIds(items) {
+  return (items || []).map(i => i.id)
+}
+
+function normalizeActivities(items) {
+  if (!items?.length || !rates.value?.extraActivities) return items || []
+  return items
+    .filter(item => rates.value.extraActivities.some(ea => ea.id === item.id))
+    .map(item => {
+      const def = rates.value.extraActivities.find(ea => ea.id === item.id)
+      return def.multiPerson ? item : { ...item, qty: 1 }
+    })
 }
 
 // ── 月份日曆格 ──
@@ -473,33 +536,49 @@ function getCalendar(studentId) {
   return log.calendar
 }
 
-function updateActivityAttendance(studentId, newIds) {
+function toggleAttendanceActivity(studentId, activityId, checked) {
   const log = logs.value[studentId] || { totalDays: 0, absentDays: 0 }
-  const oldIds = log.extraActivities !== undefined ? log.extraActivities : (enrollment.value?.[studentId]?.extraActivities || [])
-  const removed = oldIds.filter(id => !newIds.includes(id))
+  const raw = log.extraActivities !== undefined
+    ? [...log.extraActivities]
+    : [...(enrollment.value?.[studentId]?.extraActivities || [])]
+  const current = normalizeActivities(raw)
 
-  if (removed.length) {
-    const names = removed.map(id => getActivityName(id)).join('、')
+  if (checked) {
+    const enrolledItem = normalizeActivities(enrollment.value?.[studentId]?.extraActivities || []).find(i => i.id === activityId)
+    current.push({ id: activityId, qty: enrolledItem?.qty || 1 })
+    applyActivityUpdate(studentId, current)
+  } else {
+    const name = getActivityName(activityId)
     $q.dialog({
       title: '取消活動出席',
-      message: `確認「${names}」未參加？取消後該活動費用將不計入。`,
+      message: `確認「${name}」未參加？取消後該活動費用將不計入。`,
       cancel: { flat: true, label: '返回' },
       ok: { color: 'negative', label: '確認取消' },
       persistent: true
     }).onOk(() => {
-      applyActivityUpdate(studentId, newIds)
+      const updated = current.filter(i => i.id !== activityId)
+      applyActivityUpdate(studentId, updated)
     })
-  } else {
-    applyActivityUpdate(studentId, newIds)
   }
 }
 
-function applyActivityUpdate(studentId, newIds) {
+function updateAttendanceActivityQty(studentId, activityId, qty) {
+  const log = logs.value[studentId] || { totalDays: 0, absentDays: 0 }
+  const raw = log.extraActivities !== undefined
+    ? [...log.extraActivities]
+    : [...(enrollment.value?.[studentId]?.extraActivities || [])]
+  const current = normalizeActivities(raw)
+  const item = current.find(i => i.id === activityId)
+  if (item) item.qty = Math.max(1, qty)
+  applyActivityUpdate(studentId, current)
+}
+
+function applyActivityUpdate(studentId, items) {
   if (!logs.value[studentId]) {
     logs.value[studentId] = { totalDays: 0, absentDays: 0 }
   }
-  logs.value[studentId].extraActivities = newIds
-  attendanceService.updateLog(monthKey.value, studentId, 'extraActivities', newIds)
+  logs.value[studentId].extraActivities = items
+  attendanceService.updateLog(monthKey.value, studentId, 'extraActivities', items)
 }
 
 function recalcTotals(studentId) {
@@ -566,8 +645,8 @@ const rows = computed(() => {
       const log = logs.value[studentId] || { totalDays: 0, absentDays: 0 }
       const attendDays = Math.max(0, log.totalDays - log.absentDays)
       const planned = plannedAtt.value[studentId] || { totalDays: 0, absentDays: 0 }
-      const enrolledActivities = settings.extraActivities || []
-      const attendedActivities = log.extraActivities !== undefined ? log.extraActivities : [...enrolledActivities]
+      const enrolledActivities = normalizeActivities(settings.extraActivities || [])
+      const attendedActivities = normalizeActivities(log.extraActivities !== undefined ? log.extraActivities : [...enrolledActivities])
       const prepaidFee = calcFee(settings.classType, settings.withMeal, planned.totalDays, planned.absentDays, enrolledActivities)
       const currentFee = calcFee(settings.classType, settings.withMeal, log.totalDays, log.absentDays, attendedActivities)
       return { studentId, student, settings, attendDays, absentDays: log.absentDays, enrolledActivities, attendedActivities, prepaidFee, currentFee }

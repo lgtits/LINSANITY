@@ -85,8 +85,11 @@
                 <q-item-section><span class="text-body2 text-weight-bold text-amber-9">附加活動</span></q-item-section>
               </q-item>
               <q-item v-for="ea in rate.extraActivities" :key="ea.id" dense>
-                <q-item-section class="text-body2 text-grey-7">{{ ea.name }}</q-item-section>
-                <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(ea.amount) }}</q-item-section>
+                <q-item-section class="text-body2 text-grey-7">
+                  {{ ea.name }}
+                  <q-badge v-if="ea.multiPerson" color="amber-8" class="q-ml-xs" label="多人" />
+                </q-item-section>
+                <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(ea.amount) }}<span v-if="ea.multiPerson" class="text-caption text-grey-5">/人</span></q-item-section>
               </q-item>
             </q-list>
           </div>
@@ -200,14 +203,25 @@
             <div v-if="!form.extraActivities.length" class="text-body2 text-grey-5 q-mb-md">
               尚未新增附加活動
             </div>
-            <div v-for="(ea, idx) in form.extraActivities" :key="idx" class="row q-col-gutter-sm q-mb-sm items-center">
+            <div v-for="(ea, idx) in form.extraActivities" :key="idx"
+              class="row q-col-gutter-sm q-mb-sm items-center">
               <div class="col">
                 <q-input v-model="ea.name" label="活動名稱" outlined dense
                   :rules="[v => !!v || '請輸入名稱']" />
               </div>
               <div class="col-4">
-                <q-input v-model.number="ea.amount" label="金額" type="number" prefix="$" outlined dense
+                <q-input v-model.number="ea.amount" type="number" prefix="$"
+                  :suffix="ea.multiPerson ? '/人' : ''" outlined dense
+                  :label="ea.multiPerson ? '金額（每人）' : '金額'"
                   :rules="[v => v > 0 || '請輸入金額']" />
+              </div>
+              <div class="col-auto">
+                <q-btn flat round dense size="sm"
+                  :icon="ea.multiPerson ? 'groups' : 'person'"
+                  :color="ea.multiPerson ? 'amber-9' : 'grey-5'"
+                  @click="ea.multiPerson = !ea.multiPerson">
+                  <q-tooltip>{{ ea.multiPerson ? '多人活動（點擊切換為單人）' : '單人活動（點擊切換為多人）' }}</q-tooltip>
+                </q-btn>
               </div>
               <div class="col-auto">
                 <q-btn flat round dense icon="delete" color="negative" size="sm" @click="removeActivity(idx)" />
@@ -253,6 +267,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { tuitionService } from '../services/tuitionService'
+import { attendanceService } from '../services/attendanceService'
 
 const $q = useQuasar()
 const loading = ref(true)
@@ -295,7 +310,7 @@ const columns = [
   { name: 'halfFlat',         label: '半天月費',           field: 'halfFlat',         align: 'right', format: v => `$${fmtNum(v)}` },
   { name: 'halfFlatMeal',     label: '半天月費(含餐)',      field: 'halfFlatMeal',     align: 'right', format: v => `$${fmtNum(v)}` },
   { name: 'halfDaily',        label: '半天按日',           field: 'halfDaily',        align: 'right', format: v => `$${v}` },
-  { name: 'extraActivities', label: '附加活動',           field: 'extraActivities',  align: 'left', format: v => v?.length ? v.map(a => `${a.name}($${a.amount})`).join('、') : '—' },
+  { name: 'extraActivities', label: '附加活動',           field: 'extraActivities',  align: 'left', format: v => v?.length ? v.map(a => `${a.name}($${a.amount}${a.multiPerson ? '/人' : ''})`).join('、') : '—' },
   { name: 'actions',          label: '操作',               field: 'actions',          align: 'center' }
 ]
 
@@ -331,8 +346,35 @@ function openEdit(mk, rate) {
   showDialog.value = true
 }
 
+async function cleanupMultiPersonQty(mk, demotedIds) {
+  const [enr, logs] = await Promise.all([
+    tuitionService.getEnrollment(mk),
+    attendanceService.getLogs(mk)
+  ])
+  if (enr) {
+    for (const [sid, s] of Object.entries(enr)) {
+      const items = s.extraActivities || []
+      const needsUpdate = items.some(i => demotedIds.includes(i.id) && i.qty !== 1)
+      if (needsUpdate) {
+        const cleaned = items.map(i => demotedIds.includes(i.id) ? { ...i, qty: 1 } : i)
+        await tuitionService.updateEnrollmentSetting(mk, sid, 'extraActivities', cleaned)
+      }
+    }
+  }
+  if (logs) {
+    for (const [sid, log] of Object.entries(logs)) {
+      const items = log.extraActivities || []
+      const needsUpdate = items.some(i => demotedIds.includes(i.id) && i.qty !== 1)
+      if (needsUpdate) {
+        const cleaned = items.map(i => demotedIds.includes(i.id) ? { ...i, qty: 1 } : i)
+        await attendanceService.updateLog(mk, sid, 'extraActivities', cleaned)
+      }
+    }
+  }
+}
+
 function addActivity() {
-  form.value.extraActivities.push({ id: `ea${Date.now()}`, name: '', amount: 0 })
+  form.value.extraActivities.push({ id: `ea${Date.now()}`, name: '', amount: 0, multiPerson: false })
 }
 
 function removeActivity(idx) {
@@ -357,6 +399,13 @@ async function save() {
     halfDaily: form.value.halfDaily,       halfMealDaily: form.value.halfMealDaily,
     extraActivities: form.value.extraActivities.filter(ea => ea.name && ea.amount > 0)
   }
+  const singlePersonIds = rateData.extraActivities
+    .filter(ea => !ea.multiPerson)
+    .map(ea => ea.id)
+  if (singlePersonIds.length) {
+    await cleanupMultiPersonQty(mk, singlePersonIds)
+  }
+
   allRates.value = { ...allRates.value, [mk]: rateData }
   await tuitionService.updateRates(mk, rateData)
 

@@ -10,8 +10,8 @@
     "halfDaily": 200,
     "halfMealDaily": 250,
     "extraActivities": [
-      { "id": "ea1", "name": "游泳課", "amount": 800 },
-      { "id": "ea2", "name": "美術課", "amount": 600 }
+      { "id": "ea1", "name": "游泳課", "amount": 800, "multiPerson": false },
+      { "id": "ea2", "name": "親子活動", "amount": 500, "multiPerson": true }
     ]
   },
   "2026-07": {
@@ -25,7 +25,7 @@
     "halfDaily": 200,
     "halfMealDaily": 250,
     "extraActivities": [
-      { "id": "ea1", "name": "游泳課", "amount": 800 }
+      { "id": "ea1", "name": "游泳課", "amount": 800, "multiPerson": false }
     ]
   },
   "2026-08": {

@@ -109,8 +109,11 @@
                   <q-item-section><span class="text-body2 text-weight-bold text-amber-9">附加活動（依學生勾選加收）</span></q-item-section>
                 </q-item>
                 <q-item v-for="ea in rates.extraActivities" :key="ea.id" dense>
-                  <q-item-section class="text-body2 text-grey-7">{{ ea.name }}</q-item-section>
-                  <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(ea.amount) }}</q-item-section>
+                  <q-item-section class="text-body2 text-grey-7">
+                    {{ ea.name }}
+                    <q-badge v-if="ea.multiPerson" color="amber-8" class="q-ml-xs" label="多人" />
+                  </q-item-section>
+                  <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(ea.amount) }}{{ ea.multiPerson ? '/人' : '' }}</q-item-section>
                 </q-item>
               </q-list>
             </div>
@@ -227,12 +230,24 @@
                 <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動
               </div>
               <q-card flat bordered class="q-pa-sm">
-                <q-option-group
-                  :model-value="row.settings.extraActivities || []"
-                  @update:model-value="v => updateSetting(row.student.id, 'extraActivities', v)"
-                  :options="rates.extraActivities.map(ea => ({ label: `${ea.name}（$${fmtNum(ea.amount)}）`, value: ea.id }))"
-                  type="checkbox" color="amber-9" dense
-                />
+                <div v-for="ea in rates.extraActivities" :key="ea.id" class="q-py-xs">
+                  <div class="row items-center no-wrap">
+                    <q-checkbox
+                      :model-value="getSelectedIds(row.settings.extraActivities).includes(ea.id)"
+                      @update:model-value="v => toggleActivity(row.student.id, ea.id, v)"
+                      color="amber-9" dense class="q-mr-xs"
+                    />
+                    <span class="text-body2">{{ ea.name }}</span>
+                    <span class="text-body2 text-grey-6 q-ml-xs">${{ fmtNum(ea.amount) }}{{ ea.multiPerson ? '/人' : '' }}</span>
+                    <q-space />
+                    <q-input v-if="ea.multiPerson && getSelectedIds(row.settings.extraActivities).includes(ea.id)"
+                      :model-value="(row.settings.extraActivities || []).find(i => i.id === ea.id)?.qty || 1"
+                      @update:model-value="v => updateActivityQty(row.student.id, ea.id, Number(v))"
+                      type="number" dense outlined input-class="text-center" suffix="人"
+                      style="width: 80px; font-size: 13px" :min="1"
+                    />
+                  </div>
+                </div>
               </q-card>
             </div>
 
@@ -286,12 +301,13 @@
                 </template>
                 <!-- 附加活動明細（手機版） -->
                 <template v-if="(row.settings.extraActivities || []).length">
-                  <q-item v-for="eaId in row.settings.extraActivities" :key="eaId">
+                  <q-item v-for="item in row.settings.extraActivities" :key="item.id">
                     <q-item-section class="text-body2 text-amber-9">
-                      {{ getActivityName(eaId) }}
+                      {{ getActivityName(item.id) }}
+                      <span v-if="isMultiPerson(item.id)" class="text-caption text-grey-6">× {{ item.qty || 1 }}人</span>
                     </q-item-section>
                     <q-item-section side class="text-body2 text-weight-bold">
-                      +${{ fmtNum(getActivityAmount(eaId)) }}
+                      +${{ fmtNum(getActivityAmount(item.id) * (isMultiPerson(item.id) ? (item.qty || 1) : 1)) }}
                     </q-item-section>
                   </q-item>
                 </template>
@@ -408,12 +424,24 @@
                       <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動
                     </div>
                     <q-card flat bordered class="q-pa-sm">
-                      <q-option-group
-                        :model-value="props.row.settings.extraActivities || []"
-                        @update:model-value="v => updateSetting(props.row.student.id, 'extraActivities', v)"
-                        :options="rates.extraActivities.map(ea => ({ label: `${ea.name}（$${fmtNum(ea.amount)}）`, value: ea.id }))"
-                        type="checkbox" color="amber-9" dense
-                      />
+                      <div v-for="ea in rates.extraActivities" :key="ea.id" class="q-py-xs">
+                        <div class="row items-center no-wrap">
+                          <q-checkbox
+                            :model-value="getSelectedIds(props.row.settings.extraActivities).includes(ea.id)"
+                            @update:model-value="v => toggleActivity(props.row.student.id, ea.id, v)"
+                            color="amber-9" dense class="q-mr-xs"
+                          />
+                          <span class="text-body2">{{ ea.name }}</span>
+                          <span class="text-body2 text-grey-6 q-ml-xs">${{ fmtNum(ea.amount) }}{{ ea.multiPerson ? '/人' : '' }}</span>
+                          <q-space />
+                          <q-input v-if="ea.multiPerson && getSelectedIds(props.row.settings.extraActivities).includes(ea.id)"
+                            :model-value="(props.row.settings.extraActivities || []).find(i => i.id === ea.id)?.qty || 1"
+                            @update:model-value="v => updateActivityQty(props.row.student.id, ea.id, Number(v))"
+                            type="number" dense outlined input-class="text-center" suffix="人"
+                            style="width: 80px; font-size: 13px" :min="1"
+                          />
+                        </div>
+                      </div>
                     </q-card>
                   </div>
 
@@ -456,12 +484,13 @@
                       </q-item>
                       <!-- 附加活動明細 -->
                       <template v-if="(props.row.settings.extraActivities || []).length">
-                        <q-item v-for="eaId in props.row.settings.extraActivities" :key="eaId">
+                        <q-item v-for="item in props.row.settings.extraActivities" :key="item.id">
                           <q-item-section class="text-body2 text-amber-9">
-                            {{ getActivityName(eaId) }}
+                            {{ getActivityName(item.id) }}
+                            <span v-if="isMultiPerson(item.id)" class="text-caption text-grey-6">× {{ item.qty || 1 }}人</span>
                           </q-item-section>
                           <q-item-section side class="text-body2 text-weight-bold">
-                            +${{ fmtNum(getActivityAmount(eaId)) }}
+                            +${{ fmtNum(getActivityAmount(item.id) * (isMultiPerson(item.id) ? (item.qty || 1) : 1)) }}
                           </q-item-section>
                         </q-item>
                       </template>
@@ -485,9 +514,12 @@
                     </div>
                     <q-card flat bordered>
                       <q-list dense separator>
-                        <q-item v-for="eaId in props.row.settings.extraActivities" :key="eaId">
-                          <q-item-section class="text-body2 text-amber-9">{{ getActivityName(eaId) }}</q-item-section>
-                          <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(getActivityAmount(eaId)) }}</q-item-section>
+                        <q-item v-for="item in props.row.settings.extraActivities" :key="item.id">
+                          <q-item-section class="text-body2 text-amber-9">
+                            {{ getActivityName(item.id) }}
+                            <span v-if="isMultiPerson(item.id)" class="text-caption text-grey-6">× {{ item.qty || 1 }}人</span>
+                          </q-item-section>
+                          <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(getActivityAmount(item.id) * (item.qty || 1)) }}</q-item-section>
                         </q-item>
                         <q-separator />
                         <q-item class="bg-info-hint">
@@ -812,11 +844,14 @@ function calcTuitionBase(classType, withMeal, totalDays, absentDays) {
   }
 }
 
-function calcExtraFee(selectedIds) {
-  if (!rates.value?.extraActivities?.length || !selectedIds?.length) return 0
-  return rates.value.extraActivities
-    .filter(ea => selectedIds.includes(ea.id))
-    .reduce((sum, ea) => sum + ea.amount, 0)
+function calcExtraFee(selectedItems) {
+  if (!rates.value?.extraActivities?.length || !selectedItems?.length) return 0
+  return selectedItems.reduce((sum, item) => {
+    const def = rates.value.extraActivities.find(ea => ea.id === item.id)
+    if (!def) return sum
+    const qty = def.multiPerson ? (item.qty || 1) : 1
+    return sum + def.amount * qty
+  }, 0)
 }
 
 function calcFee(classType, withMeal, totalDays, absentDays, selectedActivityIds) {
@@ -831,12 +866,54 @@ function dailyRate(row) {
   return row.settings.withMeal ? rates.value.halfMealDaily : rates.value.halfDaily
 }
 
+function getActivityDef(id) {
+  return rates.value?.extraActivities?.find(ea => ea.id === id)
+}
+
 function getActivityName(id) {
-  return rates.value?.extraActivities?.find(ea => ea.id === id)?.name || id
+  return getActivityDef(id)?.name || id
 }
 
 function getActivityAmount(id) {
-  return rates.value?.extraActivities?.find(ea => ea.id === id)?.amount || 0
+  return getActivityDef(id)?.amount || 0
+}
+
+function isMultiPerson(id) {
+  return getActivityDef(id)?.multiPerson || false
+}
+
+function getSelectedIds(items) {
+  return (items || []).map(i => i.id)
+}
+
+function normalizeActivities(items) {
+  if (!items?.length || !rates.value?.extraActivities) return items || []
+  return items
+    .filter(item => rates.value.extraActivities.some(ea => ea.id === item.id))
+    .map(item => {
+      const def = rates.value.extraActivities.find(ea => ea.id === item.id)
+      return def.multiPerson ? item : { ...item, qty: 1 }
+    })
+}
+
+function toggleActivity(studentId, activityId, checked) {
+  const current = [...(enrollment.value[studentId].extraActivities || [])]
+  if (checked) {
+    current.push({ id: activityId, qty: 1 })
+  } else {
+    const idx = current.findIndex(i => i.id === activityId)
+    if (idx >= 0) current.splice(idx, 1)
+  }
+  enrollment.value[studentId] = { ...enrollment.value[studentId], extraActivities: current }
+  tuitionService.updateEnrollmentSetting(monthKey.value, studentId, 'extraActivities', current)
+}
+
+function updateActivityQty(studentId, activityId, qty) {
+  const current = [...(enrollment.value[studentId].extraActivities || [])]
+  const item = current.find(i => i.id === activityId)
+  if (item) item.qty = Math.max(1, qty)
+  enrollment.value[studentId] = { ...enrollment.value[studentId], extraActivities: current }
+  tuitionService.updateEnrollmentSetting(monthKey.value, studentId, 'extraActivities', current)
 }
 
 // ── 組合列表 ──
@@ -848,7 +925,8 @@ const rows = computed(() => {
       if (!student) return null
       const att = attendance.value[studentId] || { totalDays: 22, absentDays: 0 }
       const attendDays = Math.max(0, att.totalDays - att.absentDays)
-      return { id: studentId, student, settings: s, attendance: { ...att, attendDays }, fee: calcFee(s.classType, s.withMeal, att.totalDays, att.absentDays, s.extraActivities) }
+      const normalizedSettings = { ...s, extraActivities: normalizeActivities(s.extraActivities) }
+      return { id: studentId, student, settings: normalizedSettings, attendance: { ...att, attendDays }, fee: calcFee(s.classType, s.withMeal, att.totalDays, att.absentDays, normalizedSettings.extraActivities) }
     })
     .filter(Boolean)
     .sort((a, b) =>
@@ -885,7 +963,7 @@ async function loadStudentsForMonth() {
   const mk = monthKey.value
   const defaultEnrollment = {}
   allStudents.value.forEach(s => {
-    defaultEnrollment[s.id] = { classType: 'none', withMeal: false, extraActivities: [] }
+    defaultEnrollment[s.id] = { classType: 'none', withMeal: false, extraActivities: [] }  // extraActivities: [{ id, qty }]
   })
   await tuitionService.createEnrollment(mk, defaultEnrollment)
   enrollment.value = { ...defaultEnrollment }
@@ -912,9 +990,10 @@ function exportExcel() {
     '請假天數':   r.attendance.absentDays,
     '出席天數':   r.attendance.attendDays,
     '計費方式':   !rates.value ? 'N/A' : r.attendance.absentDays > rates.value.absentThreshold ? `按日計費（$${dailyRate(r)}/天）` : '月費制',
-    '附加活動':   (r.settings.extraActivities || []).map(id => {
-      const ea = rates.value?.extraActivities?.find(a => a.id === id)
-      return ea ? `${ea.name}($${ea.amount})` : ''
+    '附加活動':   (r.settings.extraActivities || []).map(item => {
+      const ea = rates.value?.extraActivities?.find(a => a.id === item.id)
+      if (!ea) return ''
+      return ea.multiPerson ? `${ea.name}($${ea.amount}/人×${item.qty || 1})` : `${ea.name}($${ea.amount})`
     }).filter(Boolean).join('、') || '無',
     '附加活動費': calcExtraFee(r.settings.extraActivities),
     '應收學費':   r.fee
