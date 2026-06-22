@@ -1,0 +1,1 @@
+import{dn as e}from"./index-MIkrYB3g.js";function t(){return e(`_q_`)}export{t};
