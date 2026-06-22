@@ -1,1 +1,0 @@
-import{Wt as e,ft as t,nn as n,un as r}from"./index-BeBXcatQ.js";var i=e({name:`QTr`,props:{props:Object,noHover:Boolean},setup(e,{slots:i}){let a=n(()=>`q-tr`+(e.props===void 0||e.props.header===!0?``:` `+e.props.__trClass)+(e.noHover===!0?` q-tr--no-hover`:``));return()=>r(`tr`,{style:e.props?.__trStyle,class:a.value},t(i.default))}});export{i as t};
