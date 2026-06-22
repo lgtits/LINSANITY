@@ -41,7 +41,7 @@
 
     <div class="row items-center q-mb-sm">
       <span class="text-body2 text-grey-6">{{ filtered.length }} 筆</span>
-      <span class="text-body2 text-grey-5 q-ml-sm">（本月已發送 {{ currentMonthCount }} 筆）</span>
+      <span class="text-body2 text-grey-5 q-ml-sm">（本月已發送 {{ currentMonthCount }} 則訊息）</span>
     </div>
 
     <!-- 空狀態 -->
