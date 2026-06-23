@@ -47,6 +47,12 @@ npx supabase functions deploy line-webhook --no-verify-jwt
 - [ ] 重複家長合併(同一家長被建兩筆時合併)
 - [ ] 學生「畢業」批次處理
 
+### 老師(新功能，設計見 F)
+- [ ] **老師管理頁**：老師清單 + 新增/編輯，欄位比照家長(name/phone/lineUserId)。mock `public/mock/teachers.json` 已建
+- [ ] `teacherService.js`(比照 `parentService`) + 路由與選單入口
+- [ ] schema 加 `teachers` 表
+- [ ] **老師點餐記帳**：走「記帳 + 月結」模式，需先定案資料模型(見 F)
+
 ### LINE / 通知
 - [ ] 綁定後自動發「綁定成功」確認訊息
 - [ ] 匯出加好友 QR / 連結,方便發給家長
@@ -83,6 +89,39 @@ npx supabase functions deploy line-webhook --no-verify-jwt
 - 對應要做：schema 加 `archived`/`deleted` 欄 + 遷移、`parentService` 加 archive/delete/restore、家長管理頁加按鈕與「封存家長」清單(比照學生的封存/刪除頁)。
 
 > 建議先做「封存 + 軟刪 + 守門提示」,跟學生一致,最安全。
+
+---
+
+## F. 老師管理 + 老師記帳 — 設計討論（2026-06，待定案）
+
+### 老師管理
+- 進入後是老師清單，欄位比照家長：`name` / `phone` / `lineUserId`。
+- mock 已建 `public/mock/teachers.json`(id 用 `t*`)。
+- 不放家長專屬的金流欄位(餘額/儲值)，金流另議(見下)。
+- 待確認：老師是否要家長沒有的欄位(教授科目/班別、到職日、備註)。
+
+### 老師點餐記帳 — 資料模型(未定案)
+問題：老師點餐記帳能不能直接共用 `meal_transactions`？
+**不能直接共用**——該表 `parent_id NOT NULL references parents`，餘額 view `parent_balances` 也綁死 parent_id；老師不是家長，塞不進去。三條路：
+
+| 方案 | 做法 | 優點 | 缺點 |
+|---|---|---|---|
+| **A. 通用帳戶(傾向)** | 擁有者改 `owner_type`(parent/teacher)+`owner_id` | 一套邏輯吃兩種人，記錄/餘額共用 | 改欄位 + 既有查詢(demo mock 改動輕) |
+| B. 加 `teacher_id` | 與 parent_id 並存，二擇一 + XOR 約束 | 改動小 | 每個查詢分叉、越長越亂 |
+| C. 獨立 `teacher_transactions` | 另開一張一樣的表 | 完全隔離 | mealService 複製兩份 |
+
+**待客戶決定的產品語意**：老師記帳是
+- (a) 跟家長一樣「先儲值再扣款」，還是
+- (b)「先記帳、月底結算」的月結帳？
+
+> 若走 (b) 月結，順手把「結帳快照」做進去(見下)，資料模型一次到位。
+
+### 帳本效能(順帶結論)
+- `parent_balances` 是**普通 view**，每次查餘額重掃全表做 `SUM ... GROUP BY`(有 `parent_id` 索引)。
+- 量級估算：~150 童、每月約 3,150 筆 ≈ **3.8 萬筆/年**，10 年 ~38 萬筆。對 Postgres 是小資料，純 view 撐十年沒問題。
+- 單一家長查餘額會把條件下推成 `SUM WHERE parent_id=?` 吃索引，**與總筆數無關**，永遠快。
+- **真正先卡的是前端**：`ParentsPage` 載入呼叫 `getAllTransactions()` 把整張表撈到瀏覽器再 JS 分組。幾年後第一個要改的 → 列表頁別撈全表，明細改成點開家長才查 `getTransactions(parentId)`(已有此 API)。
+- 要再擴的順序：① 覆蓋索引 `(parent_id, amount)` → index-only；② **月結快照**(每月底寫結轉餘額，掃描收斂成當月)，剛好對應老師月結需求；③ 百萬列以上才考慮 materialized view 定時刷新或觸發器維護 `balance` 欄。
 
 ---
 

@@ -10,8 +10,9 @@
 
 Supabase → SQL Editor，貼上執行：
 
+> 全新安裝用 `schema.sql` 已含這兩欄，可跳過此步；舊資料庫才需補跑：
+
 ```sql
--- supabase/migrate-broadcast-status.sql
 alter table broadcast_logs add column if not exists success_count int not null default 0;
 alter table broadcast_logs add column if not exists fail_count    int not null default 0;
 ```
@@ -69,9 +70,24 @@ npx supabase functions deploy send-broadcast
 push 訊息只能發給「加過你 OA 好友」且你有他 `Uxxx` userId 的人。userId 要靠 webhook 自動蒐集。
 程式已做好：`line-webhook` function + `line_contacts` 表 + 家長管理的「綁定」UI。
 
-## 步驟 A：SQL Editor 跑遷移
+## 步驟 A：SQL Editor 跑遷移（建 line_contacts 表）
+> 全新安裝用 `schema.sql` 已含此表，可跳過；舊資料庫才需補跑：
+
 ```sql
--- supabase/migrate-line-contacts.sql （建 line_contacts 表）
+create table if not exists line_contacts (
+  user_id          text primary key,
+  display_name     text default '',
+  picture_url      text default '',
+  last_message     text,
+  linked_parent_id text references parents(id) on delete set null,
+  created_at       timestamptz default now(),
+  updated_at       timestamptz default now()
+);
+create index if not exists line_contacts_linked_idx on line_contacts (linked_parent_id);
+
+alter table line_contacts enable row level security;
+drop policy if exists demo_all on line_contacts;
+create policy demo_all on line_contacts for all using (true) with check (true);
 ```
 
 ## 步驟 B：設 Channel secret 並部署 webhook

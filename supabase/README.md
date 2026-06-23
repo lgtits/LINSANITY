@@ -45,8 +45,11 @@
   是衍生的：supabase 用 `select('*, parents(name, phone)')` join，demo 用 `parents` 拼接。
 - 單一真相在 `parents`：改家長姓名/電話一處即全家反映，不會分裂或不同步。
 - 新增/編輯學生時，家長以**下拉選擇**（`parent_id`），不再用電話猜身分。
-- **若你的資料庫是用舊版 schema（含 `parent_name`/`phone`）建的**，跑一次
-  `migrate-phase2.sql` 把那兩欄移除即可（程式即使欄位還在也能正常運作，移除只是清乾淨）。
+- **若你的資料庫是用舊版 schema（含 `parent_name`/`phone`）建的**，跑一次以下即可移除（程式即使欄位還在也能正常運作，移除只是清乾淨）：
+  ```sql
+  alter table students drop column if exists parent_name;
+  alter table students drop column if exists phone;
+  ```
 - 訂單的 `student_name`/`grade`/`restaurant_name` 仍是**下單當下快照**，**不要**改成即時 join。
 
 ## LINE 推播 ID 放在家長（已完成）
@@ -55,8 +58,19 @@
   不在 students。學生表單不再填 LINE，改在「家長管理」維護。
 - **廣播改為家長導向**：收件人是家長，兄弟姊妹合併成一則；餐費通知彙整名下孩子當日費用 + 家庭餘額。
 - 廣播記錄的 `records` 由 `{studentId, studentName}` 改為 `{parentId, parentName}`。
-- **舊資料庫**（parents 沒有 `line_user_id`、students 還有）請跑一次 `migrate-line-to-parent.sql`
-  （會把 students 的 LINE 搬到 parents，再移除 students 的欄位）。
+- **舊資料庫**（parents 沒有 `line_user_id`、students 還有）請跑一次以下，把 students 的 LINE 搬到 parents 再移除：
+  ```sql
+  alter table parents add column if not exists line_user_id text default '';
+  update parents p set line_user_id = sub.lid
+  from (
+    select distinct on (parent_id) parent_id, line_user_id as lid
+    from students
+    where line_user_id is not null and line_user_id <> ''
+    order by parent_id, id
+  ) sub
+  where p.id = sub.parent_id and (p.line_user_id is null or p.line_user_id = '');
+  alter table students drop column if exists line_user_id;
+  ```
 
 ## Service 的 Supabase 分支（已全部補完）
 
