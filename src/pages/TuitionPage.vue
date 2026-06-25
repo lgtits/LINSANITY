@@ -13,6 +13,9 @@
       </div>
       <q-btn flat round dense icon="chevron_right" @click="nextMonth" />
       <q-space />
+      <q-btn v-if="enrollment !== null" flat dense icon="person_add" color="teal"
+        label="更新學生" :loading="refreshingStudents"
+        style="font-size: 13px" @click="refreshStudentList" />
       <q-btn flat dense icon="calculate" color="grey-7" label="費率說明"
         style="font-size: 13px" @click="showRatesInfoDialog = true" />
     </div>
@@ -609,6 +612,7 @@ import { tuitionService } from '../services/tuitionService'
 const $q = useQuasar()
 const $router = useRouter()
 const loading = ref(true)
+const refreshingStudents = ref(false)
 
 // ── 月份控制 ──
 const now = new Date()
@@ -971,6 +975,29 @@ async function loadStudentsForMonth() {
   $q.notify({ message: `已載入 ${allStudents.value.length} 位學生`, color: 'positive', icon: 'group' })
 }
 
+async function refreshStudentList() {
+  refreshingStudents.value = true
+  try {
+    const mk = monthKey.value
+    const freshStudents = await studentService.getAll()
+    allStudents.value = freshStudents
+    const newStudents = freshStudents.filter(s => !enrollment.value[s.id])
+    if (!newStudents.length) {
+      $q.notify({ message: '沒有新學生需要加入', color: 'info', icon: 'info' })
+      return
+    }
+    for (const s of newStudents) {
+      const defaults = { classType: 'none', withMeal: false, extraActivities: [] }
+      await tuitionService.addToEnrollment(mk, s.id, defaults)
+      enrollment.value[s.id] = defaults
+      attendance.value[s.id] = attendance.value[s.id] || { totalDays: 22, absentDays: 0 }
+      getStudentCalendar(s.id)
+    }
+    $q.notify({ message: `已新增 ${newStudents.length} 位學生`, color: 'positive', icon: 'person_add' })
+  } finally {
+    refreshingStudents.value = false
+  }
+}
 
 // ── 格式化 ──
 function fmtNum(n) { return Number(n).toLocaleString('zh-TW') }
