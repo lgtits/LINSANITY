@@ -2,7 +2,21 @@
   "2026-06": {
     "s1": { "totalDays": 22, "absentDays": 3 },
     "s2": { "totalDays": 22, "absentDays": 9 },
-    "s3": { "totalDays": 22, "absentDays": 0 },
+    "s3": {
+      "totalDays": 20,
+      "absentDays": 2,
+      "calendar": {
+        "1":"full","2":"half","3":"full","4":"half","5":"leave",
+        "6":"none","7":"none",
+        "8":"full","9":"half","10":"full","11":"half","12":"full",
+        "13":"none","14":"none",
+        "15":"half","16":"full","17":"leave","18":"half","19":"full",
+        "20":"none","21":"none",
+        "22":"full","23":"half","24":"full","25":"half","26":"full",
+        "27":"none","28":"none",
+        "29":"half","30":"full"
+      }
+    },
     "s4": { "totalDays": 22, "absentDays": 12 },
     "s5": { "totalDays": 22, "absentDays": 2 },
     "s6": { "totalDays": 22, "absentDays": 7 }
@@ -10,7 +24,7 @@
   "2026-07": {
     "s1": { "totalDays": 22, "absentDays": 3 },
     "s2": { "totalDays": 22, "absentDays": 9 },
-    "s3": { "totalDays": 22, "absentDays": 0 },
+    "s3": { "totalDays": 0, "absentDays": 0 },
     "s4": { "totalDays": 22, "absentDays": 12 },
     "s5": { "totalDays": 22, "absentDays": 2 },
     "s6": { "totalDays": 22, "absentDays": 7 }

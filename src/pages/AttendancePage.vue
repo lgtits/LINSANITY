@@ -70,9 +70,13 @@
               </div>
               <div class="row items-center q-gutter-xs q-mt-xs">
                 <q-badge
-                  :color="row.settings.classType === 'full' ? 'deep-purple' : row.settings.classType === 'half' ? 'teal' : 'grey-6'"
-                  :label="row.settings.classType === 'full' ? '全天班' : row.settings.classType === 'half' ? '半天班' : '不上課'" />
-                <template v-if="row.settings.classType !== 'none'">
+                  :color="row.settings.classType === 'full' ? 'deep-purple' : row.settings.classType === 'half' ? 'teal' : row.settings.classType === 'mixed' ? 'orange-8' : 'grey-6'"
+                  :label="row.settings.classType === 'full' ? '全天班' : row.settings.classType === 'half' ? '半天班' : row.settings.classType === 'mixed' ? '混合班' : '不上課'" />
+                <template v-if="row.settings.classType === 'mixed'">
+                  <q-badge outline color="positive" :label="`全天 ${row.fullDays}天`" />
+                  <q-badge outline color="teal" :label="`半天 ${row.halfDays}天`" />
+                </template>
+                <template v-else-if="row.settings.classType !== 'none'">
                   <q-badge :color="row.settings.withMeal ? 'orange-7' : 'grey-6'"
                     :label="row.settings.withMeal ? '含用餐' : '不含用餐'" />
                   <q-badge outline color="positive" :label="`出席 ${row.attendDays}天`" />
@@ -96,7 +100,12 @@
           <div v-if="row.settings.classType !== 'none' || row.enrolledActivities.length" class="q-pa-md bg-subtle">
             <template v-if="row.settings.classType !== 'none'">
               <div class="text-caption text-grey-6 text-center q-mb-sm">
-                點擊日期切換：出席(綠) ➔ 請假(紅) ➔ 未到(灰)
+                <template v-if="row.settings.classType === 'mixed'">
+                  點擊切換：全天(綠) ➔ 半天(青) ➔ 請假(紅) ➔ 非上課日(灰)
+                </template>
+                <template v-else>
+                  點擊日期切換：出席(綠) ➔ 請假(紅) ➔ 未到(灰)
+                </template>
               </div>
               <div class="calendar-grid">
                 <div v-for="h in ['日','一','二','三','四','五','六']" :key="h" class="calendar-header-cell">{{ h }}</div>
@@ -114,9 +123,17 @@
                 </div>
               </div>
               <div class="row q-gutter-md justify-center q-mt-md text-caption text-grey-7">
-                <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
-                <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
-                <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>未到</span>
+                <template v-if="row.settings.classType === 'mixed'">
+                  <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>全天</span>
+                  <span class="flex items-center"><q-icon name="contrast" color="teal" class="q-mr-xs"/>半天</span>
+                  <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
+                  <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>非上課</span>
+                </template>
+                <template v-else>
+                  <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
+                  <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
+                  <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>未到</span>
+                </template>
               </div>
             </template>
 
@@ -194,17 +211,23 @@
             </q-td>
             <q-td key="classType" :props="props" class="text-center">
               <q-badge
-                :color="props.row.settings.classType === 'full' ? 'deep-purple' : props.row.settings.classType === 'half' ? 'teal' : 'grey-6'"
-                :label="props.row.settings.classType === 'full' ? '全天班' : props.row.settings.classType === 'half' ? '半天班' : '不上課'" />
+                :color="props.row.settings.classType === 'full' ? 'deep-purple' : props.row.settings.classType === 'half' ? 'teal' : props.row.settings.classType === 'mixed' ? 'orange-8' : 'grey-6'"
+                :label="props.row.settings.classType === 'full' ? '全天班' : props.row.settings.classType === 'half' ? '半天班' : props.row.settings.classType === 'mixed' ? '混合班' : '不上課'" />
             </q-td>
             <q-td key="withMeal" :props="props" class="text-center">
-              <q-badge v-if="props.row.settings.classType !== 'none'"
+              <span v-if="props.row.settings.classType === 'none' || props.row.settings.classType === 'mixed'" class="text-grey-5">—</span>
+              <q-badge v-else
                 :color="props.row.settings.withMeal ? 'orange-7' : 'grey-6'"
                 :label="props.row.settings.withMeal ? '含用餐' : '不含用餐'" />
-              <span v-else class="text-grey-5">—</span>
             </q-td>
             <q-td key="attendance" :props="props" class="text-center">
-              <template v-if="props.row.settings.classType !== 'none'">
+              <template v-if="props.row.settings.classType === 'mixed'">
+                <span class="text-positive text-weight-bold">全{{ props.row.fullDays }}</span>
+                <span class="text-grey-4"> / </span>
+                <span class="text-teal text-weight-bold">半{{ props.row.halfDays }}</span>
+                <span class="text-caption text-grey-5"> 天</span>
+              </template>
+              <template v-else-if="props.row.settings.classType !== 'none'">
                 <span class="text-positive text-weight-bold">{{ props.row.attendDays }}</span>
                 <span class="text-grey-4"> / </span>
                 <span class="text-grey-6">{{ props.row.absentDays }}</span>
@@ -248,7 +271,12 @@
                     <q-card flat bordered class="q-pa-md">
                       <div class="attendance-calendar-container full-width">
                         <div class="text-caption text-grey-6 text-center q-mb-md">
-                          點擊日期切換狀態：出席 (綠) ➔ 請假 (紅) ➔ 未到 (灰)
+                          <template v-if="props.row.settings.classType === 'mixed'">
+                            點擊切換：全天(綠) ➔ 半天(青) ➔ 請假(紅) ➔ 非上課日(灰)
+                          </template>
+                          <template v-else>
+                            點擊日期切換狀態：出席 (綠) ➔ 請假 (紅) ➔ 未到 (灰)
+                          </template>
                         </div>
                         <div class="calendar-grid">
                           <div v-for="h in ['日','一','二','三','四','五','六']" :key="h" class="calendar-header-cell">{{ h }}</div>
@@ -266,9 +294,17 @@
                           </div>
                         </div>
                         <div class="row q-gutter-md justify-center q-mt-md text-caption text-grey-7">
-                          <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
-                          <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
-                          <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>未到</span>
+                          <template v-if="props.row.settings.classType === 'mixed'">
+                            <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>全天</span>
+                            <span class="flex items-center"><q-icon name="contrast" color="teal" class="q-mr-xs"/>半天</span>
+                            <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
+                            <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>非上課日</span>
+                          </template>
+                          <template v-else>
+                            <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
+                            <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
+                            <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>未到</span>
+                          </template>
                         </div>
                       </div>
                     </q-card>
@@ -410,6 +446,7 @@ const classTypeFilterOptions = [
   { label: '全部班別', value: 'all' },
   { label: '全天班',   value: 'full' },
   { label: '半天班',   value: 'half' },
+  { label: '混合班',   value: 'mixed' },
   { label: '不上課',   value: 'none' }
 ]
 
@@ -435,9 +472,16 @@ const hasRates = computed(() => rates.value !== null)
 
 function fmtNum(n) { return Number(n).toLocaleString('zh-TW') }
 
-function calcTuitionBase(classType, withMeal, totalDays, absentDays) {
+function calcTuitionBase(classType, withMeal, totalDays, absentDays, calendar) {
   if (!rates.value) return null
   if (classType === 'none') return 0
+  if (classType === 'mixed') {
+    if (!calendar) return null
+    const vals = Object.values(calendar)
+    const fullDays = vals.filter(s => s === 'full').length
+    const halfDays = vals.filter(s => s === 'half').length
+    return fullDays * (rates.value.mixedFullDaily || 0) + halfDays * (rates.value.mixedHalfDaily || 0)
+  }
   const attended = Math.max(0, totalDays - absentDays)
   const threshold = rates.value.absentThreshold
   if (classType === 'full') {
@@ -459,8 +503,8 @@ function calcExtraFee(selectedItems) {
   }, 0)
 }
 
-function calcFee(classType, withMeal, totalDays, absentDays, activityItems) {
-  const base = calcTuitionBase(classType, withMeal, totalDays, absentDays)
+function calcFee(classType, withMeal, totalDays, absentDays, activityItems, calendar) {
+  const base = calcTuitionBase(classType, withMeal, totalDays, absentDays, calendar)
   if (base === null) return null
   return base + calcExtraFee(activityItems)
 }
@@ -514,23 +558,26 @@ function getCalendar(studentId) {
   }
   const log = logs.value[studentId]
   if (!log.calendar) {
-    // 由 totalDays / absentDays 還原日曆：平日依序填入請假，再填出席
+    const classType = enrollment.value[studentId]?.classType
     const year = selectedYear.value
     const month = selectedMonth.value
     const daysInMonth = new Date(year, month, 0).getDate()
     const cal = {}
-    for (let d = 1; d <= daysInMonth; d++) cal[d] = 'none'
-
-    const weekdays = []
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dow = new Date(year, month - 1, d).getDay()
-      if (dow >= 1 && dow <= 5) weekdays.push(d)
+    if (classType === 'mixed') {
+      for (let d = 1; d <= daysInMonth; d++) cal[d] = 'none'
+    } else {
+      for (let d = 1; d <= daysInMonth; d++) cal[d] = 'none'
+      const weekdays = []
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dow = new Date(year, month - 1, d).getDay()
+        if (dow >= 1 && dow <= 5) weekdays.push(d)
+      }
+      const absent = log.absentDays || 0
+      const present = Math.max(0, (log.totalDays || 0) - absent)
+      let idx = 0
+      for (let i = 0; i < absent && idx < weekdays.length; i++) cal[weekdays[idx++]] = 'absent'
+      for (let i = 0; i < present && idx < weekdays.length; i++) cal[weekdays[idx++]] = 'present'
     }
-    const absent = log.absentDays || 0
-    const present = Math.max(0, (log.totalDays || 0) - absent)
-    let idx = 0
-    for (let i = 0; i < absent && idx < weekdays.length; i++) cal[weekdays[idx++]] = 'absent'
-    for (let i = 0; i < present && idx < weekdays.length; i++) cal[weekdays[idx++]] = 'present'
     log.calendar = cal
   }
   return log.calendar
@@ -584,10 +631,16 @@ function applyActivityUpdate(studentId, items) {
 function recalcTotals(studentId) {
   const log = logs.value[studentId]
   if (!log?.calendar) return
+  const classType = enrollment.value[studentId]?.classType
   let present = 0, absent = 0
   Object.values(log.calendar).forEach(s => {
-    if (s === 'present') present++
-    if (s === 'absent') absent++
+    if (classType === 'mixed') {
+      if (s === 'full' || s === 'half') present++
+      else if (s === 'leave') absent++
+    } else {
+      if (s === 'present') present++
+      else if (s === 'absent') absent++
+    }
   })
   log.totalDays = present + absent
   log.absentDays = absent
@@ -599,8 +652,13 @@ function recalcTotals(studentId) {
 
 function applyToggle(studentId, dayNum) {
   const cal = getCalendar(studentId)
+  const classType = enrollment.value[studentId]?.classType
   const cur = cal[dayNum] || 'none'
-  cal[dayNum] = cur === 'present' ? 'absent' : cur === 'absent' ? 'none' : 'present'
+  if (classType === 'mixed') {
+    cal[dayNum] = cur === 'full' ? 'half' : cur === 'half' ? 'leave' : cur === 'leave' ? 'none' : 'full'
+  } else {
+    cal[dayNum] = cur === 'present' ? 'absent' : cur === 'absent' ? 'none' : 'present'
+  }
   recalcTotals(studentId)
 }
 
@@ -624,14 +682,23 @@ function toggleDay(studentId, dayNum) {
 function getDayClass(studentId, cell) {
   if (cell.empty) return 'cell-empty'
   const cal = getCalendar(studentId)
-  return `cell-${cal[cell.day] || 'none'}`
+  const s = cal[cell.day] || 'none'
+  const classType = enrollment.value[studentId]?.classType
+  if (classType === 'mixed') {
+    if (s === 'full') return 'cell-present'
+    if (s === 'half') return 'cell-half'
+    if (s === 'leave') return 'cell-absent'
+    return 'cell-none'
+  }
+  return `cell-${s}`
 }
 
 function getDayIcon(studentId, dayNum) {
   const cal = getCalendar(studentId)
   const s = cal[dayNum] || 'none'
-  if (s === 'present') return 'check_circle'
-  if (s === 'absent') return 'cancel'
+  if (s === 'present' || s === 'full') return 'check_circle'
+  if (s === 'absent' || s === 'leave') return 'cancel'
+  if (s === 'half') return 'contrast'
   return 'do_not_disturb_on'
 }
 
@@ -647,9 +714,13 @@ const rows = computed(() => {
       const planned = plannedAtt.value[studentId] || { totalDays: 0, absentDays: 0 }
       const enrolledActivities = normalizeActivities(settings.extraActivities || [])
       const attendedActivities = normalizeActivities(log.extraActivities !== undefined ? log.extraActivities : [...enrolledActivities])
-      const prepaidFee = calcFee(settings.classType, settings.withMeal, planned.totalDays, planned.absentDays, enrolledActivities)
-      const currentFee = calcFee(settings.classType, settings.withMeal, log.totalDays, log.absentDays, attendedActivities)
-      return { studentId, student, settings, attendDays, absentDays: log.absentDays, enrolledActivities, attendedActivities, prepaidFee, currentFee }
+      const logCal = log.calendar || {}
+      const plannedCal = planned.calendar || {}
+      const fullDays = Object.values(logCal).filter(s => s === 'full').length
+      const halfDays = Object.values(logCal).filter(s => s === 'half').length
+      const prepaidFee = calcFee(settings.classType, settings.withMeal, planned.totalDays, planned.absentDays, enrolledActivities, plannedCal)
+      const currentFee = calcFee(settings.classType, settings.withMeal, log.totalDays, log.absentDays, attendedActivities, logCal)
+      return { studentId, student, settings, attendDays, absentDays: log.absentDays, fullDays, halfDays, enrolledActivities, attendedActivities, prepaidFee, currentFee }
     })
     .filter(Boolean)
     .sort((a, b) =>
@@ -751,6 +822,7 @@ onMounted(async () => {
 }
 .cell-empty  { border: none; cursor: default; background: transparent; }
 .cell-present { background-color: #e8f5e9; border-color: #81c784; color: #2e7d32; }
+.cell-half    { background-color: #e0f7fa; border-color: #4dd0e1; color: #00838f; }
 .cell-absent  { background-color: #ffebee; border-color: #e57373; color: #c62828; }
 .cell-none    { background-color: #fafafa; border-color: #e0e0e0; color: #9e9e9e; }
 .day-number { font-size: 12px; font-weight: bold; }
@@ -761,6 +833,7 @@ onMounted(async () => {
 body.body--dark .calendar-header-cell { color: #b0b3b8; }
 body.body--dark .calendar-day-cell { border-color: #3a3b3c; }
 body.body--dark .cell-present { background-color: #2d3b2d; border-color: #4a7a4a; color: #8bc48b; }
+body.body--dark .cell-half    { background-color: #1a3038; border-color: #2a7a8a; color: #4dd0e1; }
 body.body--dark .cell-absent  { background-color: #3b2626; border-color: #7a3b3b; color: #e08080; }
 body.body--dark .cell-none    { background-color: #303132; border-color: #3a3b3c; color: #6b6d70; }
 </style>

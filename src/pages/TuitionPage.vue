@@ -179,9 +179,13 @@
               </div>
               <div class="row items-center q-gutter-xs q-mt-xs">
                 <q-badge
-                  :color="row.settings.classType === 'full' ? 'deep-purple' : row.settings.classType === 'half' ? 'teal' : 'grey-6'"
-                  :label="row.settings.classType === 'full' ? '全天班' : row.settings.classType === 'half' ? '半天班' : '不上課'" />
-                <template v-if="row.settings.classType !== 'none'">
+                  :color="row.settings.classType === 'full' ? 'deep-purple' : row.settings.classType === 'half' ? 'teal' : row.settings.classType === 'mixed' ? 'orange-8' : 'grey-6'"
+                  :label="row.settings.classType === 'full' ? '全天班' : row.settings.classType === 'half' ? '半天班' : row.settings.classType === 'mixed' ? '混合班' : '不上課'" />
+                <template v-if="row.settings.classType === 'mixed'">
+                  <q-badge outline color="positive" :label="`全天 ${row.attendance.fullDays}天`" />
+                  <q-badge outline color="teal" :label="`半天 ${row.attendance.halfDays}天`" />
+                </template>
+                <template v-else-if="row.settings.classType !== 'none'">
                   <q-badge :color="row.settings.withMeal ? 'orange-7' : 'grey-6'"
                     :label="row.settings.withMeal ? '含用餐' : '不含用餐'" />
                   <q-badge outline color="positive" :label="`出席 ${row.attendance.attendDays}天`" />
@@ -194,7 +198,8 @@
                 <div class="text-subtitle1 text-weight-bold" :class="hasRates ? 'text-primary' : 'text-grey-5'">
                   {{ row.fee !== null ? `$${fmtNum(row.fee)}` : 'N/A' }}
                 </div>
-                <div class="text-body2" :class="hasRates && row.attendance.absentDays > rates?.absentThreshold ? 'text-negative text-weight-bold' : 'text-grey-5'">
+                <div v-if="row.settings.classType === 'mixed'" class="text-body2 text-orange-8">按天計費</div>
+                <div v-else class="text-body2" :class="hasRates && row.attendance.absentDays > rates?.absentThreshold ? 'text-negative text-weight-bold' : 'text-grey-5'">
                   {{ row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? '按日計費' : '月費制' }}
                 </div>
               </template>
@@ -218,7 +223,7 @@
                 />
               </div>
               <div class="col-6 flex items-center justify-end">
-                <q-toggle v-if="row.settings.classType !== 'none'"
+                <q-toggle v-if="row.settings.classType !== 'none' && row.settings.classType !== 'mixed'"
                   :model-value="row.settings.withMeal"
                   @update:model-value="v => updateSetting(row.student.id, 'withMeal', v)"
                   label="含用餐" color="orange-7"
@@ -258,7 +263,12 @@
             <q-card v-if="row.settings.classType !== 'none'" flat bordered class="q-pa-sm q-mb-md">
               <div class="attendance-calendar-container full-width">
                 <div class="text-caption text-grey-6 text-center q-mb-sm">
-                  點擊日期切換：出席(綠) ➔ 請假(紅) ➔ 非上課日(灰)
+                  <template v-if="row.settings.classType === 'mixed'">
+                    點擊切換：全天(綠) ➔ 半天(青) ➔ 請假(紅) ➔ 非上課日(灰)
+                  </template>
+                  <template v-else>
+                    點擊日期切換：出席(綠) ➔ 請假(紅) ➔ 非上課日(灰)
+                  </template>
                 </div>
                 <div class="calendar-grid">
                   <div v-for="h in ['日', '一', '二', '三', '四', '五', '六']" :key="h" class="calendar-header-cell">
@@ -277,6 +287,19 @@
                     </div>
                   </div>
                 </div>
+                <div class="row q-gutter-sm justify-center q-mt-sm text-caption text-grey-7">
+                  <template v-if="row.settings.classType === 'mixed'">
+                    <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>全天</span>
+                    <span class="flex items-center"><q-icon name="contrast" color="teal" class="q-mr-xs"/>半天</span>
+                    <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
+                    <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>非上課</span>
+                  </template>
+                  <template v-else>
+                    <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
+                    <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
+                    <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>非上課日</span>
+                  </template>
+                </div>
               </div>
             </q-card>
 
@@ -284,6 +307,24 @@
             <q-card v-if="row.settings.classType !== 'none' || (row.settings.extraActivities || []).length" flat bordered class="q-pa-sm">
               <q-list dense separator>
                 <template v-if="row.settings.classType !== 'none'">
+                  <template v-if="row.settings.classType === 'mixed'">
+                    <q-item>
+                      <q-item-section class="text-body2 text-grey-7">全天班天數</q-item-section>
+                      <q-item-section side class="text-body2 text-weight-bold text-positive">{{ row.attendance.fullDays }} 天</q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section class="text-body2 text-grey-7">半天班天數</q-item-section>
+                      <q-item-section side class="text-body2 text-weight-bold text-teal">{{ row.attendance.halfDays }} 天</q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section class="text-body2 text-grey-7">計費方式</q-item-section>
+                      <q-item-section side class="text-body2 text-orange-8">
+                        <span v-if="!hasRates" class="text-grey-5">N/A</span>
+                        <span v-else>全天{{ row.attendance.fullDays }}×${{ rates?.mixedFullDaily || 0 }} + 半天{{ row.attendance.halfDays }}×${{ rates?.mixedHalfDaily || 0 }}</span>
+                      </q-item-section>
+                    </q-item>
+                  </template>
+                  <template v-else>
                   <q-item>
                     <q-item-section class="text-body2 text-grey-7">上課天數統計</q-item-section>
                     <q-item-section side class="text-body2 text-weight-bold">
@@ -301,6 +342,7 @@
                       </span>
                     </q-item-section>
                   </q-item>
+                  </template>
                 </template>
                 <!-- 附加活動明細（手機版） -->
                 <template v-if="(row.settings.extraActivities || []).length">
@@ -355,17 +397,23 @@
             </q-td>
             <q-td key="classType" :props="props" class="text-center">
               <q-badge
-                :color="props.row.settings.classType === 'full' ? 'deep-purple' : props.row.settings.classType === 'half' ? 'teal' : 'grey-6'"
-                :label="props.row.settings.classType === 'full' ? '全天班' : props.row.settings.classType === 'half' ? '半天班' : '不上課'" />
+                :color="props.row.settings.classType === 'full' ? 'deep-purple' : props.row.settings.classType === 'half' ? 'teal' : props.row.settings.classType === 'mixed' ? 'orange-8' : 'grey-6'"
+                :label="props.row.settings.classType === 'full' ? '全天班' : props.row.settings.classType === 'half' ? '半天班' : props.row.settings.classType === 'mixed' ? '混合班' : '不上課'" />
             </q-td>
             <q-td key="withMeal" :props="props" class="text-center">
-              <q-badge v-if="props.row.settings.classType !== 'none'"
+              <span v-if="props.row.settings.classType === 'none' || props.row.settings.classType === 'mixed'" class="text-grey-5">—</span>
+              <q-badge v-else
                 :color="props.row.settings.withMeal ? 'orange-7' : 'grey-6'"
                 :label="props.row.settings.withMeal ? '含用餐' : '不含用餐'" />
-              <span v-else class="text-grey-5">—</span>
             </q-td>
             <q-td key="attendance" :props="props" class="text-center">
-              <template v-if="props.row.settings.classType !== 'none'">
+              <template v-if="props.row.settings.classType === 'mixed'">
+                <span class="text-positive text-weight-bold">全{{ props.row.attendance.fullDays }}</span>
+                <span class="text-grey-4"> / </span>
+                <span class="text-teal text-weight-bold">半{{ props.row.attendance.halfDays }}</span>
+                <span class="text-caption text-grey-5"> 天</span>
+              </template>
+              <template v-else-if="props.row.settings.classType !== 'none'">
                 <span class="text-positive text-weight-bold">{{ props.row.attendance.attendDays }}</span>
                 <span class="text-grey-4"> / </span>
                 <span :class="props.row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? 'text-negative text-weight-bold' : 'text-grey-6'">
@@ -376,7 +424,8 @@
               <span v-else class="text-grey-5">—</span>
             </q-td>
             <q-td key="billingType" :props="props" class="text-center">
-              <span v-if="props.row.settings.classType !== 'none'"
+              <span v-if="props.row.settings.classType === 'mixed'" class="text-orange-8 text-weight-bold">按天計費</span>
+              <span v-else-if="props.row.settings.classType !== 'none'"
                 :class="props.row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? 'text-negative text-weight-bold' : 'text-grey-6'">
                 {{ props.row.attendance.absentDays > (rates?.absentThreshold ?? Infinity) ? '按日計費' : '月費制' }}
               </span>
@@ -411,7 +460,7 @@
                         />
                       </div>
                       <div class="col-6 flex items-center">
-                        <q-toggle v-if="props.row.settings.classType !== 'none'"
+                        <q-toggle v-if="props.row.settings.classType !== 'none' && props.row.settings.classType !== 'mixed'"
                           :model-value="props.row.settings.withMeal"
                           @update:model-value="v => updateSetting(props.row.student.id, 'withMeal', v)"
                           label="含用餐" color="orange-7"
@@ -454,6 +503,28 @@
                   </div>
                   <q-card flat bordered>
                     <q-list dense separator>
+                      <template v-if="props.row.settings.classType === 'mixed'">
+                        <q-item>
+                          <q-item-section class="text-body2 text-grey-7">全天班天數</q-item-section>
+                          <q-item-section side class="text-positive text-weight-bold text-body2">{{ props.row.attendance.fullDays }} 天</q-item-section>
+                        </q-item>
+                        <q-item>
+                          <q-item-section class="text-body2 text-grey-7">半天班天數</q-item-section>
+                          <q-item-section side class="text-teal text-weight-bold text-body2">{{ props.row.attendance.halfDays }} 天</q-item-section>
+                        </q-item>
+                        <q-item>
+                          <q-item-section class="text-body2 text-grey-7">請假天數</q-item-section>
+                          <q-item-section side class="text-body2">{{ props.row.attendance.absentDays }} 天</q-item-section>
+                        </q-item>
+                        <q-item>
+                          <q-item-section class="text-body2 text-grey-7">計費方式</q-item-section>
+                          <q-item-section side class="text-body2 text-orange-8">
+                            <span v-if="!hasRates" class="text-grey-5">N/A（未設定費率）</span>
+                            <span v-else>全天{{ props.row.attendance.fullDays }}×${{ rates.mixedFullDaily||0 }} + 半天{{ props.row.attendance.halfDays }}×${{ rates.mixedHalfDaily||0 }}</span>
+                          </q-item-section>
+                        </q-item>
+                      </template>
+                      <template v-else>
                       <q-item>
                         <q-item-section class="text-body2 text-grey-7">上課總天數 (出席 + 請假)</q-item-section>
                         <q-item-section side class="text-body2 text-weight-bold">{{ props.row.attendance.totalDays }} 天</q-item-section>
@@ -485,6 +556,7 @@
                           </span>
                         </q-item-section>
                       </q-item>
+                      </template>
                       <!-- 附加活動明細 -->
                       <template v-if="(props.row.settings.extraActivities || []).length">
                         <q-item v-for="item in props.row.settings.extraActivities" :key="item.id">
@@ -544,7 +616,12 @@
                   <q-card flat bordered class="q-pa-md col flex justify-center items-center">
                     <div class="attendance-calendar-container full-width">
                       <div class="text-caption text-grey-6 text-center q-mb-md">
-                        點擊日期切換狀態：出席 (綠) ➔ 請假 (紅) ➔ 非上課日 (灰)
+                        <template v-if="props.row.settings.classType === 'mixed'">
+                          點擊切換：全天(綠) ➔ 半天(青) ➔ 請假(紅) ➔ 非上課日(灰)
+                        </template>
+                        <template v-else>
+                          點擊日期切換狀態：出席 (綠) ➔ 請假 (紅) ➔ 非上課日 (灰)
+                        </template>
                       </div>
                       <div class="calendar-grid">
                         <div v-for="h in ['日', '一', '二', '三', '四', '五', '六']" :key="h" class="calendar-header-cell">
@@ -565,9 +642,17 @@
                       </div>
                       <!-- Legend -->
                       <div class="row q-gutter-md justify-center q-mt-md text-caption text-grey-7">
-                        <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
-                        <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
-                        <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>非上課日</span>
+                        <template v-if="props.row.settings.classType === 'mixed'">
+                          <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>全天</span>
+                          <span class="flex items-center"><q-icon name="contrast" color="teal" class="q-mr-xs"/>半天</span>
+                          <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
+                          <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>非上課日</span>
+                        </template>
+                        <template v-else>
+                          <span class="flex items-center"><q-icon name="check_circle" color="positive" class="q-mr-xs"/>出席</span>
+                          <span class="flex items-center"><q-icon name="cancel" color="negative" class="q-mr-xs"/>請假</span>
+                          <span class="flex items-center"><q-icon name="do_not_disturb_on" color="grey-5" class="q-mr-xs"/>非上課日</span>
+                        </template>
                       </div>
                     </div>
                   </q-card>
@@ -639,8 +724,9 @@ const selectedClassType = ref('all')
 const classTypeFilterOptions = [
   { label: '全部班別', value: 'all' },
   { label: '全天班',   value: 'full' },
-  { label: '不上課',   value: 'none' },
-  { label: '半天班',   value: 'half' }
+  { label: '半天班',   value: 'half' },
+  { label: '混合班',   value: 'mixed' },
+  { label: '不上課',   value: 'none' }
 ]
 
 const gradeFilterOptions = [
@@ -650,6 +736,7 @@ const gradeFilterOptions = [
 const classTypeOptions = [
   { label: '全天班', value: 'full' },
   { label: '半天班', value: 'half' },
+  { label: '混合班', value: 'mixed' },
   { label: '不上課', value: 'none' }
 ]
 
@@ -706,38 +793,32 @@ function getStudentCalendar(studentId) {
     const month = selectedMonth.value
     const totalDaysInMonth = new Date(year, month, 0).getDate()
     
+    const classType = enrollment.value[studentId]?.classType
     const cal = {}
-    const isMock = att.totalDays !== undefined && att.absentDays !== undefined
-    if (isMock && (att.totalDays > 0 || att.absentDays > 0)) {
-      const weekdays = []
-      for (let d = 1; d <= totalDaysInMonth; d++) {
-        const dayOfWeek = new Date(year, month - 1, d).getDay()
-        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-          weekdays.push(d)
+    if (classType === 'mixed') {
+      for (let d = 1; d <= totalDaysInMonth; d++) cal[d] = 'none'
+    } else {
+      const isMock = att.totalDays !== undefined && att.absentDays !== undefined
+      if (isMock && (att.totalDays > 0 || att.absentDays > 0)) {
+        const weekdays = []
+        for (let d = 1; d <= totalDaysInMonth; d++) {
+          const dayOfWeek = new Date(year, month - 1, d).getDay()
+          if (dayOfWeek >= 1 && dayOfWeek <= 5) weekdays.push(d)
+        }
+        for (let d = 1; d <= totalDaysInMonth; d++) cal[d] = 'none'
+        let absCount = att.absentDays || 0
+        let totalCount = att.totalDays || 22
+        let presCount = Math.max(0, totalCount - absCount)
+        let curIdx = 0
+        for (let i = 0; i < absCount && curIdx < weekdays.length; i++) cal[weekdays[curIdx++]] = 'absent'
+        for (let i = 0; i < presCount && curIdx < weekdays.length; i++) cal[weekdays[curIdx++]] = 'present'
+      } else {
+        for (let d = 1; d <= totalDaysInMonth; d++) {
+          const dayOfWeek = new Date(year, month - 1, d).getDay()
+          cal[d] = (dayOfWeek >= 1 && dayOfWeek <= 5) ? 'present' : 'none'
         }
       }
-      for (let d = 1; d <= totalDaysInMonth; d++) {
-        cal[d] = 'none'
-      }
-      
-      let absCount = att.absentDays || 0
-      let totalCount = att.totalDays || 22
-      let presCount = Math.max(0, totalCount - absCount)
-      
-      let curIdx = 0
-      for (let i = 0; i < absCount && curIdx < weekdays.length; i++) {
-        cal[weekdays[curIdx++]] = 'absent'
-      }
-      for (let i = 0; i < presCount && curIdx < weekdays.length; i++) {
-        cal[weekdays[curIdx++]] = 'present'
-      }
-    } else {
-      for (let d = 1; d <= totalDaysInMonth; d++) {
-        const dayOfWeek = new Date(year, month - 1, d).getDay()
-        cal[d] = (dayOfWeek >= 1 && dayOfWeek <= 5) ? 'present' : 'none'
-      }
     }
-    
     att.calendar = cal
     
     let presentCount = 0
@@ -756,10 +837,16 @@ function getStudentCalendar(studentId) {
 function recalculateTotals(studentId, triggerSave = true) {
   const att = attendance.value[studentId]
   if (!att || !att.calendar) return
+  const classType = enrollment.value[studentId]?.classType
   let presentCount = 0, absentCount = 0
   Object.values(att.calendar).forEach(s => {
-    if (s === 'present') presentCount++
-    if (s === 'absent') absentCount++
+    if (classType === 'mixed') {
+      if (s === 'full' || s === 'half') presentCount++
+      else if (s === 'leave') absentCount++
+    } else {
+      if (s === 'present') presentCount++
+      else if (s === 'absent') absentCount++
+    }
   })
   att.totalDays = presentCount + absentCount
   att.absentDays = absentCount
@@ -774,22 +861,36 @@ function recalculateTotals(studentId, triggerSave = true) {
 function toggleDay(studentId, dayNum) {
   const cal = getStudentCalendar(studentId)
   if (!cal) return
+  const classType = enrollment.value[studentId]?.classType
   const current = cal[dayNum] || 'none'
-  cal[dayNum] = current === 'present' ? 'absent' : current === 'absent' ? 'none' : 'present'
+  if (classType === 'mixed') {
+    cal[dayNum] = current === 'full' ? 'half' : current === 'half' ? 'leave' : current === 'leave' ? 'none' : 'full'
+  } else {
+    cal[dayNum] = current === 'present' ? 'absent' : current === 'absent' ? 'none' : 'present'
+  }
   recalculateTotals(studentId, true)
 }
 
 function getDayClass(studentId, cell) {
   if (cell.empty) return 'cell-empty'
   const cal = getStudentCalendar(studentId)
-  return `cell-${cal[cell.day] || 'none'}`
+  const s = cal[cell.day] || 'none'
+  const classType = enrollment.value[studentId]?.classType
+  if (classType === 'mixed') {
+    if (s === 'full') return 'cell-present'
+    if (s === 'half') return 'cell-half'
+    if (s === 'leave') return 'cell-absent'
+    return 'cell-none'
+  }
+  return `cell-${s}`
 }
 
 function getDayIcon(studentId, dayNum) {
   const cal = getStudentCalendar(studentId)
   const s = cal[dayNum] || 'none'
-  if (s === 'present') return 'check_circle'
-  if (s === 'absent') return 'cancel'
+  if (s === 'present' || s === 'full') return 'check_circle'
+  if (s === 'absent' || s === 'leave') return 'cancel'
+  if (s === 'half') return 'contrast'
   return 'do_not_disturb_on'
 }
 
@@ -834,9 +935,16 @@ onMounted(async () => {
 })
 
 // ── 計費 ──
-function calcTuitionBase(classType, withMeal, totalDays, absentDays) {
+function calcTuitionBase(classType, withMeal, totalDays, absentDays, calendar) {
   if (!rates.value) return null
   if (classType === 'none') return 0
+  if (classType === 'mixed') {
+    if (!calendar) return null
+    const vals = Object.values(calendar)
+    const fullDays = vals.filter(s => s === 'full').length
+    const halfDays = vals.filter(s => s === 'half').length
+    return fullDays * (rates.value.mixedFullDaily || 0) + halfDays * (rates.value.mixedHalfDaily || 0)
+  }
   const attended = Math.max(0, totalDays - absentDays)
   const threshold = rates.value.absentThreshold
   if (classType === 'full') {
@@ -858,14 +966,14 @@ function calcExtraFee(selectedItems) {
   }, 0)
 }
 
-function calcFee(classType, withMeal, totalDays, absentDays, selectedActivityIds) {
-  const base = calcTuitionBase(classType, withMeal, totalDays, absentDays)
+function calcFee(classType, withMeal, totalDays, absentDays, selectedActivityIds, calendar) {
+  const base = calcTuitionBase(classType, withMeal, totalDays, absentDays, calendar)
   if (base === null) return null
   return base + calcExtraFee(selectedActivityIds)
 }
 
 function dailyRate(row) {
-  if (!rates.value) return null
+  if (!rates.value || row.settings.classType === 'mixed') return null
   if (row.settings.classType === 'full') return row.settings.withMeal ? rates.value.fullMealDaily : rates.value.fullDaily
   return row.settings.withMeal ? rates.value.halfMealDaily : rates.value.halfDaily
 }
@@ -930,7 +1038,10 @@ const rows = computed(() => {
       const att = attendance.value[studentId] || { totalDays: 22, absentDays: 0 }
       const attendDays = Math.max(0, att.totalDays - att.absentDays)
       const normalizedSettings = { ...s, extraActivities: normalizeActivities(s.extraActivities) }
-      return { id: studentId, student, settings: normalizedSettings, attendance: { ...att, attendDays }, fee: calcFee(s.classType, s.withMeal, att.totalDays, att.absentDays, normalizedSettings.extraActivities) }
+      const cal = att.calendar || {}
+      const fullDays = Object.values(cal).filter(v => v === 'full').length
+      const halfDays = Object.values(cal).filter(v => v === 'half').length
+      return { id: studentId, student, settings: normalizedSettings, attendance: { ...att, attendDays, fullDays, halfDays }, fee: calcFee(s.classType, s.withMeal, att.totalDays, att.absentDays, normalizedSettings.extraActivities, cal) }
     })
     .filter(Boolean)
     .sort((a, b) =>
@@ -1011,12 +1122,14 @@ function exportExcel() {
     '年級':       `${r.student.grade}年級`,
     '家長':       r.student.parentName,
     '電話':       r.student.phone,
-    '班別':       r.settings.classType === 'full' ? '全天班' : r.settings.classType === 'half' ? '半天班' : '不上課',
-    '用餐':       r.settings.withMeal ? '含用餐' : '不含用餐',
-    '上課總天數': r.attendance.totalDays,
-    '請假天數':   r.attendance.absentDays,
-    '出席天數':   r.attendance.attendDays,
-    '計費方式':   !rates.value ? 'N/A' : r.attendance.absentDays > rates.value.absentThreshold ? `按日計費（$${dailyRate(r)}/天）` : '月費制',
+    '班別':       r.settings.classType === 'full' ? '全天班' : r.settings.classType === 'half' ? '半天班' : r.settings.classType === 'mixed' ? '混合班' : '不上課',
+    '用餐':       r.settings.classType === 'mixed' ? '—' : r.settings.withMeal ? '含用餐' : '不含用餐',
+    '上課總天數': r.settings.classType === 'mixed' ? `全天${r.attendance.fullDays}+半天${r.attendance.halfDays}` : r.attendance.totalDays,
+    '請假天數':   r.settings.classType === 'mixed' ? r.attendance.absentDays : r.attendance.absentDays,
+    '出席天數':   r.settings.classType === 'mixed' ? r.attendance.fullDays + r.attendance.halfDays : r.attendance.attendDays,
+    '計費方式':   r.settings.classType === 'mixed'
+      ? `混合班 全天${r.attendance.fullDays}×$${rates.value?.mixedFullDaily||0}+半天${r.attendance.halfDays}×$${rates.value?.mixedHalfDaily||0}`
+      : (!rates.value ? 'N/A' : r.attendance.absentDays > rates.value.absentThreshold ? `按日計費（$${dailyRate(r)}/天）` : '月費制'),
     '附加活動':   (r.settings.extraActivities || []).map(item => {
       const ea = rates.value?.extraActivities?.find(a => a.id === item.id)
       if (!ea) return ''
@@ -1081,6 +1194,7 @@ function exportExcel() {
   background: transparent;
 }
 .cell-present { background-color: #e8f5e9; border-color: #81c784; color: #2e7d32; }
+.cell-half    { background-color: #e0f7fa; border-color: #4dd0e1; color: #00838f; }
 .cell-absent  { background-color: #ffebee; border-color: #e57373; color: #c62828; }
 .cell-none    { background-color: #fafafa; border-color: #e0e0e0; color: #9e9e9e; }
 .day-number {
@@ -1100,6 +1214,7 @@ function exportExcel() {
 body.body--dark .calendar-header-cell { color: #b0b3b8; }
 body.body--dark .calendar-day-cell { border-color: #3a3b3c; }
 body.body--dark .cell-present { background-color: #2d3b2d; border-color: #4a7a4a; color: #8bc48b; }
+body.body--dark .cell-half    { background-color: #1a3038; border-color: #2a7a8a; color: #4dd0e1; }
 body.body--dark .cell-absent  { background-color: #3b2626; border-color: #7a3b3b; color: #e08080; }
 body.body--dark .cell-none    { background-color: #303132; border-color: #3a3b3c; color: #6b6d70; }
 body.body--dark .border-grey  { border-color: #3a3b3c; }

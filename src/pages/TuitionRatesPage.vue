@@ -78,6 +78,22 @@
               </q-list>
             </div>
           </div>
+          <!-- 混合班 -->
+          <div class="col-12 q-mt-xs">
+            <q-list dense bordered class="rounded-borders">
+              <q-item dense class="bg-orange-1">
+                <q-item-section><span class="text-body2 text-weight-bold text-orange-8">混合班（純按天計費）</span></q-item-section>
+              </q-item>
+              <q-item dense>
+                <q-item-section class="text-body2 text-grey-7">全天日費</q-item-section>
+                <q-item-section side class="text-body2">${{ rate.mixedFullDaily || 0 }}/天</q-item-section>
+              </q-item>
+              <q-item dense>
+                <q-item-section class="text-body2 text-grey-7">半天日費</q-item-section>
+                <q-item-section side class="text-body2">${{ rate.mixedHalfDaily || 0 }}/天</q-item-section>
+              </q-item>
+            </q-list>
+          </div>
           <!-- 附加活動 -->
           <div v-if="rate.extraActivities?.length" class="q-mt-sm">
             <q-list dense bordered class="rounded-borders">
@@ -196,6 +212,25 @@
             <q-separator class="q-mb-md" />
 
             <div class="row items-center q-mb-sm">
+              <q-badge color="orange-8" label="混合班" />
+              <span class="text-caption text-grey-5 q-ml-sm">純按天計費，不含月費</span>
+            </div>
+            <div class="row q-col-gutter-sm q-mb-md">
+              <div class="col-6">
+                <q-input v-model.number="form.mixedFullDaily" label="全天日費"
+                  type="number" prefix="$" suffix="/天" outlined dense
+                  :rules="[v => v >= 0 || '請輸入正確金額']" />
+              </div>
+              <div class="col-6">
+                <q-input v-model.number="form.mixedHalfDaily" label="半天日費"
+                  type="number" prefix="$" suffix="/天" outlined dense
+                  :rules="[v => v >= 0 || '請輸入正確金額']" />
+              </div>
+            </div>
+
+            <q-separator class="q-mb-md" />
+
+            <div class="row items-center q-mb-sm">
               <q-badge color="amber-9" label="附加活動" />
               <q-space />
               <q-btn flat dense size="sm" icon="add" color="amber-9" label="新增活動" @click="addActivity" />
@@ -280,6 +315,7 @@ const defaultForm = () => ({
   fullDaily: 400,  fullMealDaily: 450,
   halfFlat: 5000,  halfFlatMeal: 5500,
   halfDaily: 200,  halfMealDaily: 250,
+  mixedFullDaily: 400, mixedHalfDaily: 200,
   extraActivities: []
 })
 
@@ -297,6 +333,7 @@ const tableRows = computed(() =>
     fullDaily: r.fullDaily, fullMealDaily: r.fullMealDaily,
     halfFlat: r.halfFlat, halfFlatMeal: r.halfFlatMeal,
     halfDaily: r.halfDaily, halfMealDaily: r.halfMealDaily,
+    mixedFullDaily: r.mixedFullDaily || 0, mixedHalfDaily: r.mixedHalfDaily || 0,
     extraActivities: r.extraActivities || []
   }))
 )
@@ -310,6 +347,8 @@ const columns = [
   { name: 'halfFlat',         label: '半天月費',           field: 'halfFlat',         align: 'right', format: v => `$${fmtNum(v)}` },
   { name: 'halfFlatMeal',     label: '半天月費(含餐)',      field: 'halfFlatMeal',     align: 'right', format: v => `$${fmtNum(v)}` },
   { name: 'halfDaily',        label: '半天按日',           field: 'halfDaily',        align: 'right', format: v => `$${v}` },
+  { name: 'mixedFullDaily',   label: '混合-全天/日',       field: 'mixedFullDaily',   align: 'right', format: v => `$${v}` },
+  { name: 'mixedHalfDaily',   label: '混合-半天/日',       field: 'mixedHalfDaily',   align: 'right', format: v => `$${v}` },
   { name: 'extraActivities', label: '附加活動',           field: 'extraActivities',  align: 'left', format: v => v?.length ? v.map(a => `${a.name}($${a.amount}${a.multiPerson ? '/人' : ''})`).join('、') : '—' },
   { name: 'actions',          label: '操作',               field: 'actions',          align: 'center' }
 ]
@@ -397,6 +436,8 @@ async function save() {
     fullDaily: form.value.fullDaily,       fullMealDaily: form.value.fullMealDaily,
     halfFlat: form.value.halfFlat,         halfFlatMeal: form.value.halfFlatMeal,
     halfDaily: form.value.halfDaily,       halfMealDaily: form.value.halfMealDaily,
+    mixedFullDaily: form.value.mixedFullDaily,
+    mixedHalfDaily: form.value.mixedHalfDaily,
     extraActivities: form.value.extraActivities.filter(ea => ea.name && ea.amount > 0)
   }
   const singlePersonIds = rateData.extraActivities

@@ -8,6 +8,8 @@ const rateToApp = r => ({
   fullDaily: Number(r.full_daily),     fullMealDaily: Number(r.full_meal_daily),
   halfFlat: Number(r.half_flat),       halfFlatMeal: Number(r.half_flat_meal),
   halfDaily: Number(r.half_daily),     halfMealDaily: Number(r.half_meal_daily),
+  mixedFullDaily: Number(r.mixed_full_daily || 0),
+  mixedHalfDaily: Number(r.mixed_half_daily || 0),
   extraActivities: r.extra_activities || []
 })
 
@@ -18,6 +20,8 @@ const rateToDb = (monthKey, v) => ({
   full_daily: v.fullDaily, full_meal_daily: v.fullMealDaily,
   half_flat: v.halfFlat,   half_flat_meal: v.halfFlatMeal,
   half_daily: v.halfDaily, half_meal_daily: v.halfMealDaily,
+  mixed_full_daily: v.mixedFullDaily || 0,
+  mixed_half_daily: v.mixedHalfDaily || 0,
   extra_activities: v.extraActivities || []
 })
 
