@@ -11,8 +11,8 @@
 
     <q-banner class="bg-warning-hint q-mb-md rounded-borders">
       <template #avatar><q-icon name="info" color="orange-7" /></template>
-      <span v-if="tab === 'students'">刪除記錄中的學生歷史資料（點餐、餐費）仍會保留。可選擇恢復或永久刪除。</span>
-      <span v-else>刪除記錄中的家長歷史餐費交易記錄仍會保留。可選擇恢復或永久刪除。</span>
+      <span v-if="tab === 'students'">永久刪除學生時，歷史訂單與餐費扣款記錄的學生欄位會設為空，但金額記錄仍保留；學費出席記錄將一併刪除。</span>
+      <span v-else>永久刪除家長時，名下所有餐費交易記錄（餘額）將一併刪除且無法復原。學生仍存在，但家長欄位會清空。</span>
     </q-banner>
 
     <!-- 搜尋 + 計數 -->
@@ -231,7 +231,7 @@ function confirmRestoreParent(p) {
 function confirmPermanentDeleteParent(p) {
   $q.dialog({
     title: '永久刪除',
-    message: `確定要永久刪除「${p.name}」？此操作無法復原，但歷史餐費交易記錄仍會保留。`,
+    message: `確定要永久刪除「${p.name}」？名下所有餐費交易記錄（含餘額）將一併刪除，此操作無法復原。`,
     cancel: { flat: true, label: '取消' },
     ok: { color: 'negative', label: '永久刪除' },
     persistent: true

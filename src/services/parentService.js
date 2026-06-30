@@ -109,6 +109,10 @@ export const parentService = {
 
   async permanentDelete(id) {
     if (isDemoMode) return api.remove('parents', id)
+    // meal_transactions.parent_id NOT NULL 無法 SET NULL，必須先刪
+    // students.parent_id / orders.parent_id 已設 ON DELETE SET NULL，DB 自動處理
+    const { error: txErr } = await supabase.from('meal_transactions').delete().eq('parent_id', id)
+    if (txErr) throw txErr
     const { error } = await supabase.from('parents').delete().eq('id', id)
     if (error) throw error
   }

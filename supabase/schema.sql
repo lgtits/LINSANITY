@@ -48,7 +48,7 @@ create table students (
   id            text primary key default gen_random_uuid()::text,
   name          text not null,
   grade         int  not null,
-  parent_id     text references parents(id),
+  parent_id     text references parents(id) on delete set null,
   schedule_days int[] not null default '{}',     -- 上課星期，對應 JS getDay()：0=日 1=一 … 6=六
   notes         text default '',
   archived      boolean not null default false,
@@ -91,10 +91,10 @@ create table orders (
   datetime        timestamptz,
   restaurant_id   text references restaurants(id),
   restaurant_name text,
-  student_id      text references students(id),
+  student_id      text references students(id) on delete set null,
   student_name    text,
   grade           int,
-  parent_id       text references parents(id),
+  parent_id       text references parents(id)  on delete set null,
   total           numeric(10,2) not null default 0,
   created_at      timestamptz default now()
 );
@@ -117,8 +117,8 @@ create index order_items_order_idx on order_items (order_id);
 -- deduct：amount 負、student_id 標記是哪個孩子吃的
 create table meal_transactions (
   id         text primary key default gen_random_uuid()::text,
-  parent_id  text not null references parents(id),
-  student_id text references students(id),
+  parent_id  text not null references parents(id),                       -- NOT NULL：刪家長前需先刪交易（應用層處理）
+  student_id text references students(id) on delete set null,
   type       text not null check (type in ('topup','deduct')),
   amount     numeric(10,2) not null,
   note       text,
@@ -155,7 +155,7 @@ create table tuition_rates (
 
 create table tuition_enrollments (
   month_key        text not null,
-  student_id       text not null references students(id),
+  student_id       text not null references students(id) on delete cascade,
   class_type       text not null check (class_type in ('full','half','none','mixed')),
   with_meal        boolean not null default false,
   extra_activities jsonb not null default '[]', -- 報名的附加活動 ID 陣列 ["ea1","ea2"]
@@ -165,7 +165,7 @@ create table tuition_enrollments (
 -- 預計上課安排（月初預收用）。calendar 為 null 時前端會用 total/absent 還原。
 create table tuition_attendance (
   month_key   text not null,
-  student_id  text not null references students(id),
+  student_id  text not null references students(id) on delete cascade,
   total_days  int not null default 0,
   absent_days int not null default 0,
   calendar    jsonb,                            -- 一般班: { "<day>": "present|absent|none" }；混合班: "full|half|leave|none"
@@ -175,7 +175,7 @@ create table tuition_attendance (
 -- 實際簽到記錄（月底結算用）。
 create table attendance_logs (
   month_key        text not null,
-  student_id       text not null references students(id),
+  student_id       text not null references students(id) on delete cascade,
   total_days       int not null default 0,
   absent_days      int not null default 0,
   calendar         jsonb,
