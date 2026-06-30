@@ -1,0 +1,1 @@
+import{un as e}from"./index-DKXZvYXB.js";function t(){return e(`_q_`)}export{t};
