@@ -1,11 +1,13 @@
 [
-  { "id": "p1", "name": "王大明", "phone": "0912-345-678", "lineUserId": "Uabc1234567890demo1" },
-  { "id": "p2", "name": "李志明", "phone": "0923-456-789", "lineUserId": "Uabc1234567890demo2" },
-  { "id": "p3", "name": "陳建國", "phone": "0934-567-890", "lineUserId": "" },
-  { "id": "p4", "name": "張文雄", "phone": "0945-678-901", "lineUserId": "Uabc1234567890demo4" },
-  { "id": "p5", "name": "林秀蘭", "phone": "0956-789-012", "lineUserId": "" },
-  { "id": "p6", "name": "吳勇志", "phone": "0967-890-123", "lineUserId": "Uabc1234567890demo6" },
-  { "id": "p7", "name": "趙建華", "phone": "0978-901-234", "lineUserId": "" },
-  { "id": "p8", "name": "劉志遠", "phone": "0989-012-345", "lineUserId": "" },
-  { "id": "p9", "name": "蔡明宏", "phone": "0990-123-456", "lineUserId": "" }
+  { "id": "p1",  "name": "王大明", "phone": "0912-345-678", "lineUserId": "Uabc1234567890demo1", "archived": false, "deleted": false },
+  { "id": "p2",  "name": "李志明", "phone": "0923-456-789", "lineUserId": "Uabc1234567890demo2", "archived": false, "deleted": false },
+  { "id": "p3",  "name": "陳建國", "phone": "0934-567-890", "lineUserId": "",                    "archived": false, "deleted": false },
+  { "id": "p4",  "name": "張文雄", "phone": "0945-678-901", "lineUserId": "Uabc1234567890demo4", "archived": false, "deleted": false },
+  { "id": "p5",  "name": "林秀蘭", "phone": "0956-789-012", "lineUserId": "",                    "archived": false, "deleted": false },
+  { "id": "p6",  "name": "吳勇志", "phone": "0967-890-123", "lineUserId": "Uabc1234567890demo6", "archived": false, "deleted": false },
+  { "id": "p7",  "name": "趙建華", "phone": "0978-901-234", "lineUserId": "",                    "archived": false, "deleted": false },
+  { "id": "p8",  "name": "劉志遠", "phone": "0989-012-345", "lineUserId": "",                    "archived": false, "deleted": false },
+  { "id": "p9",  "name": "蔡明宏", "phone": "0990-123-456", "lineUserId": "",                    "archived": false, "deleted": false },
+  { "id": "p10", "name": "鄭淑芬", "phone": "0991-234-567", "lineUserId": "",                    "archived": true,  "deleted": false },
+  { "id": "p11", "name": "黃建志", "phone": "0992-345-678", "lineUserId": "",                    "archived": false, "deleted": true  }
 ]
