@@ -43,6 +43,9 @@
               <q-badge v-else color="grey-3" text-color="grey-8" class="q-ml-sm" style="font-size:12px">未綁 LINE</q-badge>
             </div>
             <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEdit(p)" />
+            <q-btn flat round dense icon="archive" color="grey-6" size="sm" @click="confirmArchive(p)">
+              <q-tooltip>封存家長</q-tooltip>
+            </q-btn>
           </div>
           <div class="row items-center q-gutter-xs q-mb-xs">
             <q-badge v-for="s in p.students" :key="s.id" color="primary" outline style="font-size:12px">
@@ -108,6 +111,9 @@
             <q-tooltip>消費記錄</q-tooltip>
           </q-btn>
           <q-btn flat dense round icon="edit" color="primary" size="sm" @click="openEdit(props.row)" />
+          <q-btn flat dense round icon="archive" color="grey-6" size="sm" @click="confirmArchive(props.row)">
+            <q-tooltip>封存家長</q-tooltip>
+          </q-btn>
         </q-td>
       </template>
     </q-table>
@@ -422,5 +428,24 @@ function openDetail(p) {
   detailParent.value = p
   detailTransactions.value = txByParent.value[p.id] || []
   showDetail.value = true
+}
+
+// ── 封存家長 ──
+function confirmArchive(p) {
+  const childNames = (studentsByParent.value[p.id] || []).map(s => s.name).join('、')
+  const msg = childNames
+    ? `確定要封存「${p.name}」？名下學生（${childNames}）仍在籍，封存後新增學生時將無法選擇此家長。`
+    : `確定要封存「${p.name}」？封存後不會出現在學生的家長選單中，可至封存記錄恢復。`
+  $q.dialog({
+    title: '封存家長',
+    message: msg,
+    cancel: { flat: true, label: '取消' },
+    ok: { color: 'warning', label: '封存' },
+    persistent: true
+  }).onOk(async () => {
+    await parentService.archive(p.id)
+    parents.value = parents.value.filter(x => x.id !== p.id)
+    $q.notify({ message: `${p.name} 已封存`, color: 'warning', icon: 'archive' })
+  })
 }
 </script>

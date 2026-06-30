@@ -33,13 +33,9 @@ export const attendanceService = {
       return
     }
     const col = keyToCol[key]
-    const { data, error } = await supabase.from('attendance_logs')
-      .update({ [col]: value }).eq('month_key', monthKey).eq('student_id', studentId).select()
+    // upsert 避免 concurrent calls（calendar + totalDays + absentDays）同時搶 INSERT 產生 PK 衝突
+    const { error } = await supabase.from('attendance_logs')
+      .upsert({ month_key: monthKey, student_id: studentId, [col]: value }, { onConflict: 'month_key,student_id' })
     if (error) throw error
-    if (!data.length) {
-      const base = { month_key: monthKey, student_id: studentId, total_days: 0, absent_days: 0, extra_activities: [], [col]: value }
-      const { error: insErr } = await supabase.from('attendance_logs').insert(base)
-      if (insErr) throw insErr
-    }
   }
 }

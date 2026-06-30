@@ -33,8 +33,11 @@ create table parents (
   name         text not null,
   phone        text,
   line_user_id text default '',          -- LINE 推播 ID（家長一個帳號，孩子共用）
+  archived     boolean not null default false,
+  deleted      boolean not null default false,
   created_at   timestamptz default now()
 );
+create index parents_archived_idx on parents (archived, deleted);
 -- 電話唯一，但允許多筆未填（NULL／空字串不納入限制）
 create unique index parents_phone_key on parents (phone) where phone is not null and phone <> '';
 

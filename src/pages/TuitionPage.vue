@@ -1094,6 +1094,15 @@ function updateSetting(studentId, key, value) {
   if (!enrollment.value?.[studentId]) return
   enrollment.value[studentId] = { ...enrollment.value[studentId], [key]: value }
   tuitionService.updateEnrollmentSetting(monthKey.value, studentId, key, value)
+  // 切換班別時重置 calendar：mixed 用 full/half/leave，一般班用 present/absent，互不相容
+  if (key === 'classType' && attendance.value[studentId]) {
+    const att = attendance.value[studentId]
+    att.calendar = null
+    att.totalDays = 0
+    att.absentDays = 0
+    getStudentCalendar(studentId)
+    recalculateTotals(studentId, true)
+  }
 }
 
 // ── 載入學生建立名單 ──
@@ -1148,7 +1157,7 @@ function exportExcel() {
     '班別':       r.settings.classType === 'full' ? '全天班' : r.settings.classType === 'half' ? '半天班' : r.settings.classType === 'mixed' ? '混合班' : '不上課',
     '用餐':       r.settings.classType === 'mixed' ? '—' : r.settings.withMeal ? '含用餐' : '不含用餐',
     '上課總天數': r.settings.classType === 'mixed' ? `全天${r.attendance.fullDays}+半天${r.attendance.halfDays}` : r.attendance.totalDays,
-    '請假天數':   r.settings.classType === 'mixed' ? r.attendance.absentDays : r.attendance.absentDays,
+    '請假天數':   r.attendance.absentDays,
     '出席天數':   r.settings.classType === 'mixed' ? r.attendance.fullDays + r.attendance.halfDays : r.attendance.attendDays,
     '計費方式':   r.settings.classType === 'mixed'
       ? `混合班 全天${r.attendance.fullDays}×$${rates.value?.mixedFullDaily||0}+半天${r.attendance.halfDays}×$${rates.value?.mixedHalfDaily||0}`
