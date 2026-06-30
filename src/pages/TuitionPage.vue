@@ -101,9 +101,24 @@
                   </q-item>
                 </q-list>
               </div>
+              <div class="col-12">
+                <q-list dense bordered class="rounded-borders">
+                  <q-item dense class="bg-orange-1">
+                    <q-item-section><span class="text-body2 text-weight-bold text-orange-8">混合班</span></q-item-section>
+                  </q-item>
+                  <q-item dense>
+                    <q-item-section class="text-body2 text-grey-7">全天日費</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold">${{ rates.mixedFullDaily }} / 天</q-item-section>
+                  </q-item>
+                  <q-item dense>
+                    <q-item-section class="text-body2 text-grey-7">半天日費</q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold">${{ rates.mixedHalfDaily }} / 天</q-item-section>
+                  </q-item>
+                </q-list>
+              </div>
             </div>
             <div class="text-body2 text-grey-6 q-mt-sm">
-              請假超過 {{ rates.absentThreshold }} 天時改為按日計費
+              全天／半天班：請假超過 {{ rates.absentThreshold }} 天時改為按日計費；混合班固定按天計費
             </div>
             <!-- 附加活動說明 -->
             <div v-if="rates.extraActivities?.length" class="q-mt-md">
@@ -689,13 +704,14 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import * as XLSX from 'xlsx'
 import { studentService } from '../services/studentService'
 import { tuitionService } from '../services/tuitionService'
 
 const $q = useQuasar()
 const $router = useRouter()
+const route = useRoute()
 const loading = ref(true)
 const refreshingStudents = ref(false)
 
@@ -914,6 +930,13 @@ async function loadMonth(mk) {
 }
 
 watch(monthKey, loadMonth)
+
+// 從費率管理返回時，強制重新載入費率（避免 bfcache 或 HMR 保留舊狀態）
+watch(() => route.path, async (newPath, oldPath) => {
+  if (newPath === '/tuition' && oldPath?.startsWith('/tuition/')) {
+    allRates.value = await tuitionService.getRates()
+  }
+})
 
 onMounted(async () => {
   try {
