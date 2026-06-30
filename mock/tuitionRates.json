@@ -9,6 +9,8 @@
     "halfFlatMeal": 5500,
     "halfDaily": 200,
     "halfMealDaily": 250,
+    "mixedFullDaily": 400,
+    "mixedHalfDaily": 200,
     "extraActivities": [
       { "id": "ea1", "name": "游泳課", "amount": 800, "multiPerson": false },
       { "id": "ea2", "name": "親子活動", "amount": 500, "multiPerson": true }
@@ -24,6 +26,8 @@
     "halfFlatMeal": 5500,
     "halfDaily": 200,
     "halfMealDaily": 250,
+    "mixedFullDaily": 400,
+    "mixedHalfDaily": 200,
     "extraActivities": [
       { "id": "ea1", "name": "游泳課", "amount": 800, "multiPerson": false }
     ]
@@ -38,6 +42,8 @@
     "halfFlatMeal": 5500,
     "halfDaily": 200,
     "halfMealDaily": 250,
+    "mixedFullDaily": 400,
+    "mixedHalfDaily": 200,
     "extraActivities": []
   }
 }

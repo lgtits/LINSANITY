@@ -2,7 +2,7 @@
   "2026-06": {
     "s1": { "classType": "none", "withMeal": false, "extraActivities": [] },
     "s2": { "classType": "half", "withMeal": true, "extraActivities": [{ "id": "ea1", "qty": 1 }] },
-    "s3": { "classType": "full", "withMeal": true, "extraActivities": [{ "id": "ea1", "qty": 1 }, { "id": "ea2", "qty": 3 }] },
+    "s3": { "classType": "mixed", "withMeal": false, "extraActivities": [] },
     "s4": { "classType": "half", "withMeal": false, "extraActivities": [] },
     "s5": { "classType": "full", "withMeal": false, "extraActivities": [{ "id": "ea2", "qty": 2 }] },
     "s6": { "classType": "half", "withMeal": true, "extraActivities": [{ "id": "ea1", "qty": 1 }] }
@@ -10,7 +10,7 @@
   "2026-07": {
     "s1": { "classType": "none", "withMeal": false, "extraActivities": [] },
     "s2": { "classType": "half", "withMeal": true, "extraActivities": [{ "id": "ea1", "qty": 1 }] },
-    "s3": { "classType": "full", "withMeal": true, "extraActivities": [] },
+    "s3": { "classType": "mixed", "withMeal": false, "extraActivities": [] },
     "s4": { "classType": "half", "withMeal": false, "extraActivities": [] },
     "s5": { "classType": "full", "withMeal": false, "extraActivities": [{ "id": "ea1", "qty": 1 }] },
     "s6": { "classType": "half", "withMeal": true, "extraActivities": [] }
