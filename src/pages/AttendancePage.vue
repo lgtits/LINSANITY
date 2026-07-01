@@ -10,11 +10,51 @@
       </div>
       <q-btn flat round dense icon="chevron_right" @click="nextMonth" />
       <q-space />
-      <span class="text-body2 text-grey-6">{{ filteredRows.length }} 位學生</span>
+      <q-btn v-if="enrollment !== null" flat dense icon="move_down" color="indigo"
+        label="帶入請假記錄" style="font-size: 13px" @click="openImportFromTuition" />
+      <span class="text-body2 text-grey-6 q-ml-sm">{{ filteredRows.length }} 位學生</span>
     </div>
+
+    <!-- ══════ 帶入請假記錄 確認 Dialog ══════ -->
+    <q-dialog v-model="showImportDialog">
+      <q-card style="width: min(95vw, 480px)">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">帶入請假記錄</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <div class="text-body2 text-grey-7 q-mb-sm">
+            以下 {{ importDiffs.length }} 位學生，將把費率計算頁預先登記的請假日，補進簽到記錄尚未標記的日期：
+          </div>
+          <q-list dense bordered separator class="rounded-borders">
+            <q-item v-for="d in importDiffs" :key="d.studentId">
+              <q-item-section>
+                <div class="text-body2 text-weight-bold">{{ d.name }}</div>
+                <div class="text-caption text-grey-6">
+                  新增請假日：{{ d.days.map(day => `${day}日`).join('、') }}
+                </div>
+              </q-item-section>
+            </q-item>
+          </q-list>
+          <div class="text-caption text-grey-6 q-mt-sm">
+            <q-icon name="info" size="14px" class="q-mr-xs" />只會補上簽到記錄目前空白（尚未標記）的日期；已經有簽到記錄的日期（無論出席或請假）不會被覆蓋，出席日也不會帶入。
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-px-md q-pb-md">
+          <q-btn flat label="取消" v-close-popup />
+          <q-btn color="primary" icon="move_down" label="確認帶入" :loading="importing" @click="confirmImportFromTuition" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <!-- 篩選 -->
     <div class="row q-col-gutter-sm q-mb-md items-center">
+      <div class="col-12 col-sm-auto">
+        <q-checkbox v-model="hideNoClass" label="只顯示上課學生" dense />
+      </div>
       <div class="col-12 col-sm">
         <q-input v-model="search" placeholder="搜尋姓名..." outlined dense clearable>
           <template #prepend><q-icon name="search" /></template>
@@ -437,6 +477,7 @@ const monthKey = computed(() =>
 const search = ref('')
 const selectedGrade = ref(null)
 const selectedClassType = ref('all')
+const hideNoClass = ref(true)
 
 const gradeOptions = [
   { label: '全部年級', value: null },
@@ -471,6 +512,67 @@ const rates = computed(() => allRates.value[monthKey.value] || null)
 const hasRates = computed(() => rates.value !== null)
 
 function fmtNum(n) { return Number(n).toLocaleString('zh-TW') }
+
+// ── 帶入請假記錄（僅補上簽到記錄空白日的請假標記，手動觸發、不覆蓋既有記錄）──
+const showImportDialog = ref(false)
+const importDiffs = ref([])
+const importing = ref(false)
+
+function openImportFromTuition() {
+  const diffs = []
+  for (const [studentId, planned] of Object.entries(plannedAtt.value)) {
+    if (!planned.calendar || !enrollment.value[studentId]) continue
+    const classType = enrollment.value[studentId]?.classType
+    const leaveStatus = classType === 'mixed' ? 'leave' : 'absent'
+    const log = logs.value[studentId]
+    const curCal = log?.calendar || {}
+    const days = Object.entries(planned.calendar)
+      .filter(([day, status]) => status === leaveStatus && (curCal[day] === undefined || curCal[day] === 'none'))
+      .map(([day]) => Number(day))
+      .sort((a, b) => a - b)
+    if (!days.length) continue
+    const student = allStudents.value.find(s => s.id === studentId)
+    diffs.push({ studentId, name: student?.name || studentId, classType, leaveStatus, days })
+  }
+  if (!diffs.length) {
+    $q.notify({ message: '沒有新的請假日需要帶入', color: 'info', icon: 'info' })
+    return
+  }
+  importDiffs.value = diffs
+  showImportDialog.value = true
+}
+
+async function confirmImportFromTuition() {
+  importing.value = true
+  try {
+    const mk = monthKey.value
+    for (const d of importDiffs.value) {
+      const log = logs.value[d.studentId] || { totalDays: 0, absentDays: 0, calendar: {} }
+      const cal = { ...(log.calendar || {}) }
+      d.days.forEach(day => { cal[day] = d.leaveStatus })
+      let present = 0, absent = 0
+      Object.values(cal).forEach(s => {
+        if (d.classType === 'mixed') {
+          if (s === 'full' || s === 'half') present++
+          else if (s === 'leave') absent++
+        } else {
+          if (s === 'present') present++
+          else if (s === 'absent') absent++
+        }
+      })
+      const totalDays = present + absent
+      const absentDays = absent
+      await attendanceService.updateLog(mk, d.studentId, 'calendar', cal)
+      await attendanceService.updateLog(mk, d.studentId, 'totalDays', totalDays)
+      await attendanceService.updateLog(mk, d.studentId, 'absentDays', absentDays)
+      logs.value[d.studentId] = { ...log, calendar: cal, totalDays, absentDays }
+    }
+    $q.notify({ message: `已帶入 ${importDiffs.value.length} 位學生的請假記錄`, color: 'positive', icon: 'move_down' })
+    showImportDialog.value = false
+  } finally {
+    importing.value = false
+  }
+}
 
 function calcTuitionBase(classType, withMeal, totalDays, absentDays, calendar) {
   if (!rates.value) return null
@@ -732,6 +834,7 @@ const rows = computed(() => {
 
 const filteredRows = computed(() => {
   let list = rows.value
+  if (hideNoClass.value) list = list.filter(r => r.settings.classType !== 'none')
   if (selectedGrade.value !== null) list = list.filter(r => r.student.grade === selectedGrade.value)
   if (selectedClassType.value !== 'all') list = list.filter(r => r.settings.classType === selectedClassType.value)
   const q = search.value?.trim().toLowerCase()

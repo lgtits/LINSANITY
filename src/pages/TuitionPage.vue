@@ -22,6 +22,9 @@
 
     <!-- 第二行：篩選 + 匯出 -->
     <div class="row q-col-gutter-sm q-mb-md items-center">
+      <div class="col-12 col-sm-auto">
+        <q-checkbox v-model="hideNoClass" label="只顯示上課學生" dense />
+      </div>
       <div class="col-12 col-sm">
         <q-input v-model="search" placeholder="搜尋姓名..." outlined dense clearable>
           <template #prepend><q-icon name="search" /></template>
@@ -736,6 +739,7 @@ const monthKey = computed(() =>
 const search        = ref('')
 const selectedGrade = ref(null)
 const selectedClassType = ref('all')
+const hideNoClass   = ref(false)
 
 const classTypeFilterOptions = [
   { label: '全部班別', value: 'all' },
@@ -1076,6 +1080,7 @@ const rows = computed(() => {
 
 const filteredRows = computed(() => {
   let list = rows.value
+  if (hideNoClass.value) list = list.filter(r => r.settings.classType !== 'none')
   if (selectedGrade.value !== null) list = list.filter(r => r.student.grade === selectedGrade.value)
   if (selectedClassType.value !== 'all') list = list.filter(r => r.settings.classType === selectedClassType.value)
   const q = search.value?.trim().toLowerCase()
