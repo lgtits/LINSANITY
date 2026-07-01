@@ -1,0 +1,1 @@
+import{Ut as e,dt as t,ln as n,tn as r}from"./index-B_mtsM7W.js";var i=e({name:`QTr`,props:{props:Object,noHover:Boolean},setup(e,{slots:i}){let a=r(()=>`q-tr`+(e.props===void 0||e.props.header===!0?``:` `+e.props.__trClass)+(e.noHover===!0?` q-tr--no-hover`:``));return()=>n(`tr`,{style:e.props?.__trStyle,class:a.value},t(i.default))}});export{i as t};
