@@ -9,114 +9,228 @@
         <div class="text-body2 text-grey-6">家長的姓名、電話在此維護；餘額為全家共用的餐費帳戶</div>
       </div>
       <q-space />
-      <q-btn outline icon="person_add" color="primary" label="新增家長"
+      <q-btn v-if="mainTab === 'parents'" outline icon="person_add" color="primary" label="新增家長"
         style="font-size:12px" @click="openAdd" />
     </div>
 
-    <!-- 未綁定的 LINE 好友提示 -->
-    <q-banner v-if="unlinkedContacts.length" class="bg-info-hint q-mb-md rounded-borders">
-      <template #avatar><q-icon name="link" color="primary" /></template>
-      有 <b>{{ unlinkedContacts.length }}</b> 位已加 LINE 好友但尚未綁定家長。編輯家長時，可在「LINE 聯絡人」選單把對方帶入。
-    </q-banner>
+    <q-tabs v-model="mainTab" align="left" indicator-color="primary" active-color="primary" class="q-mb-md" dense>
+      <q-tab name="parents" icon="family_restroom" label="家長" />
+      <q-tab name="lineUsers" icon="chat" label="LINE 好友" />
+    </q-tabs>
 
-    <!-- 搜尋 -->
-    <q-input v-model="search" placeholder="搜尋家長姓名或電話..." outlined dense clearable class="q-mb-md">
-      <template #prepend><q-icon name="search" /></template>
-    </q-input>
+    <q-tab-panels v-model="mainTab" animated>
 
-    <!-- 手機：卡片 -->
-    <template v-if="$q.screen.lt.md">
-      <q-card v-for="p in filtered" :key="p.id" class="q-mb-sm" flat bordered>
-        <q-card-section class="q-py-sm">
-          <div class="row items-center no-wrap q-mb-xs">
-            <div class="col">
-              <span class="text-subtitle2 text-weight-bold">{{ p.name }}</span>
-              <span class="text-body2 text-grey-6 q-ml-sm">
-                <q-icon name="phone" size="14px" />{{ p.phone || '—' }}
-              </span>
-              <template v-if="p.lineUserId">
-                <q-badge color="positive" class="q-ml-sm" style="font-size:12px">
-                  <q-icon name="link" size="12px" class="q-mr-xs" />已綁 LINE
+      <!-- ══════ 家長 tab ══════ -->
+      <q-tab-panel name="parents" class="q-pa-none">
+
+        <!-- 未綁定的 LINE 好友提示 -->
+        <q-banner v-if="unlinkedContacts.length" class="bg-info-hint q-mb-md rounded-borders">
+          <template #avatar><q-icon name="link" color="primary" /></template>
+          有 <b>{{ unlinkedContacts.length }}</b> 位已加 LINE 好友但尚未綁定家長。編輯家長時，可在「LINE 聯絡人」選單把對方帶入，或至「LINE 好友」分頁直接綁定。
+        </q-banner>
+
+        <!-- 搜尋 -->
+        <q-input v-model="search" placeholder="搜尋家長姓名或電話..." outlined dense clearable class="q-mb-md">
+          <template #prepend><q-icon name="search" /></template>
+        </q-input>
+
+        <!-- 手機：卡片 -->
+        <template v-if="$q.screen.lt.md">
+          <q-card v-for="p in filtered" :key="p.id" class="q-mb-sm" flat bordered>
+            <q-card-section class="q-py-sm">
+              <div class="row items-center no-wrap q-mb-xs">
+                <div class="col">
+                  <span class="text-subtitle2 text-weight-bold">{{ p.name }}</span>
+                  <span class="text-body2 text-grey-6 q-ml-sm">
+                    <q-icon name="phone" size="14px" />{{ p.phone || '—' }}
+                  </span>
+                  <template v-if="p.lineUserId">
+                    <q-badge color="positive" class="q-ml-sm" style="font-size:12px">
+                      <q-icon name="link" size="12px" class="q-mr-xs" />已綁 LINE
+                    </q-badge>
+                    <span v-if="contactMap[p.lineUserId]" class="q-ml-xs text-caption text-grey-8">{{ contactMap[p.lineUserId] }}</span>
+                  </template>
+                  <q-badge v-else color="grey-3" text-color="grey-8" class="q-ml-sm" style="font-size:12px">未綁 LINE</q-badge>
+                </div>
+                <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEdit(p)" />
+                <q-btn flat round dense icon="archive" color="grey-6" size="sm" @click="confirmArchive(p)">
+                  <q-tooltip>封存家長</q-tooltip>
+                </q-btn>
+              </div>
+              <div class="row items-center q-gutter-xs q-mb-xs">
+                <q-badge v-for="s in p.students" :key="s.id" color="primary" outline style="font-size:12px">
+                  {{ s.name }}
                 </q-badge>
-                <span v-if="contactMap[p.lineUserId]" class="q-ml-xs text-caption text-grey-8">{{ contactMap[p.lineUserId] }}</span>
-              </template>
-              <q-badge v-else color="grey-3" text-color="grey-8" class="q-ml-sm" style="font-size:12px">未綁 LINE</q-badge>
-            </div>
-            <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEdit(p)" />
-            <q-btn flat round dense icon="archive" color="grey-6" size="sm" @click="confirmArchive(p)">
-              <q-tooltip>封存家長</q-tooltip>
-            </q-btn>
-          </div>
-          <div class="row items-center q-gutter-xs q-mb-xs">
-            <q-badge v-for="s in p.students" :key="s.id" color="primary" outline style="font-size:12px">
-              {{ s.name }}
-            </q-badge>
-            <span v-if="!p.students.length" class="text-body2 text-grey-5">尚無在籍學生</span>
-          </div>
-          <div class="row items-center">
-            <span class="text-body2">家庭餘額：</span>
-            <q-badge :color="balanceColor(p.balance)" class="q-pa-xs q-ml-xs" style="font-size:13px">
-              ${{ p.balance }}
-            </q-badge>
-            <q-space />
-            <q-btn flat dense icon="savings" label="儲值" color="primary" size="sm" @click="openTopup(p)" />
-            <q-btn flat dense icon="history" label="記錄" color="grey-7" size="sm" @click="openDetail(p)" />
-          </div>
-        </q-card-section>
-      </q-card>
+                <span v-if="!p.students.length" class="text-body2 text-grey-5">尚無在籍學生</span>
+              </div>
+              <div class="row items-center">
+                <span class="text-body2">家庭餘額：</span>
+                <q-badge :color="balanceColor(p.balance)" class="q-pa-xs q-ml-xs" style="font-size:13px">
+                  ${{ p.balance }}
+                </q-badge>
+                <q-space />
+                <q-btn flat dense icon="savings" label="儲值" color="primary" size="sm" @click="openTopup(p)" />
+                <q-btn flat dense icon="history" label="記錄" color="grey-7" size="sm" @click="openDetail(p)" />
+              </div>
+            </q-card-section>
+          </q-card>
 
-      <div v-if="!filtered.length" class="text-center text-grey q-pa-xl">
-        <q-icon name="people_outline" size="56px" class="q-mb-sm" /><br>沒有符合的家長
-      </div>
-    </template>
+          <div v-if="!filtered.length" class="text-center text-grey q-pa-xl">
+            <q-icon name="people_outline" size="56px" class="q-mb-sm" /><br>沒有符合的家長
+          </div>
+        </template>
 
-    <!-- 桌機：表格 -->
-    <q-table v-else :rows="filtered" :columns="columns" row-key="id"
-      flat bordered :rows-per-page-options="[20, 50, 0]" rows-per-page-label="每頁筆數">
-      <template #body-cell-line="props">
-        <q-td :props="props" class="text-center">
-          <q-badge v-if="props.row.lineUserId" color="positive" label="已綁" />
-          <q-badge v-else color="grey-4" text-color="grey-8" label="未綁" />
-        </q-td>
-      </template>
-      <template #body-cell-lineName="props">
-        <q-td :props="props">
-          <span v-if="contactMap[props.row.lineUserId]" class="text-grey-8">
-            {{ contactMap[props.row.lineUserId] }}
-          </span>
-          <span v-else class="text-grey-4">—</span>
-        </q-td>
-      </template>
-      <template #body-cell-students="props">
-        <q-td :props="props">
-          <q-badge v-for="s in props.row.students" :key="s.id" color="primary" outline class="q-mr-xs">
-            {{ s.name }}<span class="text-grey-6 q-ml-xs">{{ s.grade }}年</span>
-          </q-badge>
-          <span v-if="!props.row.students.length" class="text-grey-5">—</span>
-        </q-td>
-      </template>
-      <template #body-cell-balance="props">
-        <q-td :props="props">
-          <q-badge :color="balanceColor(props.row.balance)" class="q-pa-xs" style="font-size:13px">
-            ${{ props.row.balance }}
-          </q-badge>
-        </q-td>
-      </template>
-      <template #body-cell-actions="props">
-        <q-td :props="props" class="text-center">
-          <q-btn flat dense round icon="savings" color="primary" size="sm" @click="openTopup(props.row)">
-            <q-tooltip>儲值</q-tooltip>
-          </q-btn>
-          <q-btn flat dense round icon="history" color="grey-7" size="sm" @click="openDetail(props.row)">
-            <q-tooltip>消費記錄</q-tooltip>
-          </q-btn>
-          <q-btn flat dense round icon="edit" color="primary" size="sm" @click="openEdit(props.row)" />
-          <q-btn flat dense round icon="archive" color="grey-6" size="sm" @click="confirmArchive(props.row)">
-            <q-tooltip>封存家長</q-tooltip>
-          </q-btn>
-        </q-td>
-      </template>
-    </q-table>
+        <!-- 桌機：表格 -->
+        <q-table v-else :rows="filtered" :columns="columns" row-key="id"
+          flat bordered :rows-per-page-options="[20, 50, 0]" rows-per-page-label="每頁筆數">
+          <template #body-cell-line="props">
+            <q-td :props="props" class="text-center">
+              <q-badge v-if="props.row.lineUserId" color="positive" label="已綁" />
+              <q-badge v-else color="grey-4" text-color="grey-8" label="未綁" />
+            </q-td>
+          </template>
+          <template #body-cell-lineName="props">
+            <q-td :props="props">
+              <span v-if="contactMap[props.row.lineUserId]" class="text-grey-8">
+                {{ contactMap[props.row.lineUserId] }}
+              </span>
+              <span v-else class="text-grey-4">—</span>
+            </q-td>
+          </template>
+          <template #body-cell-students="props">
+            <q-td :props="props">
+              <q-badge v-for="s in props.row.students" :key="s.id" color="primary" outline class="q-mr-xs">
+                {{ s.name }}<span class="text-grey-6 q-ml-xs">{{ s.grade }}年</span>
+              </q-badge>
+              <span v-if="!props.row.students.length" class="text-grey-5">—</span>
+            </q-td>
+          </template>
+          <template #body-cell-balance="props">
+            <q-td :props="props">
+              <q-badge :color="balanceColor(props.row.balance)" class="q-pa-xs" style="font-size:13px">
+                ${{ props.row.balance }}
+              </q-badge>
+            </q-td>
+          </template>
+          <template #body-cell-actions="props">
+            <q-td :props="props" class="text-center">
+              <q-btn flat dense round icon="savings" color="primary" size="sm" @click="openTopup(props.row)">
+                <q-tooltip>儲值</q-tooltip>
+              </q-btn>
+              <q-btn flat dense round icon="history" color="grey-7" size="sm" @click="openDetail(props.row)">
+                <q-tooltip>消費記錄</q-tooltip>
+              </q-btn>
+              <q-btn flat dense round icon="edit" color="primary" size="sm" @click="openEdit(props.row)" />
+              <q-btn flat dense round icon="archive" color="grey-6" size="sm" @click="confirmArchive(props.row)">
+                <q-tooltip>封存家長</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
+        </q-table>
+      </q-tab-panel>
+
+      <!-- ══════ LINE 好友 tab ══════ -->
+      <q-tab-panel name="lineUsers" class="q-pa-none">
+
+        <!-- 搜尋 + 綁定狀態篩選 -->
+        <div class="row items-center q-gutter-sm q-mb-md wrap">
+          <q-input v-model="lineSearch" placeholder="搜尋 LINE 名稱 / 家長姓名 / 學生姓名..." outlined dense clearable class="col">
+            <template #prepend><q-icon name="search" /></template>
+          </q-input>
+          <q-select
+            v-model="lineStatusFilter"
+            :options="lineStatusOptions"
+            outlined dense emit-value map-options
+            style="min-width: 160px"
+          />
+        </div>
+
+        <!-- 手機：卡片 -->
+        <template v-if="$q.screen.lt.md">
+          <q-card v-for="c in lineFiltered" :key="c.userId" class="q-mb-sm" flat bordered>
+            <q-card-section class="q-py-sm">
+              <div class="row items-center no-wrap q-mb-xs">
+                <q-avatar size="40px" class="q-mr-sm">
+                  <img v-if="c.pictureUrl" :src="c.pictureUrl">
+                  <q-icon v-else name="person" color="grey-5" />
+                </q-avatar>
+                <div class="col">
+                  <div class="text-subtitle2 text-weight-bold">{{ c.displayName || '(未命名)' }}</div>
+                  <q-badge v-if="c.parentName" color="positive" style="font-size:12px">
+                    <q-icon name="link" size="12px" class="q-mr-xs" />{{ c.parentName }}
+                  </q-badge>
+                  <q-badge v-else color="grey-3" text-color="grey-8" style="font-size:12px">未綁定家長</q-badge>
+                </div>
+                <q-btn v-if="c.linkedParentId" flat round dense icon="link_off" color="grey-6" size="sm" @click="confirmUnlink(c)">
+                  <q-tooltip>解除綁定</q-tooltip>
+                </q-btn>
+                <q-btn v-else flat round dense icon="link" color="primary" size="sm" @click="openLinkDialog(c)">
+                  <q-tooltip>綁定家長</q-tooltip>
+                </q-btn>
+              </div>
+              <div v-if="c.students.length" class="row items-center q-gutter-xs q-mb-xs">
+                <q-badge v-for="s in c.students" :key="s.id" color="primary" outline style="font-size:12px">
+                  {{ s.name }}
+                </q-badge>
+              </div>
+              <div v-if="c.lastMessage" class="text-body2 text-grey-6 ellipsis">{{ c.lastMessage }}</div>
+            </q-card-section>
+          </q-card>
+
+          <div v-if="!lineFiltered.length" class="text-center text-grey q-pa-xl">
+            <q-icon name="chat" size="56px" class="q-mb-sm" /><br>沒有符合的 LINE 好友
+          </div>
+        </template>
+
+        <!-- 桌機：表格 -->
+        <q-table v-else :rows="lineFiltered" :columns="lineColumns" row-key="userId"
+          flat bordered :rows-per-page-options="[20, 50, 0]" rows-per-page-label="每頁筆數">
+          <template #body-cell-avatar="props">
+            <q-td :props="props" class="text-center">
+              <q-avatar size="36px">
+                <img v-if="props.row.pictureUrl" :src="props.row.pictureUrl">
+                <q-icon v-else name="person" color="grey-5" />
+              </q-avatar>
+            </q-td>
+          </template>
+          <template #body-cell-displayName="props">
+            <q-td :props="props">{{ props.row.displayName || '(未命名)' }}</q-td>
+          </template>
+          <template #body-cell-parentName="props">
+            <q-td :props="props">
+              <q-badge v-if="props.row.parentName" color="positive" label="已綁" class="q-mr-xs" />
+              <span v-if="props.row.parentName" class="text-grey-8">{{ props.row.parentName }}</span>
+              <span v-else class="text-grey-4">未綁定</span>
+            </q-td>
+          </template>
+          <template #body-cell-students="props">
+            <q-td :props="props">
+              <q-badge v-for="s in props.row.students" :key="s.id" color="primary" outline class="q-mr-xs">
+                {{ s.name }}
+              </q-badge>
+              <span v-if="!props.row.students.length" class="text-grey-5">—</span>
+            </q-td>
+          </template>
+          <template #body-cell-lastMessage="props">
+            <q-td :props="props">
+              <span v-if="props.row.lastMessage" class="text-grey-7">{{ props.row.lastMessage }}</span>
+              <span v-else class="text-grey-4">—</span>
+            </q-td>
+          </template>
+          <template #body-cell-actions="props">
+            <q-td :props="props" class="text-center">
+              <q-btn v-if="props.row.linkedParentId" flat dense round icon="link_off" color="grey-6" size="sm" @click="confirmUnlink(props.row)">
+                <q-tooltip>解除綁定</q-tooltip>
+              </q-btn>
+              <q-btn v-else flat dense round icon="link" color="primary" size="sm" @click="openLinkDialog(props.row)">
+                <q-tooltip>綁定家長</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
+        </q-table>
+      </q-tab-panel>
+
+    </q-tab-panels>
 
     <!-- ══════ 新增/編輯 Dialog ══════ -->
     <q-dialog v-model="showDialog" persistent>
@@ -229,6 +343,34 @@
         </div>
       </q-card>
     </q-dialog>
+
+    <!-- ══════ 綁定家長 Dialog ══════ -->
+    <q-dialog v-model="showLinkDialog" persistent>
+      <q-card style="width: min(95vw, 360px)">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">綁定家長</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <q-card-section>
+          <div class="row items-center q-mb-md">
+            <q-avatar size="32px" class="q-mr-sm">
+              <img v-if="linkTarget?.pictureUrl" :src="linkTarget.pictureUrl">
+              <q-icon v-else name="person" color="grey-5" />
+            </q-avatar>
+            <span class="text-subtitle2">{{ linkTarget?.displayName || '(未命名)' }}</span>
+          </div>
+          <q-form @submit.prevent="doLink" class="q-gutter-sm">
+            <q-select v-model="linkParentId" :options="parentSelectOptions" label="選擇家長 *" outlined dense
+              emit-value map-options :rules="[v => !!v || '請選擇家長']" />
+            <div class="row justify-end q-mt-md q-gutter-sm">
+              <q-btn flat label="取消" v-close-popup />
+              <q-btn type="submit" color="primary" label="確認綁定" icon="link" />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -249,6 +391,8 @@ const balances = ref({})
 const allTransactions = ref([])
 const contacts = ref([])
 const search = ref('')
+const mainTab = ref('parents')
+const lineSearch = ref('')
 
 const columns = [
   { name: 'name',     label: '家長',     field: 'name',  align: 'left', sortable: true },
@@ -258,6 +402,15 @@ const columns = [
   { name: 'students', label: '名下學生', field: 'students', align: 'left' },
   { name: 'balance',  label: '家庭餘額', field: 'balance', align: 'left', sortable: true },
   { name: 'actions',  label: '操作',     field: 'actions', align: 'center' },
+]
+
+const lineColumns = [
+  { name: 'avatar',      label: '',        field: 'pictureUrl',  align: 'center' },
+  { name: 'displayName', label: 'LINE 名稱', field: 'displayName', align: 'left', sortable: true },
+  { name: 'parentName',  label: '綁定家長', field: 'parentName',  align: 'left' },
+  { name: 'students',    label: '學生',     field: 'students',    align: 'left' },
+  { name: 'lastMessage', label: '最後訊息', field: 'lastMessage', align: 'left' },
+  { name: 'actions',     label: '操作',     field: 'actions',     align: 'center' },
 ]
 
 function balanceColor(b) {
@@ -324,6 +477,75 @@ const linkedContactName = computed(() => {
 
 function onPickContact(userId) {
   if (userId) form.value.lineUserId = userId
+}
+
+// ── LINE 好友 tab ──
+const lineUserRows = computed(() => {
+  const parentMap = Object.fromEntries(parents.value.map(p => [p.id, p.name]))
+  return contacts.value.map(c => ({
+    ...c,
+    parentName: c.linkedParentId ? (parentMap[c.linkedParentId] || null) : null,
+    students: c.linkedParentId ? (studentsByParent.value[c.linkedParentId] || []) : [],
+  }))
+})
+
+const lineStatusFilter = ref('all')
+const linkedCount = computed(() => lineUserRows.value.filter(c => c.linkedParentId).length)
+const unlinkedCount = computed(() => lineUserRows.value.filter(c => !c.linkedParentId).length)
+const lineStatusOptions = computed(() => [
+  { label: `全部 (${lineUserRows.value.length})`, value: 'all' },
+  { label: `已綁定 (${linkedCount.value})`, value: 'linked' },
+  { label: `未綁定 (${unlinkedCount.value})`, value: 'unlinked' },
+])
+
+const lineFiltered = computed(() => {
+  const q = lineSearch.value?.trim().toLowerCase()
+  let list = lineUserRows.value
+  if (lineStatusFilter.value === 'linked') list = list.filter(c => c.linkedParentId)
+  else if (lineStatusFilter.value === 'unlinked') list = list.filter(c => !c.linkedParentId)
+  if (q) {
+    list = list.filter(c =>
+      (c.displayName || '').toLowerCase().includes(q) ||
+      (c.parentName || '').toLowerCase().includes(q) ||
+      c.students.some(s => s.name.toLowerCase().includes(q))
+    )
+  }
+  return [...list].sort((a, b) => (a.displayName || '').localeCompare(b.displayName || '', 'zh-TW'))
+})
+
+const parentSelectOptions = computed(() =>
+  parents.value.map(p => ({ label: p.name, value: p.id }))
+)
+
+const showLinkDialog = ref(false)
+const linkTarget = ref(null)
+const linkParentId = ref(null)
+
+function openLinkDialog(c) {
+  linkTarget.value = c
+  linkParentId.value = null
+  showLinkDialog.value = true
+}
+
+async function doLink() {
+  await lineContactService.link(linkTarget.value.userId, linkParentId.value)
+  showLinkDialog.value = false
+  await loadAll()
+  $q.notify({ message: `已將「${linkTarget.value.displayName || '此好友'}」綁定到選擇的家長`, color: 'positive', icon: 'check' })
+}
+
+function confirmUnlink(c) {
+  $q.dialog({
+    title: '解除綁定',
+    message: `確定要解除「${c.displayName || '此好友'}」與家長「${c.parentName}」的綁定？`,
+    cancel: { flat: true, label: '取消' },
+    ok: { color: 'negative', label: '解除' },
+    persistent: true
+  }).onOk(async () => {
+    await lineContactService.unlink(c.userId)
+    await loadAll()
+    $q.notify({ message: '已解除綁定', color: 'warning', icon: 'link_off' })
+  })
 }
 
 const txByParent = computed(() => {
