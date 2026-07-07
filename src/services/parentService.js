@@ -6,6 +6,8 @@ const toApp = r => ({
   name: r.name,
   phone: r.phone,
   lineUserId: r.line_user_id ?? r.lineUserId ?? '',
+  secondaryName: r.secondary_name ?? r.secondaryName ?? '',
+  secondaryLineUserId: r.secondary_line_user_id ?? r.secondaryLineUserId ?? '',
   archived: r.archived ?? false,
   deleted: r.deleted ?? false
 })
@@ -15,6 +17,8 @@ const toDb = d => {
   if (d.name !== undefined) o.name = d.name
   if (d.phone !== undefined) o.phone = d.phone
   if (d.lineUserId !== undefined) o.line_user_id = d.lineUserId
+  if (d.secondaryName !== undefined) o.secondary_name = d.secondaryName
+  if (d.secondaryLineUserId !== undefined) o.secondary_line_user_id = d.secondaryLineUserId
   if (d.archived !== undefined) o.archived = d.archived
   if (d.deleted !== undefined) o.deleted = d.deleted
   return o

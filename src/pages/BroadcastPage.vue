@@ -67,6 +67,7 @@
                     :model-value="selectedIds.includes(p.id)"
                     color="primary"
                     @update:model-value="toggleParent(p.id)"
+                    @click.stop
                   />
                 </q-item-section>
                 <q-item-section>
@@ -76,6 +77,20 @@
                   </q-item-label>
                   <q-item-label style="font-size: 12px" class="text-grey-6">
                     {{ p.children.map(c => c.name).join('、') || '無在籍學生' }}
+                  </q-item-label>
+                  <q-item-label v-if="p.secondaryName || p.secondaryLineUserId" class="q-mt-xs" @click.stop>
+                    <q-checkbox
+                      :model-value="selectedSecIds.includes(p.id)"
+                      color="teal"
+                      dense
+                      size="sm"
+                      @update:model-value="toggleSecondary(p.id)"
+                    >
+                      <span class="text-teal-8" style="font-size: 12px">
+                        <q-icon name="group_add" size="12px" class="q-mr-xs" />次要：{{ p.secondaryName || '(未命名)' }}
+                      </span>
+                    </q-checkbox>
+                    <q-badge v-if="!p.secondaryLineUserId" color="negative" class="q-ml-xs" style="font-size: 11px">未填 LINE ID</q-badge>
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side>
@@ -93,6 +108,9 @@
           <q-separator />
           <q-card-section class="q-py-sm">
             <span class="text-body2 text-grey-7">已選 {{ selectedIds.length }} 位家長</span>
+            <span v-if="selectedSecIds.length > 0" class="text-body2 text-teal q-ml-sm">
+              ＋{{ selectedSecIds.length }} 位次要
+            </span>
             <span v-if="selectedNoLineCount > 0" class="text-body2 text-negative q-ml-sm">
               （{{ selectedNoLineCount }} 位未填 LINE，無法送出）
             </span>
@@ -126,10 +144,37 @@
               counter
               maxlength="500"
             />
+
+            <!-- 預覽：實際送出的樣子 -->
+            <div class="text-subtitle2 q-mt-md q-mb-sm">預覽</div>
+            <div v-if="!selectedTargets.length" class="text-center text-grey q-pa-md">
+              請先從左側選擇收件家長
+            </div>
+            <div v-else-if="!customMessage.trim()" class="text-center text-grey q-pa-md">
+              輸入訊息內容後即可預覽
+            </div>
+            <div v-else>
+              <div class="text-caption text-grey-7 q-mb-xs">
+                以下 {{ selectedTargets.length }} 位對象都會收到相同內容：
+              </div>
+              <div class="q-mb-sm">
+                <q-chip
+                  v-for="t in selectedTargets" :key="t.key"
+                  dense square size="sm"
+                  :color="t.isSecondary ? 'teal-1' : 'blue-1'"
+                  :text-color="t.isSecondary ? 'teal-9' : 'blue-9'"
+                  :icon="t.lineUserId ? undefined : 'warning'"
+                >
+                  {{ t.name }}
+                </q-chip>
+              </div>
+              <div class="bubble-preview">{{ customMessage }}</div>
+            </div>
           </q-card-section>
           <q-card-actions class="q-px-md q-pb-md row items-center">
             <div class="text-body2 text-grey-6">
-              所有收件家長將收到相同訊息
+              所有收件對象將收到相同訊息
+              <span v-if="selectedSecIds.length" class="text-teal">（含 {{ selectedSecIds.length }} 位次要家長）</span>
               <span v-if="selectedNoLineCount" class="text-negative">（{{ selectedNoLineCount }} 位未填 LINE ID 不會送出）</span>
             </div>
             <q-space />
@@ -137,7 +182,7 @@
               color="primary"
               icon="send"
               label="發送訊息"
-              :disable="!selectedIds.length || !customMessage.trim()"
+              :disable="!selectedTargets.length || !customMessage.trim()"
               :loading="sending"
               @click="sendGeneral"
             />
@@ -160,21 +205,22 @@
               />
             </div>
 
-            <div v-if="!selectedIds.length" class="text-center text-grey q-pa-xl">
+            <div v-if="!selectedTargets.length" class="text-center text-grey q-pa-xl">
               <q-icon name="people_outline" size="48px" class="q-mb-sm" /><br />
               請先從左側選擇收件家長
             </div>
 
             <div v-else class="q-gutter-sm">
-              <div v-for="p in selectedParents" :key="p.id">
+              <div v-for="t in selectedTargets" :key="t.key">
                 <div class="text-weight-medium q-mb-xs">
-                  {{ p.name }}
-                  <q-badge v-if="!p.lineUserId" color="negative" class="q-ml-xs">
+                  <q-icon v-if="t.isSecondary" name="group_add" size="16px" class="q-mr-xs text-teal-8" />
+                  <span :class="{ 'text-teal-8': t.isSecondary }">{{ t.name }}</span>
+                  <q-badge v-if="!t.lineUserId" color="negative" class="q-ml-xs">
                     <q-icon name="warning" size="12px" class="q-mr-xs" />未填 LINE ID，無法送出
                   </q-badge>
                 </div>
                 <q-input
-                  v-model="expenseMsgs[p.id]"
+                  v-model="expenseMsgs[t.key]"
                   type="textarea"
                   outlined dense autogrow
                 />
@@ -192,14 +238,14 @@
               color="grey-7"
               icon="refresh"
               label="重新產生"
-              :disable="!selectedIds.length"
+              :disable="!selectedTargets.length"
               @click="refreshExpenseMsgs"
             />
             <q-btn
               color="teal"
               icon="send"
               label="發送通知"
-              :disable="!selectedIds.length"
+              :disable="!selectedTargets.length"
               :loading="sending"
               @click="sendExpense"
             />
@@ -237,7 +283,8 @@ const broadcastType = ref('expense')
 const parentSearch = ref('')
 const gradeFilter = ref(null)
 const onlyTodayActivity = ref(true)
-const selectedIds = ref([])           // 選定的 parentId
+const selectedIds = ref([])           // 選定的主要家長 parentId
+const selectedSecIds = ref([])        // 選定要一併發送次要家長的 parentId
 const selectedTemplateId = ref(null)
 const customMessage = ref('')
 const today = localDate()
@@ -317,10 +364,26 @@ const filteredParents = computed(() => {
   return [...list].sort((a, b) => a.name.localeCompare(b.name, 'zh-TW'))
 })
 
-const selectedParents = computed(() => parentRows.value.filter(p => selectedIds.value.includes(p.id)))
+// 收件對象清單：每位家長的「主要」與被勾選的「次要」各自成為一個 target。
+// key 唯一（主要用 parentId，次要用 sec:parentId），供預覽訊息獨立編輯。
+const selectedTargets = computed(() => {
+  const out = []
+  for (const p of parentRows.value) {
+    if (selectedIds.value.includes(p.id)) {
+      out.push({ key: p.id, parentId: p.id, parent: p, name: p.name, lineUserId: p.lineUserId, isSecondary: false })
+    }
+    if (selectedSecIds.value.includes(p.id) && (p.secondaryName || p.secondaryLineUserId)) {
+      out.push({
+        key: `sec:${p.id}`, parentId: p.id, parent: p,
+        name: `${p.secondaryName || p.name}（次要）`, lineUserId: p.secondaryLineUserId, isSecondary: true
+      })
+    }
+  }
+  return out
+})
 
-// 已選但沒填 LINE ID 的數量（這些無法實際送出，只供預覽）
-const selectedNoLineCount = computed(() => selectedParents.value.filter(p => !p.lineUserId).length)
+// 已選對象中沒填 LINE ID 的數量（無法實際送出，只供預覽）
+const selectedNoLineCount = computed(() => selectedTargets.value.filter(t => !t.lineUserId).length)
 
 const templateOptions = computed(() => templates.value.map(t => ({ label: t.name, value: t.id })))
 
@@ -351,13 +414,22 @@ function toggleParent(id) {
   else selectedIds.value.splice(idx, 1)
 }
 
+function toggleSecondary(id) {
+  const idx = selectedSecIds.value.indexOf(id)
+  if (idx === -1) selectedSecIds.value.push(id)
+  else selectedSecIds.value.splice(idx, 1)
+}
+
 function selectAll() {
   // 全選目前篩選出的家長（含未填 LINE，可預覽；送出時系統會標未填者失敗）
   selectedIds.value = filteredParents.value.map(p => p.id)
+  // 一併勾選有設次要家長者的次要
+  selectedSecIds.value = filteredParents.value.filter(p => p.secondaryName || p.secondaryLineUserId).map(p => p.id)
 }
 
 function clearAll() {
   selectedIds.value = []
+  selectedSecIds.value = []
 }
 
 function applyTemplate(id) {
@@ -385,7 +457,8 @@ const dateTopupsByParent = computed(() => {
 })
 
 // 家長層級的餐費通知：合併名下孩子當日「餐點明細 + 金額」+ 儲值 + 餘額
-function buildExpenseMsg(parent) {
+// displayName：訊息開頭的稱呼；次要家長帶入自己的名字，其餘帳單內容仍是同一家庭
+function buildExpenseMsg(parent, displayName = parent.name) {
   const kids = (childrenByParent.value[parent.id] || [])
     .map(kid => {
       const kidOrders = ordersOf(kid.id)
@@ -395,41 +468,50 @@ function buildExpenseMsg(parent) {
     .filter(Boolean)
   const topups = dateTopupsByParent.value[parent.id] || []
   return buildExpenseMessage({
-    parentName: parent.name, date: expenseDate.value, kids,
+    parentName: displayName, date: expenseDate.value, kids,
     balance: balances.value[parent.id] ?? 0, topups,
     isToday: expenseDate.value === today
   })
 }
 
+// 帳務訊息預設內容：同一家庭的帳單，但稱呼帶入該對象自己的名字
+function buildTargetMsg(t) {
+  const displayName = t.isSecondary ? (t.parent.secondaryName || t.parent.name) : t.parent.name
+  return buildExpenseMsg(t.parent, displayName)
+}
+
 function refreshExpenseMsgs() {
   const msgs = {}
-  for (const p of selectedParents.value) {
-    msgs[p.id] = buildExpenseMsg(p)
+  for (const t of selectedTargets.value) {
+    msgs[t.key] = buildTargetMsg(t)
   }
   expenseMsgs.value = msgs
 }
 
-watch(selectedIds, () => {
+// 勾選變動時保留既有編輯，只補新增對象的預設訊息
+watch([selectedIds, selectedSecIds], () => {
   const updated = {}
-  for (const p of selectedParents.value) {
-    updated[p.id] = expenseMsgs.value[p.id] ?? buildExpenseMsg(p)
+  for (const t of selectedTargets.value) {
+    updated[t.key] = expenseMsgs.value[t.key] ?? buildTargetMsg(t)
   }
   expenseMsgs.value = updated
 }, { deep: true })
 
 async function sendGeneral() {
-  if (!selectedIds.value.length || !customMessage.value.trim()) return
+  if (!selectedTargets.value.length || !customMessage.value.trim()) return
   sending.value = true
   try {
-    const records = selectedParents.value.map(p => ({
-      parentId: p.id,
-      parentName: p.name,
-      lineUserId: p.lineUserId,
-      message: customMessage.value.trim()
+    const msg = customMessage.value.trim()
+    const records = selectedTargets.value.map(t => ({
+      parentId: t.parentId,
+      parentName: t.name,
+      lineUserId: t.lineUserId,
+      message: msg
     }))
     const res = await broadcastService.send({ type: 'general', records })
     notifyResult(res)
     selectedIds.value = []
+    selectedSecIds.value = []
     customMessage.value = ''
     selectedTemplateId.value = null
   } finally {
@@ -438,21 +520,41 @@ async function sendGeneral() {
 }
 
 async function sendExpense() {
-  if (!selectedIds.value.length) return
+  if (!selectedTargets.value.length) return
   sending.value = true
   try {
-    const records = selectedParents.value.map(p => ({
-      parentId: p.id,
-      parentName: p.name,
-      lineUserId: p.lineUserId,
-      message: expenseMsgs.value[p.id] || buildExpenseMsg(p)
+    const records = selectedTargets.value.map(t => ({
+      parentId: t.parentId,
+      parentName: t.name,
+      lineUserId: t.lineUserId,
+      message: expenseMsgs.value[t.key] || buildTargetMsg(t)
     }))
     const res = await broadcastService.send({ type: 'expense', records })
     notifyResult(res)
     selectedIds.value = []
+    selectedSecIds.value = []
     expenseMsgs.value = {}
   } finally {
     sending.value = false
   }
 }
 </script>
+
+<style scoped>
+/* LINE 泡泡風格預覽：保留換行、限制寬度 */
+.bubble-preview {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #9ee27a;
+  color: #1a1a1a;
+  line-height: 1.5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.body--dark .bubble-preview {
+  background: #6bbf59;
+  color: #0a0a0a;
+}
+</style>

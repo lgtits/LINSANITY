@@ -63,6 +63,11 @@
                 </q-badge>
                 <span v-if="!p.students.length" class="text-body2 text-grey-5">尚無在籍學生</span>
               </div>
+              <div v-if="p.secondaryName || p.secondaryLineUserId" class="text-body2 text-grey-7 q-mb-xs">
+                <q-icon name="group_add" size="14px" class="q-mr-xs" />次要家長：{{ p.secondaryName || '(未命名)' }}
+                <q-badge v-if="p.secondaryLineUserId" color="teal" outline class="q-ml-xs" style="font-size:11px">已綁 LINE</q-badge>
+                <q-badge v-else color="grey-3" text-color="grey-8" class="q-ml-xs" style="font-size:11px">未綁 LINE</q-badge>
+              </div>
               <div class="row items-center">
                 <span class="text-body2">家庭餘額：</span>
                 <q-badge :color="balanceColor(p.balance)" class="q-pa-xs q-ml-xs" style="font-size:13px">
@@ -94,6 +99,15 @@
               <span v-if="contactMap[props.row.lineUserId]" class="text-grey-8">
                 {{ contactMap[props.row.lineUserId] }}
               </span>
+              <span v-else class="text-grey-4">—</span>
+            </q-td>
+          </template>
+          <template #body-cell-secondary="props">
+            <q-td :props="props">
+              <template v-if="props.row.secondaryName || props.row.secondaryLineUserId">
+                <span class="text-grey-8">{{ props.row.secondaryName || '(未命名)' }}</span>
+                <q-badge v-if="props.row.secondaryLineUserId" color="teal" outline class="q-ml-xs">LINE</q-badge>
+              </template>
               <span v-else class="text-grey-4">—</span>
             </q-td>
           </template>
@@ -261,6 +275,24 @@
               <q-icon name="check_circle" color="positive" size="18px" />
               <span class="text-positive text-weight-medium">已綁 LINE：{{ linkedContactName }}</span>
             </div>
+
+            <!-- 次要家長（選填）：只用來多收一份一樣的訊息，不影響餘額/儲值 -->
+            <q-separator spaced />
+            <div class="text-caption text-grey-7">次要家長（選填）— 發送訊息時會多送一份給對方，不影響餘額與儲值</div>
+            <q-input v-model="form.secondaryName" label="次要家長姓名" outlined dense clearable
+              hint="供辨識，如「王媽媽」" />
+            <q-select
+              :model-value="null"
+              :options="contactOptions"
+              label="次要家長：從 LINE 聯絡人帶入"
+              outlined dense emit-value map-options
+              :disable="!contacts.length"
+              :hint="contacts.length ? '' : '尚無 LINE 好友（需先有人加好友才能選）'"
+              @update:model-value="onPickSecondaryContact"
+            />
+            <q-input v-model="form.secondaryLineUserId" label="次要家長 LINE 用戶 ID" outlined dense clearable
+              hint="從上面選好友帶入，或貼上 U 開頭的 userId" />
+
             <div v-if="isEdit && editingStudents.length"
               class="text-caption bg-warning-hint rounded-borders q-pa-sm">
               <q-icon name="info" size="14px" class="q-mr-xs" />
@@ -399,6 +431,7 @@ const columns = [
   { name: 'phone',    label: '電話',     field: 'phone', align: 'left' },
   { name: 'line',     label: 'LINE',     field: 'lineUserId', align: 'center' },
   { name: 'lineName', label: 'LINE 名稱', field: 'lineUserId', align: 'left' },
+  { name: 'secondary', label: '次要家長', field: 'secondaryName', align: 'left' },
   { name: 'students', label: '名下學生', field: 'students', align: 'left' },
   { name: 'balance',  label: '家庭餘額', field: 'balance', align: 'left', sortable: true },
   { name: 'actions',  label: '操作',     field: 'actions', align: 'center' },
@@ -477,6 +510,13 @@ const linkedContactName = computed(() => {
 
 function onPickContact(userId) {
   if (userId) form.value.lineUserId = userId
+}
+
+function onPickSecondaryContact(userId) {
+  if (!userId) return
+  form.value.secondaryLineUserId = userId
+  // 沒填次要姓名時，帶入該聯絡人的顯示名稱方便辨識
+  if (!form.value.secondaryName) form.value.secondaryName = contactMap.value[userId] || ''
 }
 
 // ── LINE 好友 tab ──
@@ -567,7 +607,7 @@ onMounted(async () => {
 // ── 新增/編輯 ──
 const showDialog = ref(false)
 const isEdit = ref(false)
-const form = ref({ id: null, name: '', phone: '', lineUserId: '' })
+const form = ref({ id: null, name: '', phone: '', lineUserId: '', secondaryName: '', secondaryLineUserId: '' })
 
 const editingStudents = computed(() =>
   isEdit.value && form.value.id ? (studentsByParent.value[form.value.id] || []) : []
@@ -575,13 +615,16 @@ const editingStudents = computed(() =>
 
 function openAdd() {
   isEdit.value = false
-  form.value = { id: null, name: '', phone: '', lineUserId: '' }
+  form.value = { id: null, name: '', phone: '', lineUserId: '', secondaryName: '', secondaryLineUserId: '' }
   showDialog.value = true
 }
 
 function openEdit(p) {
   isEdit.value = true
-  form.value = { id: p.id, name: p.name, phone: p.phone || '', lineUserId: p.lineUserId || '' }
+  form.value = {
+    id: p.id, name: p.name, phone: p.phone || '', lineUserId: p.lineUserId || '',
+    secondaryName: p.secondaryName || '', secondaryLineUserId: p.secondaryLineUserId || ''
+  }
   showDialog.value = true
 }
 
@@ -595,7 +638,10 @@ async function save() {
     }
   }
 
-  const payload = { name: form.value.name, phone: form.value.phone, lineUserId: form.value.lineUserId }
+  const payload = {
+    name: form.value.name, phone: form.value.phone, lineUserId: form.value.lineUserId,
+    secondaryName: form.value.secondaryName || '', secondaryLineUserId: form.value.secondaryLineUserId || ''
+  }
   let pid = form.value.id
   if (isEdit.value) {
     await parentService.update(pid, payload)

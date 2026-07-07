@@ -33,6 +33,8 @@ create table parents (
   name         text not null,
   phone        text,
   line_user_id text default '',          -- LINE 推播 ID（家長一個帳號，孩子共用）
+  secondary_name         text default '', -- 次要家長姓名（僅供辨識/發送紀錄顯示）
+  secondary_line_user_id text default '', -- 次要家長 LINE ID：發訊息時多送一份，不影響餘額
   archived     boolean not null default false,
   deleted      boolean not null default false,
   created_at   timestamptz default now()
