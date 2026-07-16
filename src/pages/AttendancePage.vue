@@ -223,6 +223,58 @@
                 </div>
               </q-card>
             </div>
+
+            <!-- 計費明細（手機版）：拆解目前計費怎麼算出來的 -->
+            <div v-if="hasRates && row.currentFee !== null" class="q-mt-md">
+              <div class="text-body2 text-grey-7 text-weight-bold q-mb-xs">
+                <q-icon name="receipt_long" size="14px" class="q-mr-xs" />計費明細
+              </div>
+              <q-card flat bordered>
+                <q-list dense separator>
+                  <q-item v-if="row.settings.classType !== 'none'">
+                    <q-item-section>
+                      <div class="text-body2 text-grey-7">學費</div>
+                      <div class="text-caption text-grey-5">
+                        <template v-if="row.settings.classType === 'mixed'">
+                          全天 {{ row.fullDays }}×${{ fmtNum(rates.mixedFullDaily || 0) }} + 半天 {{ row.halfDays }}×${{ fmtNum(rates.mixedHalfDaily || 0) }}
+                        </template>
+                        <template v-else-if="row.absentDays <= rates.absentThreshold">
+                          月費制（請假 {{ row.absentDays }} ≤ {{ rates.absentThreshold }} 天）
+                        </template>
+                        <template v-else>
+                          按日計費 出席 {{ row.attendDays }} 天 × ${{ fmtNum(dailyRate(row.settings)) }}/天（請假 {{ row.absentDays }} > {{ rates.absentThreshold }} 天）
+                        </template>
+                      </div>
+                    </q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(row.baseFee || 0) }}</q-item-section>
+                  </q-item>
+                  <q-item v-for="item in row.attendedActivities" :key="item.id">
+                    <q-item-section class="text-body2 text-amber-9">
+                      {{ getActivityName(item.id) }}
+                      <span v-if="isMultiPerson(item.id)" class="text-caption text-grey-6">× {{ item.qty || 1 }}人</span>
+                    </q-item-section>
+                    <q-item-section side class="text-body2 text-weight-bold text-amber-9">
+                      +${{ fmtNum(getActivityAmount(item.id) * (isMultiPerson(item.id) ? (item.qty || 1) : 1)) }}
+                    </q-item-section>
+                  </q-item>
+                  <q-separator />
+                  <q-item class="bg-info-hint">
+                    <q-item-section class="text-subtitle2 text-weight-bold">目前計費</q-item-section>
+                    <q-item-section side>
+                      <span class="text-subtitle1 text-primary text-weight-bold">${{ fmtNum(row.currentFee) }}</span>
+                    </q-item-section>
+                  </q-item>
+                  <q-item v-if="row.prepaidFee !== null && row.currentFee !== row.prepaidFee">
+                    <q-item-section class="text-caption text-grey-6">預收 ${{ fmtNum(row.prepaidFee) }}，差額</q-item-section>
+                    <q-item-section side>
+                      <span class="text-caption text-weight-bold" :class="row.currentFee > row.prepaidFee ? 'text-positive' : 'text-negative'">
+                        {{ row.currentFee > row.prepaidFee ? `補收 $${fmtNum(row.currentFee - row.prepaidFee)}` : `退費 $${fmtNum(row.prepaidFee - row.currentFee)}` }}
+                      </span>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-card>
+            </div>
           </div>
           <div v-else class="q-pa-md text-grey-6 text-body2 text-center">此月份不上課</div>
         </q-expansion-item>
@@ -399,6 +451,58 @@
                       </div>
                     </q-card>
                   </div>
+                </div>
+
+                <!-- 計費明細（桌機版）：拆解目前計費怎麼算出來的 -->
+                <div v-if="hasRates && props.row.currentFee !== null" class="q-mt-md">
+                  <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
+                    <q-icon name="receipt_long" size="14px" class="q-mr-xs" />計費明細
+                  </div>
+                  <q-card flat bordered>
+                    <q-list dense separator>
+                      <q-item v-if="props.row.settings.classType !== 'none'">
+                        <q-item-section>
+                          <div class="text-body2 text-grey-7">學費</div>
+                          <div class="text-caption text-grey-5">
+                            <template v-if="props.row.settings.classType === 'mixed'">
+                              全天 {{ props.row.fullDays }}×${{ fmtNum(rates.mixedFullDaily || 0) }} + 半天 {{ props.row.halfDays }}×${{ fmtNum(rates.mixedHalfDaily || 0) }}
+                            </template>
+                            <template v-else-if="props.row.absentDays <= rates.absentThreshold">
+                              月費制（請假 {{ props.row.absentDays }} ≤ {{ rates.absentThreshold }} 天）
+                            </template>
+                            <template v-else>
+                              按日計費 出席 {{ props.row.attendDays }} 天 × ${{ fmtNum(dailyRate(props.row.settings)) }}/天（請假 {{ props.row.absentDays }} > {{ rates.absentThreshold }} 天）
+                            </template>
+                          </div>
+                        </q-item-section>
+                        <q-item-section side class="text-body2 text-weight-bold">${{ fmtNum(props.row.baseFee || 0) }}</q-item-section>
+                      </q-item>
+                      <q-item v-for="item in props.row.attendedActivities" :key="item.id">
+                        <q-item-section class="text-body2 text-amber-9">
+                          {{ getActivityName(item.id) }}
+                          <span v-if="isMultiPerson(item.id)" class="text-caption text-grey-6">× {{ item.qty || 1 }}人</span>
+                        </q-item-section>
+                        <q-item-section side class="text-body2 text-weight-bold text-amber-9">
+                          +${{ fmtNum(getActivityAmount(item.id) * (isMultiPerson(item.id) ? (item.qty || 1) : 1)) }}
+                        </q-item-section>
+                      </q-item>
+                      <q-separator />
+                      <q-item class="bg-info-hint">
+                        <q-item-section class="text-subtitle2 text-weight-bold">目前計費</q-item-section>
+                        <q-item-section side>
+                          <span class="text-h6 text-primary text-weight-bold">${{ fmtNum(props.row.currentFee) }}</span>
+                        </q-item-section>
+                      </q-item>
+                      <q-item v-if="props.row.prepaidFee !== null && props.row.currentFee !== props.row.prepaidFee">
+                        <q-item-section class="text-caption text-grey-6">預收 ${{ fmtNum(props.row.prepaidFee) }}，差額</q-item-section>
+                        <q-item-section side>
+                          <span class="text-caption text-weight-bold" :class="props.row.currentFee > props.row.prepaidFee ? 'text-positive' : 'text-negative'">
+                            {{ props.row.currentFee > props.row.prepaidFee ? `補收 $${fmtNum(props.row.currentFee - props.row.prepaidFee)}` : `退費 $${fmtNum(props.row.prepaidFee - props.row.currentFee)}` }}
+                          </span>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-card>
                 </div>
               </template>
               <div v-else class="text-grey-6 text-body2">此月份不上課</div>
@@ -609,6 +713,12 @@ function calcFee(classType, withMeal, totalDays, absentDays, activityItems, cale
   const base = calcTuitionBase(classType, withMeal, totalDays, absentDays, calendar)
   if (base === null) return null
   return base + calcExtraFee(activityItems)
+}
+
+function dailyRate(settings) {
+  if (!rates.value || settings.classType === 'mixed' || settings.classType === 'none') return null
+  if (settings.classType === 'full') return settings.withMeal ? rates.value.fullMealDaily : rates.value.fullDaily
+  return settings.withMeal ? rates.value.halfMealDaily : rates.value.halfDaily
 }
 
 function getActivityDef(id) {
@@ -824,7 +934,9 @@ const rows = computed(() => {
       const halfDays = Object.values(logCal).filter(s => s === 'half').length
       const prepaidFee = calcFee(settings.classType, settings.withMeal, planned.totalDays, planned.absentDays, enrolledActivities, plannedCal)
       const currentFee = calcFee(settings.classType, settings.withMeal, log.totalDays, log.absentDays, attendedActivities, logCal)
-      return { studentId, student, settings, attendDays, absentDays: log.absentDays, fullDays, halfDays, enrolledActivities, attendedActivities, displayActivities, prepaidFee, currentFee }
+      // baseFee：純學費（不含附加活動），用於「計費明細」拆解 currentFee = baseFee + 活動費
+      const baseFee = calcTuitionBase(settings.classType, settings.withMeal, log.totalDays, log.absentDays, logCal)
+      return { studentId, student, settings, attendDays, absentDays: log.absentDays, fullDays, halfDays, totalDays: log.totalDays, enrolledActivities, attendedActivities, displayActivities, baseFee, prepaidFee, currentFee }
     })
     .filter(Boolean)
     .sort((a, b) =>
