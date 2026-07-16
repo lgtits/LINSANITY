@@ -178,13 +178,13 @@
             </template>
 
             <!-- 附加活動出席（手機版） -->
-            <div v-if="row.enrolledActivities.length" :class="row.settings.classType !== 'none' ? 'q-mt-md' : ''">
+            <div v-if="row.displayActivities.length" :class="row.settings.classType !== 'none' ? 'q-mt-md' : ''">
               <div class="text-body2 text-grey-7 text-weight-bold q-mb-xs">
                 <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動出席
               </div>
               <q-card flat bordered class="q-pa-sm">
                 <div class="text-caption text-grey-6 q-mb-xs">勾選實際有參加的活動</div>
-                <div v-for="item in row.enrolledActivities" :key="item.id" class="q-py-xs">
+                <div v-for="item in row.displayActivities" :key="item.id" class="q-py-xs">
                   <div class="row items-center no-wrap">
                     <q-checkbox
                       :model-value="getSelectedIds(row.attendedActivities).includes(item.id)"
@@ -351,14 +351,14 @@
                   </div>
 
                   <!-- 附加活動出席 -->
-                  <div v-if="props.row.enrolledActivities.length"
+                  <div v-if="props.row.displayActivities.length"
                     :class="props.row.settings.classType !== 'none' ? 'col-12 col-md-4' : 'col-12'">
                     <div class="text-body2 text-grey-7 text-weight-bold q-mb-sm">
                       <q-icon name="local_activity" size="14px" class="q-mr-xs" />附加活動出席
                     </div>
                     <q-card flat bordered class="q-pa-md">
                       <div class="text-caption text-grey-6 q-mb-sm">勾選實際有參加的活動</div>
-                      <div v-for="item in props.row.enrolledActivities" :key="item.id" class="q-py-xs">
+                      <div v-for="item in props.row.displayActivities" :key="item.id" class="q-py-xs">
                         <div class="row items-center no-wrap">
                           <q-checkbox
                             :model-value="getSelectedIds(props.row.attendedActivities).includes(item.id)"
@@ -816,13 +816,15 @@ const rows = computed(() => {
       const planned = plannedAtt.value[studentId] || { totalDays: 0, absentDays: 0 }
       const enrolledActivities = normalizeActivities(settings.extraActivities || [])
       const attendedActivities = normalizeActivities(log.extraActivities !== undefined ? log.extraActivities : [...enrolledActivities])
+      // 簽到頁列出費率定義的全部活動，任何一項都能勾選補收（含報名沒有、簽到才補報的活動）
+      const displayActivities = (rates.value?.extraActivities || []).map(ea => ({ id: ea.id }))
       const logCal = log.calendar || {}
       const plannedCal = planned.calendar || {}
       const fullDays = Object.values(logCal).filter(s => s === 'full').length
       const halfDays = Object.values(logCal).filter(s => s === 'half').length
       const prepaidFee = calcFee(settings.classType, settings.withMeal, planned.totalDays, planned.absentDays, enrolledActivities, plannedCal)
       const currentFee = calcFee(settings.classType, settings.withMeal, log.totalDays, log.absentDays, attendedActivities, logCal)
-      return { studentId, student, settings, attendDays, absentDays: log.absentDays, fullDays, halfDays, enrolledActivities, attendedActivities, prepaidFee, currentFee }
+      return { studentId, student, settings, attendDays, absentDays: log.absentDays, fullDays, halfDays, enrolledActivities, attendedActivities, displayActivities, prepaidFee, currentFee }
     })
     .filter(Boolean)
     .sort((a, b) =>
