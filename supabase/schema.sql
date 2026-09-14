@@ -61,14 +61,18 @@ create index students_parent_idx on students (parent_id);
 create index students_active_idx on students (archived, deleted);
 
 -- ─────────────────────── 餐廳 / 菜單 ───────────────────────
+-- 餐廳與餐點被訂單引用，一律軟刪除（deleted 旗標），與 parents/students 同慣例。
+-- 真刪除只發生在「永久刪除」，此時訂單靠快照欄位保留歷史（FK 為 set null）。
 create table restaurants (
   id         text primary key default gen_random_uuid()::text,
   name       text not null,
   phone      text,
   address    text,
   active     boolean not null default true,
+  deleted    boolean not null default false,
   created_at timestamptz default now()
 );
+create index restaurants_active_idx on restaurants (active, deleted);
 
 create table menu_items (
   id            text primary key default gen_random_uuid()::text,
@@ -78,9 +82,11 @@ create table menu_items (
   category      text,
   available     boolean not null default true,
   default_qty   int not null default 1,
+  deleted       boolean not null default false,
   created_at    timestamptz default now()
 );
 create index menu_items_restaurant_idx on menu_items (restaurant_id);
+create index menu_items_deleted_idx    on menu_items (deleted);
 
 -- ─────────────────────── 訂單 ───────────────────────
 -- 注意：前端 demo 把「今日訂單」放在獨立的 todayOrders；在 Supabase 不需要，
@@ -91,7 +97,7 @@ create table orders (
   batch_id        text,
   date            date not null,
   datetime        timestamptz,
-  restaurant_id   text references restaurants(id),
+  restaurant_id   text references restaurants(id) on delete set null,
   restaurant_name text,
   student_id      text references students(id) on delete set null,
   student_name    text,
@@ -107,7 +113,7 @@ create index orders_parent_idx  on orders (parent_id);
 create table order_items (
   id             text primary key default gen_random_uuid()::text,
   order_id       text not null references orders(id) on delete cascade,
-  menu_item_id   text references menu_items(id),
+  menu_item_id   text references menu_items(id) on delete set null,
   menu_item_name text not null,
   price          numeric(10,2) not null,
   qty            int not null default 1

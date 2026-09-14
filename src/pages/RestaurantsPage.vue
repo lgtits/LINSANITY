@@ -12,13 +12,16 @@
 
         <div class="row items-center justify-between q-mb-md">
           <div class="text-subtitle1 text-weight-bold">餐廳列表</div>
-          <q-btn color="primary" icon="add" label="新增餐廳" @click="openAddRestaurant" />
+          <div class="row items-center q-gutter-sm">
+            <q-btn-toggle v-model="showDeleted" :options="viewOptions" toggle-color="primary" flat dense no-caps />
+            <q-btn v-if="!showDeleted" color="primary" icon="add" label="新增餐廳" @click="openAddRestaurant" />
+          </div>
         </div>
 
         <!-- 手機：卡片 -->
         <template v-if="$q.screen.lt.md">
           <q-card
-            v-for="r in restaurants"
+            v-for="r in displayRestaurants"
             :key="r.id"
             class="q-mb-sm"
             flat
@@ -35,12 +38,22 @@
                 <div class="text-caption text-grey-6">{{ r.address }}</div>
               </div>
               <div class="col-auto column q-gutter-xs">
-                <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEditRestaurant(r)" />
-                <q-btn flat round dense :icon="r.active ? 'toggle_on' : 'toggle_off'" :color="r.active ? 'positive' : 'grey'" size="sm" @click="toggleRestaurant(r)" />
-                <q-btn flat round dense icon="delete" color="negative" size="sm" @click="confirmDeleteRestaurant(r)" />
-                <q-btn flat round dense icon="restaurant_menu" color="secondary" size="sm" @click="openAddMenuForRestaurant(r)">
-                  <q-tooltip>增加餐點</q-tooltip>
-                </q-btn>
+                <template v-if="showDeleted">
+                  <q-btn flat round dense icon="restore" color="primary" size="sm" @click="restoreRestaurant(r)">
+                    <q-tooltip>復原</q-tooltip>
+                  </q-btn>
+                  <q-btn flat round dense icon="delete_forever" color="negative" size="sm" @click="confirmPurgeRestaurant(r)">
+                    <q-tooltip>永久刪除</q-tooltip>
+                  </q-btn>
+                </template>
+                <template v-else>
+                  <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEditRestaurant(r)" />
+                  <q-btn flat round dense :icon="r.active ? 'toggle_on' : 'toggle_off'" :color="r.active ? 'positive' : 'grey'" size="sm" @click="toggleRestaurant(r)" />
+                  <q-btn flat round dense icon="delete" color="negative" size="sm" @click="confirmDeleteRestaurant(r)" />
+                  <q-btn flat round dense icon="restaurant_menu" color="secondary" size="sm" @click="openAddMenuForRestaurant(r)">
+                    <q-tooltip>增加餐點</q-tooltip>
+                  </q-btn>
+                </template>
               </div>
             </q-card-section>
           </q-card>
@@ -49,7 +62,7 @@
         <!-- 桌機：表格 -->
         <q-table
           v-else
-          :rows="restaurants"
+          :rows="displayRestaurants"
           :columns="rColumns"
           row-key="id"
           flat
@@ -65,18 +78,28 @@
           </template>
           <template #body-cell-actions="props">
             <q-td :props="props" class="text-center q-gutter-xs">
-              <q-btn flat dense round icon="edit" color="primary" size="sm" @click="openEditRestaurant(props.row)" />
-              <q-btn flat dense round :icon="props.row.active ? 'toggle_on' : 'toggle_off'" :color="props.row.active ? 'positive' : 'grey'" size="sm" @click="toggleRestaurant(props.row)" />
-              <q-btn flat dense round icon="delete" color="negative" size="sm" @click="confirmDeleteRestaurant(props.row)" />
-              <q-btn flat dense round icon="restaurant_menu" color="secondary" size="sm" @click="openAddMenuForRestaurant(props.row)">
-                <q-tooltip>增加餐點</q-tooltip>
-              </q-btn>
+              <template v-if="showDeleted">
+                <q-btn flat dense round icon="restore" color="primary" size="sm" @click="restoreRestaurant(props.row)">
+                  <q-tooltip>復原</q-tooltip>
+                </q-btn>
+                <q-btn flat dense round icon="delete_forever" color="negative" size="sm" @click="confirmPurgeRestaurant(props.row)">
+                  <q-tooltip>永久刪除</q-tooltip>
+                </q-btn>
+              </template>
+              <template v-else>
+                <q-btn flat dense round icon="edit" color="primary" size="sm" @click="openEditRestaurant(props.row)" />
+                <q-btn flat dense round :icon="props.row.active ? 'toggle_on' : 'toggle_off'" :color="props.row.active ? 'positive' : 'grey'" size="sm" @click="toggleRestaurant(props.row)" />
+                <q-btn flat dense round icon="delete" color="negative" size="sm" @click="confirmDeleteRestaurant(props.row)" />
+                <q-btn flat dense round icon="restaurant_menu" color="secondary" size="sm" @click="openAddMenuForRestaurant(props.row)">
+                  <q-tooltip>增加餐點</q-tooltip>
+                </q-btn>
+              </template>
             </q-td>
           </template>
         </q-table>
 
-        <div v-if="!restaurants.length" class="text-center text-grey q-pa-xl">
-          <q-icon name="store" size="56px" /><br>尚無餐廳資料
+        <div v-if="!displayRestaurants.length" class="text-center text-grey q-pa-xl">
+          <q-icon name="store" size="56px" /><br>{{ showDeleted ? '沒有已刪除的餐廳' : '尚無餐廳資料' }}
         </div>
       </q-tab-panel>
 
@@ -85,7 +108,10 @@
 
         <div class="row items-center justify-between q-mb-md">
           <div class="text-subtitle1 text-weight-bold">餐點列表</div>
-          <q-btn color="primary" icon="add" label="新增餐點" @click="openAddMenu" />
+          <div class="row items-center q-gutter-sm">
+            <q-btn-toggle v-model="showDeleted" :options="viewOptions" toggle-color="primary" flat dense no-caps />
+            <q-btn v-if="!showDeleted" color="primary" icon="add" label="新增餐點" @click="openAddMenu" />
+          </div>
         </div>
 
         <!-- 餐廳篩選 -->
@@ -122,9 +148,19 @@
                 </div>
               </div>
               <div class="col-auto column q-gutter-xs">
-                <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEditMenu(m)" />
-                <q-btn flat round dense :icon="m.available ? 'visibility' : 'visibility_off'" :color="m.available ? 'positive' : 'grey'" size="sm" @click="toggleMenu(m)" />
-                <q-btn flat round dense icon="delete" color="negative" size="sm" @click="confirmDeleteMenu(m)" />
+                <template v-if="showDeleted">
+                  <q-btn flat round dense icon="restore" color="primary" size="sm" @click="restoreMenu(m)">
+                    <q-tooltip>復原</q-tooltip>
+                  </q-btn>
+                  <q-btn flat round dense icon="delete_forever" color="negative" size="sm" @click="confirmPurgeMenu(m)">
+                    <q-tooltip>永久刪除</q-tooltip>
+                  </q-btn>
+                </template>
+                <template v-else>
+                  <q-btn flat round dense icon="edit" color="primary" size="sm" @click="openEditMenu(m)" />
+                  <q-btn flat round dense :icon="m.available ? 'visibility' : 'visibility_off'" :color="m.available ? 'positive' : 'grey'" size="sm" @click="toggleMenu(m)" />
+                  <q-btn flat round dense icon="delete" color="negative" size="sm" @click="confirmDeleteMenu(m)" />
+                </template>
               </div>
             </q-card-section>
           </q-card>
@@ -155,15 +191,25 @@
           </template>
           <template #body-cell-actions="props">
             <q-td :props="props" class="text-center q-gutter-xs">
-              <q-btn flat dense round icon="edit" color="primary" size="sm" @click="openEditMenu(props.row)" />
-              <q-btn flat dense round :icon="props.row.available ? 'visibility' : 'visibility_off'" :color="props.row.available ? 'positive' : 'grey'" size="sm" @click="toggleMenu(props.row)" />
-              <q-btn flat dense round icon="delete" color="negative" size="sm" @click="confirmDeleteMenu(props.row)" />
+              <template v-if="showDeleted">
+                <q-btn flat dense round icon="restore" color="primary" size="sm" @click="restoreMenu(props.row)">
+                  <q-tooltip>復原</q-tooltip>
+                </q-btn>
+                <q-btn flat dense round icon="delete_forever" color="negative" size="sm" @click="confirmPurgeMenu(props.row)">
+                  <q-tooltip>永久刪除</q-tooltip>
+                </q-btn>
+              </template>
+              <template v-else>
+                <q-btn flat dense round icon="edit" color="primary" size="sm" @click="openEditMenu(props.row)" />
+                <q-btn flat dense round :icon="props.row.available ? 'visibility' : 'visibility_off'" :color="props.row.available ? 'positive' : 'grey'" size="sm" @click="toggleMenu(props.row)" />
+                <q-btn flat dense round icon="delete" color="negative" size="sm" @click="confirmDeleteMenu(props.row)" />
+              </template>
             </q-td>
           </template>
         </q-table>
 
         <div v-if="!filteredMenu.length" class="text-center text-grey q-pa-xl">
-          <q-icon name="menu_book" size="56px" /><br>尚無餐點資料
+          <q-icon name="menu_book" size="56px" /><br>{{ showDeleted ? '沒有已刪除的餐點' : '尚無餐點資料' }}
         </div>
       </q-tab-panel>
     </q-tab-panels>
@@ -235,6 +281,9 @@ const loading = ref(true)
 const tab = ref('restaurants')
 const restaurants = ref([])
 const menuItems = ref([])
+const deletedRestaurants = ref([])
+const deletedMenuItems = ref([])
+const showDeleted = ref(false)
 const filterRestaurant = ref(null)
 const isEdit = ref(false)
 const showRestaurantDialog = ref(false)
@@ -262,24 +311,52 @@ const mColumns = [
   { name: 'actions',      label: '操作',   field: 'actions',      align: 'center' }
 ]
 
+const viewOptions = [
+  { label: '使用中', value: false },
+  { label: '已刪除', value: true }
+]
+
+// 下拉選單一律只給未刪除的餐廳，避免把餐點指派到已刪除的餐廳
 const restaurantOptions = computed(() =>
   restaurants.value.map(r => ({ label: r.name, value: r.id }))
 )
 
-const filteredMenu = computed(() =>
-  filterRestaurant.value
-    ? menuItems.value.filter(m => m.restaurantId === filterRestaurant.value)
-    : menuItems.value
+const displayRestaurants = computed(() =>
+  showDeleted.value ? deletedRestaurants.value : restaurants.value
 )
 
+const displayMenu = computed(() =>
+  showDeleted.value ? deletedMenuItems.value : menuItems.value
+)
+
+const filteredMenu = computed(() =>
+  filterRestaurant.value
+    ? displayMenu.value.filter(m => m.restaurantId === filterRestaurant.value)
+    : displayMenu.value
+)
+
+// 已刪除的餐點可能隸屬已刪除的餐廳，兩份名單都要查
 function restaurantName(id) {
-  return restaurants.value.find(r => r.id === id)?.name || '-'
+  const all = [...restaurants.value, ...deletedRestaurants.value]
+  return all.find(r => r.id === id)?.name || '-'
+}
+
+async function reload() {
+  const [live, liveMenu, gone, goneMenu] = await Promise.all([
+    restaurantService.getAll(),
+    restaurantService.getMenuItems(),
+    restaurantService.getDeletedRestaurants(),
+    restaurantService.getDeletedMenuItems()
+  ])
+  restaurants.value = live
+  menuItems.value = liveMenu
+  deletedRestaurants.value = gone
+  deletedMenuItems.value = goneMenu
 }
 
 onMounted(async () => {
   try {
-    restaurants.value = await restaurantService.getAll()
-    menuItems.value = await restaurantService.getMenuItems()
+    await reload()
   } finally {
     loading.value = false
   }
@@ -358,14 +435,13 @@ async function toggleMenu(m) {
 function confirmDeleteRestaurant(r) {
   $q.dialog({
     title: '確認刪除',
-    message: `刪除「${r.name}」後，該餐廳所有餐點也會一起刪除。`,
+    message: `刪除「${r.name}」後，該餐廳的餐點也會一併隱藏。歷史訂單不受影響，可從「已刪除」復原。`,
     cancel: { flat: true, label: '取消' },
     ok: { color: 'negative', label: '刪除' },
     persistent: true
   }).onOk(async () => {
     await restaurantService.removeRestaurant(r.id)
-    restaurants.value = restaurants.value.filter(x => x.id !== r.id)
-    menuItems.value = menuItems.value.filter(m => m.restaurantId !== r.id)
+    await reload()
     $q.notify({ message: '餐廳已刪除', color: 'negative', icon: 'delete' })
   })
 }
@@ -373,14 +449,55 @@ function confirmDeleteRestaurant(r) {
 function confirmDeleteMenu(m) {
   $q.dialog({
     title: '確認刪除',
-    message: `確定刪除餐點「${m.name}」？`,
+    message: `確定刪除餐點「${m.name}」？歷史訂單不受影響，可從「已刪除」復原。`,
     cancel: { flat: true, label: '取消' },
     ok: { color: 'negative', label: '刪除' },
     persistent: true
   }).onOk(async () => {
     await restaurantService.removeMenuItem(m.id)
-    menuItems.value = menuItems.value.filter(x => x.id !== m.id)
+    await reload()
     $q.notify({ message: '餐點已刪除', color: 'negative', icon: 'delete' })
+  })
+}
+
+async function restoreRestaurant(r) {
+  await restaurantService.restoreRestaurant(r.id)
+  await reload()
+  $q.notify({ message: '餐廳已復原', color: 'positive', icon: 'restore' })
+}
+
+async function restoreMenu(m) {
+  await restaurantService.restoreMenuItem(m.id)
+  await reload()
+  $q.notify({ message: '餐點已復原', color: 'positive', icon: 'restore' })
+}
+
+// 永久刪除：主檔真的消失，歷史訂單靠下單當下的名稱/價格快照保留
+function confirmPurgeRestaurant(r) {
+  $q.dialog({
+    title: '永久刪除',
+    message: `「${r.name}」與其所有餐點將從資料庫移除，無法復原。歷史訂單會保留餐廳名稱，但不再連結到此餐廳。`,
+    cancel: { flat: true, label: '取消' },
+    ok: { color: 'negative', label: '永久刪除' },
+    persistent: true
+  }).onOk(async () => {
+    await restaurantService.permanentDeleteRestaurant(r.id)
+    await reload()
+    $q.notify({ message: '餐廳已永久刪除', color: 'negative', icon: 'delete_forever' })
+  })
+}
+
+function confirmPurgeMenu(m) {
+  $q.dialog({
+    title: '永久刪除',
+    message: `餐點「${m.name}」將從資料庫移除，無法復原。歷史訂單會保留餐點名稱與價格，但不再連結到此餐點。`,
+    cancel: { flat: true, label: '取消' },
+    ok: { color: 'negative', label: '永久刪除' },
+    persistent: true
+  }).onOk(async () => {
+    await restaurantService.permanentDeleteMenuItem(m.id)
+    await reload()
+    $q.notify({ message: '餐點已永久刪除', color: 'negative', icon: 'delete_forever' })
   })
 }
 </script>

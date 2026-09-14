@@ -32,6 +32,7 @@
 - **文字主鍵**：沿用 `s1`/`p1`/`m1` 讓假資料能原樣帶入；**新資料**則由 `default gen_random_uuid()::text` 自動產生 id（前端 insert 不帶 id）。種子的短 id 與新資料的 uuid 共存皆為 text，沒問題。
 - **餐費分類帳**：餘額不存欄位，`= SUM(meal_transactions.amount)`。已提供 `parent_balances` 視圖；前端 `getAllBalances` 可改查視圖。topup 的 `student_id` 為 null、金額為正；deduct 金額為負並標記孩子。
 - **訂單快照**：`orders` 存下單當下的 `restaurant_name`/`student_name`，`order_items` 存當下 `price`，主檔改名/改價不影響歷史。
+- **主檔一律軟刪除**：被訂單引用的主檔（`parents`/`students`/`restaurants`/`menu_items`）都有 `deleted` 旗標，介面上的「刪除」只是設旗標，查詢一律帶 `.eq('deleted', false)`。真刪除只走「永久刪除」，此時 FK 為 `on delete set null`，歷史訂單靠上述快照欄位保留。餐廳被軟刪除時，旗下餐點不動自己的旗標，改由查詢條件一併隱藏，餐廳復原後各餐點維持原本的刪除狀態。
 - **沒有 todayOrders 表**：demo 為了區隔「今日可編輯訂單」才拆兩份；Supabase 裡「今日訂單 = orders where date = current_date」。
 - **學費月份資料**：`tuition_*` 用 `(month_key, student_id)` 複合主鍵，直接對應 mock 的「月→學生」巢狀結構。`calendar` 欄為 null 時前端會用 `total_days/absent_days` 還原日曆。
 
