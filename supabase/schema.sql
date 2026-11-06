@@ -123,11 +123,12 @@ create index order_items_order_idx on order_items (order_id);
 -- ─────────────────────── 餐費分類帳 ───────────────────────
 -- topup：amount 正、student_id 為 null（儲值給家長）
 -- deduct：amount 負、student_id 標記是哪個孩子吃的
+-- refund：amount 負、student_id 為 null（退費給家長，現金退回）
 create table meal_transactions (
   id         text primary key default gen_random_uuid()::text,
   parent_id  text not null references parents(id),                       -- NOT NULL：刪家長前需先刪交易（應用層處理）
   student_id text references students(id) on delete set null,
-  type       text not null check (type in ('topup','deduct')),
+  type       text not null check (type in ('topup','deduct','refund')),
   amount     numeric(10,2) not null,
   note       text,
   date       date not null,

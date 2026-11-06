@@ -105,6 +105,23 @@ export const mealService = {
     return toApp(data)
   },
 
+  // 退費：把錢退回給家長（現金），金額記為負、不綁學生
+  async refund(parentId, amount, note) {
+    const dt = now()
+    const row = {
+      type: 'refund',
+      amount: -Math.abs(amount), note,
+      date: dt.slice(0, 10), datetime: dt
+    }
+    if (isDemoMode) {
+      return api.post('mealTransactions', { parentId, ...row })
+    }
+    const { data, error } = await supabase.from('meal_transactions')
+      .insert({ parent_id: parentId, ...row }).select().single()
+    if (error) throw error
+    return toApp(data)
+  },
+
   async deduct(parentId, studentId, amount, note, date) {
     const dt = now()
     if (isDemoMode) {

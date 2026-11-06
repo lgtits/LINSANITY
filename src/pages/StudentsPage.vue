@@ -295,17 +295,35 @@
 
         <q-separator />
         <div class="q-px-md q-pt-md text-subtitle2 text-grey-8">消費記錄</div>
+        <div v-if="detailKids.length >= 2" class="q-px-md q-pt-sm row q-gutter-xs">
+          <q-chip
+            v-for="opt in detailFilterOptions"
+            :key="opt.value"
+            clickable
+            dense
+            :outline="detailFilter !== opt.value"
+            color="primary"
+            :text-color="detailFilter === opt.value ? 'white' : 'primary'"
+            @click="detailFilter = opt.value"
+          >
+            {{ opt.label }}
+          </q-chip>
+        </div>
         <div style="max-height: 50vh; overflow-y: auto">
           <q-list separator>
-            <q-item v-for="tx in detailTransactions" :key="tx.id" dense>
+            <q-item v-for="tx in filteredDetailTransactions" :key="tx.id" dense>
               <q-item-section avatar>
                 <q-icon
-                  :name="tx.type === 'topup' ? 'add_circle' : 'remove_circle'"
+                  :name="tx.type === 'topup' ? 'add_circle' : tx.type === 'refund' ? 'undo' : 'remove_circle'"
                   :color="tx.type === 'topup' ? 'positive' : 'negative'"
                 />
               </q-item-section>
               <q-item-section>
-                <q-item-label>{{ tx.note }}</q-item-label>
+                <q-item-label>
+                  <q-badge v-if="tx.type === 'deduct'" color="primary" outline class="q-mr-xs">
+                    {{ txStudentName(tx) }}
+                  </q-badge>{{ tx.note }}
+                </q-item-label>
                 <q-item-label caption>{{ tx.datetime || tx.date }}</q-item-label>
               </q-item-section>
               <q-item-section side>
@@ -317,7 +335,7 @@
                 </span>
               </q-item-section>
             </q-item>
-            <q-item v-if="!detailTransactions.length">
+            <q-item v-if="!filteredDetailTransactions.length">
               <q-item-section class="text-grey text-center q-pa-md">尚無消費記錄</q-item-section>
             </q-item>
           </q-list>
@@ -598,11 +616,64 @@ function confirmArchive(student) {
 const showDetail = ref(false)
 const detailStudent = ref(null)
 const detailTransactions = ref([])
+const detailFilter = ref('all') // 'all' | studentId | 'money'（儲值與退費）
+
+// 封存／已刪除學生的姓名（只供消費記錄顯示，開記錄時才載入一次）
+const otherStudentNames = ref({})
+let otherStudentNamesLoaded = false
+async function ensureOtherStudentNames() {
+  if (otherStudentNamesLoaded) return
+  try {
+    const [archived, deleted] = await Promise.all([
+      studentService.getArchived(),
+      studentService.getDeleted(),
+    ])
+    otherStudentNames.value = Object.fromEntries([...archived, ...deleted].map((s) => [s.id, s.name]))
+    otherStudentNamesLoaded = true
+  } catch {
+    // 載入失敗就只顯示在籍學生姓名，不擋記錄
+  }
+}
+
+function studentName(id) {
+  return students.value.find((s) => s.id === id)?.name ?? otherStudentNames.value[id]
+}
+
+// 扣款沒有 studentId = 學生已被永久刪除（FK set null）
+function txStudentName(tx) {
+  if (!tx.studentId) return '(已刪除學生)'
+  return studentName(tx.studentId) ?? '(已刪除學生)'
+}
+
+// 同家長的孩子：在籍的兄弟姊妹 + 消費紀錄裡出現過的
+const detailKids = computed(() => {
+  const pid = detailStudent.value?.parentId
+  const ids = new Set(students.value.filter((s) => pid && s.parentId === pid).map((s) => s.id))
+  for (const tx of detailTransactions.value) {
+    if (tx.type === 'deduct' && tx.studentId) ids.add(tx.studentId)
+  }
+  return [...ids].map((id) => ({ id, name: studentName(id) ?? '(已刪除學生)' }))
+})
+
+const detailFilterOptions = computed(() => [
+  { label: '全部', value: 'all' },
+  ...detailKids.value.map((k) => ({ label: k.name, value: k.id })),
+  { label: '儲值與退費', value: 'money' },
+])
+
+const filteredDetailTransactions = computed(() => {
+  const f = detailFilter.value
+  if (f === 'all') return detailTransactions.value
+  if (f === 'money') return detailTransactions.value.filter((tx) => tx.type !== 'deduct')
+  return detailTransactions.value.filter((tx) => tx.type === 'deduct' && tx.studentId === f)
+})
 
 function openDetail(student) {
   detailStudent.value = student
   detailTransactions.value = txByParent.value[student.parentId] || []
+  detailFilter.value = 'all'
   showDetail.value = true
+  ensureOtherStudentNames()
 }
 
 // ── 儲值 Dialog ──

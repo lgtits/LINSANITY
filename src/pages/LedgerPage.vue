@@ -54,8 +54,8 @@
     >
       <template #body-cell-type="props">
         <q-td :props="props">
-          <q-badge :color="props.row.type === 'topup' ? 'positive' : 'blue-grey-6'">
-            {{ props.row.type === 'topup' ? '儲值' : '消費' }}
+          <q-badge :color="typeColor(props.row.type)">
+            {{ typeLabel(props.row.type) }}
           </q-badge>
         </q-td>
       </template>
@@ -74,14 +74,14 @@
         <q-card-section class="q-py-sm">
           <div class="row items-center no-wrap">
             <q-icon
-              :name="tx.type === 'topup' ? 'add_circle' : 'remove_circle'"
+              :name="tx.type === 'topup' ? 'add_circle' : tx.type === 'refund' ? 'undo' : 'remove_circle'"
               :color="tx.type === 'topup' ? 'positive' : 'negative'"
               size="20px" class="q-mr-sm"
             />
             <div class="col">
               <div class="row items-center q-gutter-xs">
-                <q-badge :color="tx.type === 'topup' ? 'positive' : 'blue-grey-6'">
-                  {{ tx.type === 'topup' ? '儲值' : '消費' }}
+                <q-badge :color="typeColor(tx.type)">
+                  {{ typeLabel(tx.type) }}
                 </q-badge>
                 <span class="text-caption text-grey-6">{{ tx.datetime || tx.date }}</span>
               </div>
@@ -137,8 +137,14 @@ const mobilePageSize = 20
 
 const typeOptions = [
   { label: '儲值', value: 'topup' },
-  { label: '消費', value: 'deduct' }
+  { label: '消費', value: 'deduct' },
+  { label: '退費', value: 'refund' }
 ]
+
+const TYPE_LABEL = { topup: '儲值', deduct: '消費', refund: '退費' }
+const TYPE_COLOR = { topup: 'positive', deduct: 'blue-grey-6', refund: 'orange-8' }
+const typeLabel = t => TYPE_LABEL[t] ?? t
+const typeColor = t => TYPE_COLOR[t] ?? 'grey'
 
 const columns = [
   { name: 'datetime', label: '時間',   field: 'datetime', align: 'left',  sortable: true },
@@ -214,7 +220,7 @@ onMounted(async () => {
 function exportExcel() {
   const data = filtered.value.map(t => ({
     '時間': t.datetime,
-    '類型': t.type === 'topup' ? '儲值' : '消費',
+    '類型': typeLabel(t.type),
     '家長': t.parentName,
     '學生': t.studentName || '—',
     '金額': t.amount,
